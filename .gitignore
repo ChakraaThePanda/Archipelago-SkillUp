@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+# Release artifacts: built by tools/build_apworld.py and meant to be attached as GitHub
+# release assets for players to download -- not committed source. Rebuild locally any time.
+/skillup.apworld
+/Skillup.yaml
+
+# Internal dev notes (design notes, screenshots) -- kept locally, deliberately not published.
+# Player-facing docs live under worlds/skillup/docs/ instead, which ships inside the apworld.
+/docs/

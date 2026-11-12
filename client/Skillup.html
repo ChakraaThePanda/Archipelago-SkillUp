@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skillup</title>
+<style>
+:root {
+  --bg: #15120e; --panel: #201b15; --panel2: #2a231b; --line: #4a3d2c;
+  --text: #eadfc8; --dim: #a8987c; --gold: #f2c14e; --good: #6fcf6f; --bad: #e0675c;
+  --accent: #c98a3a; --bar: #3a6fb0; --gray: #777;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+button { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+button.on { background: #4a3417; border-color: var(--accent); }
+input { font: inherit; color: var(--text); background: #0f0d0a; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; }
+h1 { font-size: 18px; margin: 0; color: var(--gold); }
+h2 { font-size: 15px; margin: 0 0 8px; color: var(--gold); }
+.small { font-size: 12px; color: var(--dim); }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+header .stat { color: var(--dim); }
+header .stat b { color: var(--text); }
+#status-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); margin-right: 4px; }
+#status-dot.ok { background: var(--good); }
+main { display: grid; grid-template-columns: 240px 1fr 300px; gap: 12px; padding: 12px 16px; max-width: 1300px; margin: 0 auto; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+.prof { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 6px 8px; }
+.prof.sel { border-color: var(--gold); }
+.prof.locked { opacity: .5; }
+.prof .row { display: flex; justify-content: space-between; gap: 6px; }
+.bar { height: 5px; background: #0f0d0a; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.bar > i { display: block; height: 100%; background: var(--bar); width: 0; }
+.bar.act > i { background: var(--good); transition: none; }
+.tier { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; background: var(--panel2); }
+.tier.locked { opacity: .55; }
+.tier .info { flex: 1; min-width: 0; }
+.tier .name { font-weight: 600; }
+.gray { color: var(--gray); } .green { color: var(--good); } .orange { color: var(--accent); } .yellow { color: var(--gold); }
+.inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.slot { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.slot .btns { display: flex; gap: 4px; }
+.slot .btns button { padding: 2px 6px; font-size: 11px; }
+#log { height: 260px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column-reverse; }
+#log div { padding: 2px 0; border-bottom: 1px solid #2a231b; }
+.workers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.worker { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 12px; min-width: 0; }
+#connect { max-width: 420px; margin: 40px auto; }
+#connect label { display: block; margin: 8px 0 4px; color: var(--dim); }
+.buffs span { margin-right: 8px; }
+.goal { color: var(--gold); }
+@media (max-width: 1000px) { main { grid-template-columns: 200px 1fr; } #side { grid-column: 1 / -1; } }
+@media (max-width: 640px) {
+  main { grid-template-columns: 1fr; padding: 10px; }
+  #profs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #profs .prof { margin: 0; }
+  #profs h2 { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<div id="connect" class="panel">
+  <h1>Skillup</h1>
+  <p class="small">An Archipelago idle game. Your progress is saved on the Archipelago server for this seed and slot, so you can pick it up from any browser.</p>
+  <label for="c-server">Server</label>
+  <input id="c-server" placeholder="archipelago.gg:38281">
+  <label for="c-slot">Slot name</label>
+  <input id="c-slot" placeholder="Player1">
+  <label for="c-pass">Password (optional)</label>
+  <input id="c-pass" type="password">
+  <p><button id="c-go" style="width:100%">Connect</button></p>
+  <p id="c-err" class="small" style="color:var(--bad)"></p>
+</div>
+
+<div id="game" hidden>
+  <header>
+    <h1>Skillup</h1>
+    <span class="stat"><span id="status-dot"></span><span id="status-text">Offline</span></span>
+    <span class="stat">Gold <b id="h-gold" class="yellow">0</b></span>
+    <span class="stat">Bags <b id="h-bags">0/0</b></span>
+    <span class="stat goal" id="h-goal"></span>
+    <span class="stat buffs" id="h-buffs"></span>
+  </header>
+  <main>
+    <section class="panel" id="profs"></section>
+    <section class="panel" id="center">
+      <div class="workers" id="workers"></div>
+      <div id="detail"></div>
+    </section>
+    <section id="side">
+      <div class="panel" style="margin-bottom:12px">
+        <h2>Inventory</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button id="sell-junk">Sell all trade goods</button>
+          <button id="auto-sell">Auto-sell when full: off</button>
+          <button id="buy-bag">Buy bag slot</button>
+        </div>
+        <div class="inv" id="inv"></div>
+      </div>
+      <div class="panel">
+        <h2>Log</h2>
+        <div id="log"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+"use strict";
+// ============================================================================================
+// Game data. Profession names, tier count and level math must match the apworld's data.py;
+// item/location IDs are looked up by name from the server's data package.
+// ============================================================================================
+const GAME = "Skillup";
+const TIERS = 6, LEVELS_PER_TIER = 50, MAX_LEVEL = 300;
+const STACK = 20, BASE_SLOTS = 16, BAG_SLOTS = 4;
+const GATHER_MS = 3000, CRAFT_MS = 4000;
+const OFFLINE_CAP_MS = 12 * 3600e3;
+
+const MATS = {
+  Mining:    ["Copper Ore", "Tin Ore", "Iron Ore", "Mithril Ore", "Thorium Ore", "Fel Iron Ore"],
+  Gems:      ["Malachite", "Shadowgem", "Moss Agate", "Jade", "Citrine", "Star Ruby"],
+  Herbalism: ["Peacebloom", "Briarthorn", "Bruiseweed", "Kingsblood", "Sungrass", "Dreamfoil"],
+  Skinning:  ["Light Leather", "Medium Leather", "Heavy Leather", "Thick Leather", "Rugged Leather", "Knothide Leather"],
+  Fishing:   ["Raw Smallfish", "Raw Mud Snapper", "Raw Rockscale Cod", "Raw Yellowtail", "Raw Nightfin", "Raw Sunscale Salmon"],
+};
+const GATHER_VERB = { Mining: "Mine", Herbalism: "Pick", Skinning: "Skin for", Fishing: "Fish for" };
+
+// Crafting recipes: one per tier. `mats(t)` returns {itemName: count}.
+const CRAFT = {
+  Blacksmithing: { source: "Mining", names: ["Rough Copper Bracers", "Tin Buckler", "Iron Shortsword", "Mithril Coif", "Thorium Greatsword", "Fel Iron Breastplate"],
+    mats: t => ({ [MATS.Mining[t]]: 2 }) },
+  Jewelcrafting: { source: "Mining", names: ["Malachite Pendant", "Shadowgem Band", "Moss Agate Ring", "Jade Choker", "Citrine Signet", "Star Ruby Circlet"],
+    mats: t => ({ [MATS.Gems[t]]: 1, [MATS.Mining[t]]: 1 }) },
+  Alchemy:       { source: "Herbalism", use: "haste", names: ["Minor Swiftness Potion", "Lesser Swiftness Potion", "Swiftness Potion", "Greater Swiftness Potion", "Superior Swiftness Potion", "Major Swiftness Potion"],
+    mats: t => ({ [MATS.Herbalism[t]]: 2 }) },
+  Inscription:   { source: "Herbalism", names: ["Scroll of Stamina", "Scroll of Intellect", "Scroll of Spirit", "Scroll of Agility", "Scroll of Strength", "Scroll of Protection"],
+    mats: t => ({ [MATS.Herbalism[t]]: 2 }) },
+  Leatherworking:{ source: "Skinning", names: ["Light Armor Kit", "Medium Armor Kit", "Heavy Armor Kit", "Thick Armor Kit", "Rugged Armor Kit", "Knothide Armor Kit"],
+    mats: t => ({ [MATS.Skinning[t]]: 3 }) },
+  Cooking:       { source: "Fishing", use: "fed", names: ["Brilliant Smallfish", "Longjaw Mud Snapper", "Baked Rockscale Cod", "Spotted Yellowtail", "Grilled Nightfin", "Sunscale Salmon Steak"],
+    mats: t => ({ [MATS.Fishing[t]]: 1 }) },
+};
+const GATHERING = ["Mining", "Herbalism", "Skinning", "Fishing"];
+const PROFESSIONS = [...GATHERING, ...Object.keys(CRAFT)];
+const isGathering = p => GATHERING.includes(p);
+
+// Item catalog: name -> {tier (0-based), price, use?}
+const ITEMS = {};
+for (const [k, list] of Object.entries(MATS)) list.forEach((n, t) => ITEMS[n] = { tier: t, price: Math.round(3 * (t + 1) ** 1.6) * (k === "Gems" ? 3 : 1) });
+for (const [p, r] of Object.entries(CRAFT)) r.names.forEach((n, t) => {
+  const base = Object.entries(r.mats(t)).reduce((s, [m, c]) => s + ITEMS[m].price * c, 0);
+  ITEMS[n] = { tier: t, price: Math.round(base * 1.6), use: r.use };
+});
+
+const BUFFS = {
+  haste:   { label: "Swiftness", desc: "+30% action speed" },
+  insight: { label: "Insight",   desc: "+100% XP" },
+  fed:     { label: "Well Fed",  desc: "+25% XP" },
+};
+
+function xpToNext(level) { return 20 + level * 3; }
+function actionXp(tier) { return 25 * (tier + 1); } // tier is 0-based
+// Tier t (0-based) content only gives XP while your level is below (t + 1) * 50, so reaching a
+// level needs the matching tier. This is the rule the apworld's logic is built on.
+function tierGivesXp(tier, level) { return level < (tier + 1) * LEVELS_PER_TIER; }
+function tierColor(tier, level) {
+  if (!tierGivesXp(tier, level)) return "gray";
+  const left = (tier + 1) * LEVELS_PER_TIER - level;
+  return left > 35 ? "orange" : left > 15 ? "yellow" : "green";
+}
+
+// ============================================================================================
+// State
+// ============================================================================================
+let S = null;          // the save
+let slotData = {};
+let received = [];     // every NetworkItem the server sent, in order
+let checked = new Set(); // location ids the server knows are checked
+let nameToLoc = {}, locToName = {}, itemIdToName = {};
+let gamesPackage = {};
+let conn = null;       // connection info: {seed, team, slot, slotName, playerNames}
+let ws = null, dirty = false, saveTimer = null, goalSent = false;
+let selected = "Mining";
+
+function newSave() {
+  const levels = {};
+  for (const p of PROFESSIONS) levels[p] = { lvl: 0, xp: 0 };
+  return { v: 1, levels, inv: {}, gold: 0, buffs: {}, workers: { gather: null, craft: null },
+    itemsApplied: 0, bagsBought: 0, autoSell: false, savedAt: 0, lastTick: Date.now() };
+}
+
+function countReceived(name) { return received.filter(i => itemIdToName[i.item] === name).length; }
+function tiersUnlocked(p) { return Math.min(TIERS, countReceived("Progressive " + p)); }
+function totalSlots() { return BASE_SLOTS + BAG_SLOTS * (countReceived("Bag Upgrade") + S.bagsBought); }
+function usedSlots(inv = S.inv) { return Object.values(inv).reduce((s, c) => s + Math.ceil(c / STACK), 0); }
+function bagCost() { return Math.round(50 * 1.6 ** S.bagsBought); }
+
+function roomFor(adds, removes = {}) {
+  const inv = { ...S.inv };
+  for (const [k, c] of Object.entries(removes)) inv[k] = (inv[k] || 0) - c;
+  for (const [k, c] of Object.entries(adds)) inv[k] = (inv[k] || 0) + c;
+  return usedSlots(inv) <= totalSlots();
+}
+function addItem(name, c = 1) { S.inv[name] = (S.inv[name] || 0) + c; }
+function removeItem(name, c = 1) { S.inv[name] -= c; if (S.inv[name] <= 0) delete S.inv[name]; }
+function sell(name, c) {
+  c = Math.min(c, S.inv[name] || 0);
+  if (!c) return;
+  removeItem(name, c);
+  S.gold += ITEMS[name].price * c;
+  dirty = true;
+}
+function sellTradeGoods() {
+  // Sells crafted goods that have no use; keeps raw materials and consumables.
+  for (const n of Object.keys(S.inv)) if (!Object.values(MATS).flat().includes(n) && !ITEMS[n].use) sell(n, S.inv[n]);
+}
+
+function speedMult() { return S.buffs.haste > 0 ? 1.3 : 1; }
+function xpMult() {
+  let m = (slotData.experience_rate || 100) / 100;
+  if (S.buffs.insight > 0) m *= 2;
+  if (S.buffs.fed > 0) m *= 1.25;
+  return m;
+}
+
+function gainXp(p, amount) {
+  const L = S.levels[p];
+  L.xp += amount;
+  while (L.lvl < MAX_LEVEL && L.xp >= xpToNext(L.lvl)) {
+    L.xp -= xpToNext(L.lvl);
+    L.lvl++;
+    onLevelUp(p, L.lvl);
+  }
+  if (L.lvl >= MAX_LEVEL) L.xp = 0;
+}
+
+function onLevelUp(p, lvl) {
+  const id = nameToLoc[`${p} Level ${lvl}`];
+  if (id !== undefined && !checked.has(id) && isCheckLevel(lvl)) {
+    log(`<span class="green">${p} reached ${lvl}! Check sent.</span>`);
+    sendChecks();
+  } else if (lvl % 10 === 0 || lvl === MAX_LEVEL) log(`${p} reached ${lvl}.`);
+  if (lvl === MAX_LEVEL) { log(`<span class="yellow">${p} mastered!</span>`); checkGoal(); }
+}
+function isCheckLevel(lvl) {
+  const i = slotData.check_interval || 10;
+  return lvl % i === 0 || lvl === MAX_LEVEL;
+}
+
+// --------------------------------------------------------------------------------------------
+// Workers: one gathering action and one crafting action can run at the same time.
+// --------------------------------------------------------------------------------------------
+function startAction(kind, p, t) {
+  const w = S.workers[kind];
+  if (w && w.p === p && w.t === t) { S.workers[kind] = null; }
+  else S.workers[kind] = { p, t, progress: 0, stalled: "" };
+  dirty = true; render();
+}
+
+function tickWorker(kind, dt, quiet) {
+  const w = S.workers[kind];
+  if (!w) return;
+  if (tiersUnlocked(w.p) <= w.t) { S.workers[kind] = null; return; }
+  const dur = (kind === "gather" ? GATHER_MS : CRAFT_MS) / speedMult();
+  // Check we can actually do the action before spending time on it.
+  w.stalled = whyBlocked(kind, w.p, w.t);
+  if (w.stalled) {
+    if (w.stalled === "Bags full" && S.autoSell) {
+      sellTradeGoods();
+      // Still full of raw materials: sell the stack this worker produces so it keeps leveling.
+      if (whyBlocked(kind, w.p, w.t)) sell(kind === "gather" ? MATS[w.p][w.t] : CRAFT[w.p].names[w.t], Infinity);
+      w.stalled = whyBlocked(kind, w.p, w.t);
+    }
+    if (w.stalled) return;
+  }
+  w.progress += dt;
+  while (w.progress >= dur) {
+    w.progress -= dur;
+    if (!completeAction(kind, w.p, w.t, quiet)) { w.progress = 0; break; }
+  }
+}
+
+function whyBlocked(kind, p, t) {
+  if (kind === "gather") {
+    const adds = { [MATS[p][t]]: 1 };
+    if (p === "Mining") adds[MATS.Gems[t]] = 1;
+    return roomFor(adds) ? "" : "Bags full";
+  }
+  const r = CRAFT[p], mats = r.mats(t);
+  for (const [m, c] of Object.entries(mats)) if ((S.inv[m] || 0) < c) return `Need ${c}× ${m}`;
+  return roomFor({ [r.names[t]]: 1 }, mats) ? "" : "Bags full";
+}
+
+function completeAction(kind, p, t, quiet) {
+  if (whyBlocked(kind, p, t)) return false;
+  if (kind === "gather") {
+    addItem(MATS[p][t]);
+    if (p === "Mining" && Math.random() < 0.25) addItem(MATS.Gems[t]);
+    if (Math.random() < 0.1) addItem(MATS[p][t]); // lucky double
+  } else {
+    const r = CRAFT[p];
+    for (const [m, c] of Object.entries(r.mats(t))) removeItem(m, c);
+    addItem(r.names[t]);
+  }
+  if (tierGivesXp(t, S.levels[p].lvl)) gainXp(p, actionXp(t) * xpMult());
+  dirty = true;
+  return true;
+}
+
+function tick(dt, quiet = false) {
+  for (const b of Object.keys(S.buffs)) { S.buffs[b] -= dt; if (S.buffs[b] <= 0) delete S.buffs[b]; }
+  tickWorker("gather", dt, quiet);
+  tickWorker("craft", dt, quiet);
+}
+
+function catchUpOffline() {
+  const gap = Math.min(OFFLINE_CAP_MS, Date.now() - (S.lastTick || Date.now()));
+  S.lastTick = Date.now();
+  if (gap < 5000) return;
+  const before = PROFESSIONS.map(p => S.levels[p].lvl);
+  for (let t = 0; t < gap; t += 1000) tick(Math.min(1000, gap - t), true);
+  const gains = PROFESSIONS.map((p, i) => [p, S.levels[p].lvl - before[i]]).filter(([, d]) => d > 0);
+  log(`Welcome back! ${Math.round(gap / 60000)} min of offline progress` +
+      (gains.length ? `: ${gains.map(([p, d]) => `${p} +${d}`).join(", ")}.` : "."));
+  dirty = true;
+}
+
+// --------------------------------------------------------------------------------------------
+// Items from Archipelago
+// --------------------------------------------------------------------------------------------
+function applyNewItems() {
+  for (let i = S.itemsApplied; i < received.length; i++) {
+    const name = itemIdToName[received[i].item];
+    const from = received[i].player;
+    const who = from && from !== conn.slot ? ` from ${conn.playerNames[from] || "player " + from}` : "";
+    if (name?.startsWith("Progressive ")) {
+      const p = name.slice(12), n = countReceivedUpTo(name, i + 1);
+      const what = n === 1 ? `${p} learned` : n <= TIERS ? `${p} tier ${n} (${tierLabel(p, n - 1)})` : `${p} (extra)`;
+      log(`<span class="yellow">Received ${name}${who}: ${what}</span>`);
+    } else if (name === "Bag Upgrade") {
+      log(`<span class="yellow">Received Bag Upgrade${who}: +${BAG_SLOTS} slots</span>`);
+    } else if (name === "Pouch of Gold") {
+      const g = 25 * (highestTier() + 1) ** 2; S.gold += g; log(`Received Pouch of Gold${who}: +${g} gold`);
+    } else if (name === "Elixir of Insight") {
+      addBuff("insight", 5 * 60e3); log(`Received Elixir of Insight${who}: double XP for 5 min`);
+    } else if (name === "Swiftness Potion") {
+      addBuff("haste", 5 * 60e3); log(`Received Swiftness Potion${who}: +30% speed for 5 min`);
+    } else if (name === "Crate of Materials") {
+      const owned = GATHERING.filter(p => tiersUnlocked(p) > 0);
+      const p = owned[Math.floor(Math.random() * owned.length)] || "Mining", t = Math.max(0, tiersUnlocked(p) - 1);
+      addItem(MATS[p][t], 10); log(`Received Crate of Materials${who}: 10× ${MATS[p][t]}`);
+    } else log(`Received ${name || "unknown item"}${who}`);
+  }
+  S.itemsApplied = received.length;
+  dirty = true;
+}
+function countReceivedUpTo(name, n) { return received.slice(0, n).filter(i => itemIdToName[i.item] === name).length; }
+function highestTier() { return Math.max(0, ...GATHERING.map(p => tiersUnlocked(p) - 1)); }
+function addBuff(b, ms) { S.buffs[b] = (S.buffs[b] || 0) + ms; }
+function tierLabel(p, t) { return isGathering(p) ? MATS[p][t] : CRAFT[p].names[t]; }
+function useItem(name) {
+  const u = ITEMS[name].use;
+  if (!u || !S.inv[name]) return;
+  removeItem(name);
+  addBuff(u, (60 + 30 * ITEMS[name].tier) * 1000);
+  dirty = true; render();
+}
+
+// --------------------------------------------------------------------------------------------
+// Checks and goal
+// --------------------------------------------------------------------------------------------
+function sendChecks() {
+  if (!ws || ws.readyState !== 1) return;
+  const ids = [];
+  for (const p of PROFESSIONS) for (let l = 1; l <= S.levels[p].lvl; l++) {
+    if (!isCheckLevel(l)) continue;
+    const id = nameToLoc[`${p} Level ${l}`];
+    if (id !== undefined && !checked.has(id)) ids.push(id);
+  }
+  if (ids.length) { send([{ cmd: "LocationChecks", locations: ids }]); ids.forEach(i => checked.add(i)); }
+}
+function mastered() { return PROFESSIONS.filter(p => S.levels[p].lvl >= MAX_LEVEL).length; }
+function checkGoal() {
+  if (goalSent || !ws || ws.readyState !== 1) return;
+  if (mastered() >= (slotData.professions_to_max || 3)) {
+    send([{ cmd: "StatusUpdate", status: 30 }]);
+    goalSent = true;
+    log(`<span class="yellow">Goal complete! You are a Grand Master of Tradeskills.</span>`);
+  }
+}
+
+// --------------------------------------------------------------------------------------------
+// Saving: localStorage cache + Archipelago data storage (so any device can resume the slot)
+// --------------------------------------------------------------------------------------------
+const storageKey = () => `skillup_save_${conn.team}_${conn.slot}`;
+const localKey = () => `skillup:${conn.seed}:${conn.team}:${conn.slot}`;
+function lsGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+function save(remote = true) {
+  if (!S || !conn) return;
+  S.savedAt = Date.now();
+  const json = JSON.stringify(S);
+  lsSet(localKey(), json);
+  if (remote && ws && ws.readyState === 1) {
+    send([{ cmd: "Set", key: storageKey(), default: null, want_reply: false,
+            operations: [{ operation: "replace", value: S }] }]);
+  }
+  dirty = false;
+}
+
+function loadSave(remote) {
+  let local = null;
+  try { local = JSON.parse(lsGet(localKey()) || "null"); } catch {}
+  const pick = [remote, local].filter(x => x && x.v === 1).sort((a, b) => b.savedAt - a.savedAt)[0];
+  S = Object.assign(newSave(), pick || {});
+  for (const p of PROFESSIONS) S.levels[p] ??= { lvl: 0, xp: 0 };
+  if (pick) log(`Loaded ${pick === remote ? "server" : "local"} save from ${new Date(pick.savedAt).toLocaleString()}.`);
+  else log("New game started. Pick a profession on the left.");
+}
+
+// ============================================================================================
+// Archipelago connection
+// ============================================================================================
+function send(packets) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(packets)); }
+
+function setStatus(ok, text) {
+  document.getElementById("status-dot").classList.toggle("ok", ok);
+  document.getElementById("status-text").textContent = text;
+}
+
+function connect(server, slotName, password) {
+  server = server.trim();
+  const hasScheme = /^wss?:\/\//.test(server);
+  const urls = hasScheme ? [server] :
+    location.protocol === "https:" ? [`wss://${server}`] : [`wss://${server}`, `ws://${server}`];
+  const errEl = document.getElementById("c-err");
+  errEl.textContent = "Connecting…";
+  let attempt = 0, gotRoom = false;
+
+  const open = () => {
+    const url = urls[attempt];
+    ws = new WebSocket(url);
+    ws.onmessage = ev => { for (const pkt of JSON.parse(ev.data)) handle(pkt, slotName, password); };
+    ws.onopen = () => { gotRoom = true; };
+    ws.onclose = () => {
+      if (!gotRoom && ++attempt < urls.length) return open();
+      setStatus(false, "Disconnected");
+      if (!S) { errEl.textContent = "Could not connect. Check the server address and port."; return; }
+      log(`<span class="orange">Disconnected. Retrying in 10 s… (progress keeps going and saves locally)</span>`);
+      setTimeout(() => { if (!ws || ws.readyState > 1) { attempt = 0; gotRoom = false; open(); } }, 10000);
+    };
+  };
+  open();
+}
+
+let pendingRoom = null;
+function handle(pkt, slotName, password) {
+  switch (pkt.cmd) {
+    case "RoomInfo":
+      pendingRoom = pkt;
+      send([{ cmd: "GetDataPackage", games: pkt.games }]);
+      break;
+    case "DataPackage":
+      Object.assign(gamesPackage, pkt.data.games);
+      buildNameMaps();
+      send([{ cmd: "Connect", game: GAME, name: slotName, password: password || "", uuid: getUuid(),
+        version: { major: 0, minor: 6, build: 4, class: "Version" }, items_handling: 0b111,
+        tags: [], slot_data: true }]);
+      break;
+    case "ConnectionRefused":
+      document.getElementById("c-err").textContent = "Refused: " + (pkt.errors || []).join(", ");
+      ws.onclose = null; ws.close();
+      break;
+    case "Connected": {
+      slotData = pkt.slot_data || {};
+      conn = { seed: pendingRoom.seed_name, team: pkt.team, slot: pkt.slot, slotName,
+               playerNames: Object.fromEntries(pkt.players.map(p => [p.slot, p.alias || p.name])) };
+      checked = new Set(pkt.checked_locations);
+      playerGames = Object.fromEntries(Object.entries(pkt.slot_info || {}).map(([k, v]) => [k, v.game]));
+      lsSet("skillup:last", JSON.stringify({ server: document.getElementById("c-server").value, slot: slotName }));
+      setStatus(true, `${slotName} @ ${pendingRoom.seed_name.slice(0, 8)}`);
+      if (S) { sendChecks(); checkGoal(); break; } // reconnect: keep the running save
+      send([{ cmd: "Get", keys: [storageKey()] }]);
+      break;
+    }
+    case "Retrieved":
+      if (!S && conn && storageKey() in pkt.keys) {
+        loadSave(pkt.keys[storageKey()]);
+        applyNewItems();
+        startGame();
+      }
+      break;
+    case "ReceivedItems":
+      if (pkt.index === 0) received = [];
+      if (pkt.index !== received.length) { send([{ cmd: "Sync" }]); break; }
+      received.push(...pkt.items);
+      if (S) { applyNewItems(); render(); }
+      break;
+    case "RoomUpdate":
+      if (pkt.checked_locations) pkt.checked_locations.forEach(i => checked.add(i));
+      break;
+    case "PrintJSON":
+      if (["ItemSend", "Hint", "Goal", "Chat", "ServerChat", "Countdown"].includes(pkt.type)) {
+        const mine = pkt.type !== "ItemSend" || pkt.receiving === conn?.slot || pkt.item?.player === conn?.slot;
+        if (mine) log(renderJson(pkt.data));
+      }
+      break;
+  }
+}
+
+function buildNameMaps() {
+  const pkg = gamesPackage[GAME];
+  if (!pkg) return;
+  nameToLoc = pkg.location_name_to_id;
+  locToName = Object.fromEntries(Object.entries(nameToLoc).map(([k, v]) => [v, k]));
+  itemIdToName = Object.fromEntries(Object.entries(pkg.item_name_to_id).map(([k, v]) => [v, k]));
+}
+const reverseCache = {};
+function lookupName(kind, id, player) {
+  const game = playerGames[player], pkg = gamesPackage[game];
+  if (!pkg) return String(id);
+  const key = kind + ":" + game;
+  reverseCache[key] ??= Object.fromEntries(Object.entries(
+    kind === "item" ? pkg.item_name_to_id : pkg.location_name_to_id).map(([k, v]) => [v, k]));
+  return reverseCache[key][id] ?? String(id);
+}
+let playerGames = {};
+function renderJson(parts) {
+  return parts.map(p => {
+    const t = esc(p.text ?? "");
+    switch (p.type) {
+      case "player_id": return `<b>${esc(conn?.playerNames[+p.text] || p.text)}</b>`;
+      case "item_id": return `<span class="${p.flags & 1 ? "yellow" : "green"}">${esc(lookupName("item", +p.text, p.player))}</span>`;
+      case "location_id": return `<span class="orange">${esc(lookupName("location", +p.text, p.player))}</span>`;
+      default: return t;
+    }
+  }).join("");
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function getUuid() {
+  let u = lsGet("skillup:uuid");
+  if (!u) { u = Math.random().toString(36).slice(2) + Date.now().toString(36); lsSet("skillup:uuid", u); }
+  return u;
+}
+
+// ============================================================================================
+// UI
+// ============================================================================================
+const $ = id => document.getElementById(id);
+function log(html) {
+  const d = document.createElement("div");
+  d.innerHTML = `<span class="small">${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span> ${html}`;
+  $("log").prepend(d);
+  while ($("log").children.length > 200) $("log").lastChild.remove();
+}
+
+function startGame() {
+  $("connect").hidden = true; $("game").hidden = false;
+  if (!S.workers.gather && !S.workers.craft) {
+    const start = GATHERING.find(p => tiersUnlocked(p) > 0);
+    if (start) selected = start;
+  }
+  catchUpOffline();
+  sendChecks(); checkGoal();
+  save();
+  render();
+  // Driven by wall-clock time, so a throttled background tab or a sleeping phone catches up
+  // on the next tick instead of losing the time.
+  setInterval(() => {
+    const now = Date.now();
+    let gap = Math.min(OFFLINE_CAP_MS, Math.max(0, now - S.lastTick));
+    S.lastTick = now;
+    while (gap > 0) { const d = Math.min(1000, gap); tick(d, true); gap -= d; }
+    renderLive();
+  }, 100);
+  setInterval(render, 1000);
+  saveTimer = setInterval(() => dirty && save(), 20000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) save();
+  });
+  addEventListener("pagehide", () => save());
+}
+
+function render() {
+  if (!S) return;
+  $("h-gold").textContent = S.gold.toLocaleString();
+  $("h-bags").textContent = `${usedSlots()}/${totalSlots()}`;
+  $("h-goal").textContent = `Mastered ${mastered()}/${slotData.professions_to_max || 3}`;
+  $("h-buffs").innerHTML = Object.entries(S.buffs).map(([b, ms]) =>
+    `<span title="${BUFFS[b].desc}" class="green">${BUFFS[b].label} ${Math.ceil(ms / 1000)}s</span>`).join("");
+
+  // Profession list
+  $("profs").innerHTML = `<h2>Professions</h2>` + PROFESSIONS.map(p => {
+    const L = S.levels[p], n = tiersUnlocked(p);
+    const pct = L.lvl >= MAX_LEVEL ? 100 : 100 * L.xp / xpToNext(L.lvl);
+    return `<button class="prof ${p === selected ? "sel" : ""} ${n ? "" : "locked"}" data-prof="${p}">
+      <div class="row"><span>${p}</span><span class="small">${L.lvl}/${n * LEVELS_PER_TIER}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div></button>`;
+  }).join("");
+
+  // Selected profession detail
+  const p = selected, L = S.levels[p], n = tiersUnlocked(p), kind = isGathering(p) ? "gather" : "craft";
+  const src = CRAFT[p]?.source;
+  const nextCheck = (() => { for (let l = L.lvl + 1; l <= MAX_LEVEL; l++) if (isCheckLevel(l)) return l; })();
+  let html = `<h2>${p} <span class="small">Level ${L.lvl} · ${n}/${TIERS} tiers${src ? ` · uses ${src}` : ""}</span></h2>
+    <p class="small">${n ? (nextCheck ? `Next check at level ${nextCheck}.` : "All checks done.") :
+      `You haven't learned ${p} yet. Find <b>Progressive ${p}</b> in the multiworld.`}</p>`;
+  for (let t = 0; t < TIERS; t++) {
+    const unlocked = t < n, w = S.workers[kind], active = w && w.p === p && w.t === t;
+    const label = isGathering(p) ? `${GATHER_VERB[p]} ${MATS[p][t]}` : CRAFT[p].names[t];
+    const req = isGathering(p) ? (p === "Mining" ? `+25% ${MATS.Gems[t]}` : "")
+      : Object.entries(CRAFT[p].mats(t)).map(([m, c]) => `${c}× ${m} (${S.inv[m] || 0})`).join(", ");
+    const color = unlocked ? tierColor(t, L.lvl) : "";
+    html += `<div class="tier ${unlocked ? "" : "locked"}">
+      <div class="info"><div class="name ${color}">${label}</div>
+        <div class="small">${unlocked ? `Lv ${t * LEVELS_PER_TIER}–${(t + 1) * LEVELS_PER_TIER} · ${tierGivesXp(t, L.lvl) ? actionXp(t) + " XP" : "no XP (trivial)"}${req ? " · " + req : ""}`
+          : `Needs Progressive ${p} ×${t + 1}`}</div></div>
+      <button data-act="${kind}" data-tier="${t}" class="${active ? "on" : ""}" ${unlocked ? "" : "disabled"}>${active ? "Stop" : isGathering(p) ? "Gather" : "Craft"}</button>
+    </div>`;
+  }
+  $("detail").innerHTML = html;
+
+  // Inventory
+  const names = Object.keys(S.inv).sort((a, b) => ITEMS[a].tier - ITEMS[b].tier || a.localeCompare(b));
+  $("inv").innerHTML = names.map(nm => `<div class="slot"><span>${nm}</span><span class="small">×${S.inv[nm]} · ${ITEMS[nm].price}g each</span>
+    <span class="btns">${ITEMS[nm].use ? `<button data-use="${nm}">Use</button>` : ""}<button data-sell1="${nm}">Sell 1</button><button data-sell="${nm}">Sell all</button></span></div>`).join("")
+    || `<span class="small">Empty</span>`;
+  $("auto-sell").textContent = `Auto-sell when full: ${S.autoSell ? "on" : "off"}`;
+  $("auto-sell").classList.toggle("on", S.autoSell);
+  $("buy-bag").textContent = `Buy bag (+${BAG_SLOTS} slots): ${bagCost()}g`;
+  $("buy-bag").disabled = S.gold < bagCost();
+  renderLive();
+}
+
+function renderLive() {
+  $("workers").innerHTML = ["gather", "craft"].map(kind => {
+    const w = S.workers[kind];
+    if (!w) return `<div class="worker"><b>${kind === "gather" ? "Gathering" : "Crafting"}</b><div class="small">Idle</div><div class="bar"><i></i></div></div>`;
+    const dur = (kind === "gather" ? GATHER_MS : CRAFT_MS) / speedMult();
+    return `<div class="worker"><b>${tierLabel(w.p, w.t)}</b>
+      <div class="small ${w.stalled ? "orange" : ""}">${w.stalled || `${w.p} ${S.levels[w.p].lvl}`}</div>
+      <div class="bar act"><i style="width:${100 * w.progress / dur}%"></i></div></div>`;
+  }).join("");
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b || !S) return;
+  if (b.dataset.prof) { selected = b.dataset.prof; render(); }
+  else if (b.dataset.act) startAction(b.dataset.act, selected, +b.dataset.tier);
+  else if (b.dataset.sell) { sell(b.dataset.sell, Infinity); render(); }
+  else if (b.dataset.sell1) { sell(b.dataset.sell1, 1); render(); }
+  else if (b.dataset.use) useItem(b.dataset.use);
+  else if (b.id === "sell-junk") { sellTradeGoods(); render(); }
+  else if (b.id === "auto-sell") { S.autoSell = !S.autoSell; dirty = true; render(); }
+  else if (b.id === "buy-bag" && S.gold >= bagCost()) { S.gold -= bagCost(); S.bagsBought++; dirty = true; render(); }
+});
+
+// Connect screen: prefill from ?server=&slot= or the last connection
+(() => {
+  const q = new URLSearchParams(location.search);
+  let last = {}; try { last = JSON.parse(lsGet("skillup:last") || "{}"); } catch {}
+  $("c-server").value = q.get("server") || last.server || "archipelago.gg:";
+  $("c-slot").value = q.get("slot") || last.slot || "";
+  const go = () => { $("c-go").disabled = true; connect($("c-server").value, $("c-slot").value.trim(), $("c-pass").value);
+    setTimeout(() => $("c-go").disabled = false, 3000); };
+  $("c-go").onclick = go;
+  for (const id of ["c-server", "c-slot", "c-pass"]) $(id).addEventListener("keydown", e => e.key === "Enter" && go());
+})();
+</script>
+</body>
+</html>
