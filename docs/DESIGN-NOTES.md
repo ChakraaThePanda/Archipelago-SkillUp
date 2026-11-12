@@ -238,7 +238,8 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     keeps choosing) was 3-4x a play session, far too strong. Slowing repeat offline to 50-
     75% barely changes it (the grey limit dominates), so no slowdown is needed.
     A longer offline cap makes things worse (time past the cap becomes Rested XP, which
-    beats repeating a grey action), so the "Longer offline time" pool items should go.
+    beats repeating a grey action). Decided: the offline cap stays a fixed 8 h (covers a
+    night); the 4 "Longer offline time" pool items became 4 more storage items (8 total).
   - Traps: one of each costs at most about 1-2 minutes. Mild, as intended.
   - Red: proposed rule, attempts also take (1 + levels below / 25) times longer. Star
     Ruby from Mining 1 then takes about 5 h bare, 2.5 h with typical upgrades; from 200,

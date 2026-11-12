@@ -87,9 +87,8 @@
     "useful": {
       "Speed boost": {"count": 22, "speed": 0.07, "_": "+7% speed to one profession"},
       "XP boost": {"count": 22, "xp": 0.07, "_": "+7% XP to one profession"},
-      "Bigger storage": {"count": 4, "storage": 0.15, "_": "+15% storage cap each"},
-      "Better prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"},
-      "Longer offline time": {"count": 4, "_": "+4 h offline cap each (not simulated: active play)"}
+      "Bigger storage": {"count": 8, "storage": 0.15, "_": "+15% storage cap each"},
+      "Better prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"}
     },
     "filler": {
       "Coin pouch": {"count": 60, "gold": 5000, "_": "copper, times combat rank_growth^(highest rank)"},
