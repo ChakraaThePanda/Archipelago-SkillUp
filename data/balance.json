@@ -3,7 +3,7 @@
 
   "xp": {
     "_about": "Skill point L -> L+1 costs base * (1 + L / per_level) XP. Colors multiply XP per action.",
-    "base": 12,
+    "base": 14,
     "per_level": 25,
     "colors": {"orange": [15, 1.0], "yellow": [30, 0.75], "green": [45, 0.25], "grey": [9999, 0.0]},
     "game_speed": {"Long": 0.5, "Normal": 1.0, "Fast": 2.0}
@@ -82,26 +82,70 @@
   "pool": {
     "_about": "Non-progression items in the pool, for the default start (220 checks - 42 progression = 178). Useful items are each weaker than one trainer upgrade. The simulator spreads them evenly over a seed and applies each to the lowest-level profession that isn't maxed (Rested XP and storage are global).",
     "useful": {
-      "Speed boost": {"count": 22, "speed": 0.05, "_": "+5% speed to one profession"},
-      "XP boost": {"count": 22, "xp": 0.05, "_": "+5% XP to one profession"},
+      "Speed boost": {"count": 22, "speed": 0.07, "_": "+7% speed to one profession"},
+      "XP boost": {"count": 22, "xp": 0.07, "_": "+7% XP to one profession"},
       "Bigger storage": {"count": 4, "storage": 0.15, "_": "+15% storage cap each"},
       "Better prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"},
       "Longer offline time": {"count": 4, "_": "+4 h offline cap each (not simulated: active play)"}
     },
     "filler": {
-      "Coin pouch": {"count": 45, "gold": 1500, "_": "copper, times combat rank_growth^(highest rank)"},
-      "Rested XP": {"count": 25, "rested_min": 2, "_": "minutes of double XP"},
-      "Tome of experience": {"count": 25, "levels": 1.5, "_": "skill points' worth of XP to one profession"},
-      "Crate of materials": {"count": 25, "mats": 15, "_": "units of the material your crafting is waiting on (else a current-rank one)"}
+      "Coin pouch": {"count": 60, "gold": 5000, "_": "copper, times combat rank_growth^(highest rank)"},
+      "Rested XP": {"count": 25, "rested_min": 1, "_": "minutes of double XP"},
+      "Tome of experience": {"count": 35, "levels": 1, "_": "skill points' worth of XP to one profession"}
     },
     "trap_percent": 2
   },
 
+  "traps": {
+    "_about": "Mild by design. Durations in minutes.",
+    "Resurrection Sickness": {"combat_slow": 0.5, "minutes": 3},
+    "Repair Bill": {"gold_percent": 5},
+    "Broken Tool": {"minutes": 3},
+    "Murloc Ambush": {"fights": 1}
+  },
+
+  "buffs": {
+    "_about": "Alchemy potions and Cooking food. Used automatically when the buff is off and one is in stock; the best one first. Effect = value * (1 + rank_scale * rank). Healing Potions are drunk on a death and halve its cost. The player keeps `keep` of each kind and sells the rest.",
+    "minutes": 10,
+    "rank_scale": 0.25,
+    "keep": 5,
+    "effects": {
+      "Gathering speed": 0.15,
+      "Crafting speed": 0.15,
+      "Combat elixir": 0.15,
+      "Combat food": 0.10,
+      "XP food (Field)": 0.15,
+      "XP food (Workshop)": 0.15
+    }
+  },
+
+  "red": {
+    "_about": "Success chance when attempting something above your level, by how far below its unlock you are.",
+    "chances": [[25, 0.10], [75, 0.05], [150, 0.02], [9999, 0.01]],
+    "slow_per_levels": 25,
+    "_slow": "a red attempt also takes (1 + levels below / slow_per_levels) times longer"
+  },
+
+  "offline": {
+    "_about": "Progress keeps going while the page is closed, up to cap_hours (base) + 4 h per offline item. Each hour past the cap gives rested_per_hour minutes of Rested XP, pool capped at rested_cap minutes.",
+    "cap_hours": 8,
+    "per_item_hours": 4,
+    "rested_per_hour": 10,
+    "rested_cap": 120,
+    "mode": "auto",
+    "_mode": "auto = while closed, the game keeps making the same smart choices (next material, next recipe) but never shops; repeat = it only repeats the last action"
+  },
+
   "ragnaros": {
     "_about": "Ragnaros fight: power needed and Fire Resistance needed for a good win chance.",
-    "power_need": 220,
-    "fr_need": 120,
+    "_formula": "win chance = max_win * min(1, power/power_need)^3 * (fr_floor + (1 - fr_floor) * min(1, FR/fr_need)^2). FR = Classic FR of the set pieces worn + potion + food. A fight lasts fight_minutes; a loss also costs the death time.",
+    "power_need": 140,
+    "fr_need": 160,
     "potion_fr": 25,
-    "food_fr": 10
+    "food_fr": 10,
+    "fr_armor_rank": 2.5,
+    "fr_floor": 0.05,
+    "max_win": 0.95,
+    "fight_minutes": 5
   }
 }

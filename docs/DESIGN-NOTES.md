@@ -209,22 +209,36 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   gems for the best recipes) so nothing is gathered only to be sold.
 - Balance simulator: first pass done 2026-11-12. `tools/simulate.py` plays a typical
   player from `data/game_data.json` + `data/balance.json` (every tunable number) and writes
-  `docs/BALANCE.md`. Results with the item pool: Ragnaros ready in about 23.5 h (Long),
-  12 h (Normal), 6 h (Fast). Use these in the `game_speed` YAML text. Findings:
+  `docs/BALANCE.md`. Second pass (all features tested). A realistic default seed (full
+  pool, potions and food, each rank item arriving 30 min after it's needed) reaches
+  Ragnaros in about 22 h (Long), 12 h (Normal), 6 h (Fast). Use these in the
+  `game_speed` YAML text. Findings:
   - Gold: Wowhead sell prices x1 for materials, x0.25 for crafts; trainer upgrades cost
-    10s doubling each step (10 steps of +15% speed, 10 of +10% XP). Players own about 2
-    upgrades per profession at 1 h, 5 at 4 h, 8 by the end, so the shop matters all game.
+    10s doubling each step (10 steps of +15% speed, 10 of +10% XP). Players own about 4
+    upgrades per profession at 2 h, 6 at 4 h, 8 by the end, so the shop matters all game.
     Most gold comes from selling crafts; combat loot is small (a knob to raise in playtest).
   - Crafting earns 1.4x XP per second: one Workshop slot levels 6 professions while the
-    Field levels 5, so both now finish together.
-  - Item pool (178 slots): 22 speed +5%, 22 XP +5%, 4 storage +15%, 3 sell price +10%,
-    4 offline +4 h; filler 45 coin pouches, 25 Rested XP (2 min each), 25 XP tomes, 25
-    material crates (give what your crafting is waiting on). The full pool makes a seed
-    about 15-18% faster. Storage is the strongest useful item per copy (storage is a real
-    early bottleneck, as intended); material crates barely matter.
-  - Not modelled yet: buffs (potions, food), red attempts, offline time, the Ragnaros fight
-    itself, traps, and waiting for rank items from other players. The combat model is
-    rough (power ratio); deaths are rare with on-time gear.
+    Field levels 5, so both finish together. XP cost base 14.
+  - Item pool (178 slots), material crates cut: useful 22 speed +7%, 22 XP +7%, 4 storage
+    +15%, 3 sell price +10%, 4 offline +4 h; filler 60 coin pouches (50s x rank growth),
+    25 Rested XP (1 min each), 35 XP tomes (1 skill point's worth). Full pool: about 15%
+    faster in a realistic seed. Useful items save 2-5 min per copy, filler under 1.5 min.
+  - Potions and food (used automatically, 10 min, keep 5 of each): seeds are about 20%
+    faster with them, so Alchemy and Cooking pull their weight.
+  - Waiting for rank items: 30 min average wait costs about 50 min overall, 2 h waits
+    cost about 6 h (the other slot keeps busy, but the Field runs out of open professions).
+  - Offline: repeating only the last action is nearly worthless (things go grey, ranks
+    cap, crafting runs dry), so the game must keep choosing smartly while closed (next
+    material, next recipe, never shopping). With smart offline and the 8 h cap, 1 h of
+    play a day finishes in about 1.2 days; 4 offline items barely change it.
+  - Traps: one of each costs at most about 1-2 minutes. Mild, as intended.
+  - Red: proposed rule, attempts also take (1 + levels below / 25) times longer. Star
+    Ruby from Mining 1 then takes about 5 h bare, 2.5 h with typical upgrades; from 200,
+    about 15 min.
+  - Ragnaros: Fire Resistance needed 160. Full set + potion + food: 95% per attempt;
+    full set alone 82%; Artisan gear with no FR set 5% (about 2 h of attempts); Expert
+    gear with no FR about 1%.
+  - Still rough: the combat model (power ratio; deaths are rare with on-time gear).
 - Data step: done 2026-11-12, see `docs/DATA.md` (review page with icons) and
   `data/game_data.json` (built by `tools/build_game_data.py`, every name looked up on
   Wowhead Classic). Choices made while doing it, for Chakraa to review:
