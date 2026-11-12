@@ -145,8 +145,9 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   Elwynn only has Hogger, to introduce the idea gently.
 - **Auto-swap** toggle on the equipment screen (an on/off switch): uses the best weapon for
   the current mob among the ones you've crafted.
-- Proposed for the sim: specialty weapons (Axe, Mace, Dagger) cost more materials but give
-  more Blacksmithing XP per craft than Swords.
+- Weapon recipe cost and XP *(sim)*: Sword is the baseline. Axe and Mace cost more
+  materials and give more Blacksmithing XP per craft. Dagger is small: fewer materials and
+  less XP per craft (cheap to make, so it suits leveling when materials are short).
 - **Gear stats:** Power (everywhere) and Fire Resistance (Ragnaros only).
 - **Equipment screen:** WoW character sheet with the real empty-slot icons (check that
   Wowhead hosts `inventoryslot_*` icons). Slots: Head, Shoulders, Back, Chest | Hands, Legs,
