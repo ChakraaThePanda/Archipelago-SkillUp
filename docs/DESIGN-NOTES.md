@@ -227,7 +227,9 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     25 Rested XP (1 min each), 35 XP tomes (1 skill point's worth). Full pool: about 15%
     faster in a realistic seed. Useful items save 2-5 min per copy, filler under 1.5 min.
   - Potions and food (used automatically, 10 min, keep 5 of each): seeds are about 20%
-    faster with them, so Alchemy and Cooking pull their weight.
+    faster with them, so Alchemy and Cooking pull their weight. Decided: the stock stays a
+    fixed 5 per kind (not the bag cap), so buffs can't be banked into permanent uptime;
+    one buff of each kind at a time, extra potions and food sell.
   - Waiting for rank items: 30 min average wait costs about 50 min overall, 2 h waits
     cost about 6 h (the other slot keeps busy, but the Field runs out of open professions).
   - Offline (decided with Chakraa: offline must stay weaker than playing; bags are the
