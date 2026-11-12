@@ -135,9 +135,9 @@ RECIPES = {
         "reagents": [["m1"], ["m1", "m2"], ["m2", "m3"], ["m3", "m4"]],
         "items": [
             ["Mining Pick", "Skinning Knife", "Fishing Pole", "Herbalist's Gloves"],
-            ["Arclight Spanner", "Harpy Skinner", "Strong Fishing Pole", "Flying Tiger Goggles"],
-            ["Goblin Mining Helmet", "Zulian Slicer", "Big Iron Fishing Pole", "Green Tinted Goggles"],
-            ["Thorium Grenade", "Pip's Skinner", "Arcanite Fishing Pole", "Deepdive Helmet"],
+            ["Arclight Spanner", "Harpy Skinner", "Strong Fishing Pole", "Pruning Knife"],
+            ["Goblin Mining Helmet", "Zulian Slicer", "Big Iron Fishing Pole", "Compact Harvest Reaper Kit"],
+            ["Thorium Grenade", "Pip's Skinner", "Arcanite Fishing Pole", "Blood Scythe"],
         ],
     },
     "leatherworking": {

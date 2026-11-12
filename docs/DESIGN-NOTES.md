@@ -225,7 +225,8 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     are the closest real items ("stand-ins"): Double-stitched Woolen Shoulders, Azure Silk
     Hood, Shadow Hood, Cindercloth Cloak. Tailoring reagents are cloth only.
   - Tools are real Classic items even when Engineering didn't make them in Classic
-    (Mining Pick, fishing poles, Herbalist's Gloves, skinning knives).
+    (Mining Pick, fishing poles, skinning knives). Herbalism line: Herbalist's Gloves,
+    Pruning Knife, Compact Harvest Reaper Kit, Blood Scythe (the Zul'Gurub herb-cutting tool).
   - Fire Resistance set uses real Classic FR gear (values checked on Wowhead): Molten Helm,
     Volcanic Breastplate, Volcanic Leggings, Corehound Boots (Leatherworking), Cloak of
     Fire, Flarecore Mantle, Flarecore Gloves (Tailoring), Greater Fire Protection Potion,
