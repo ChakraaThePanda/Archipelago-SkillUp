@@ -136,11 +136,17 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
 - **Weapon types have flavour** (they don't need to be perfectly balanced, but must clearly
   feel different and the UI must explain them): Sword balanced, Axe higher crits, Mace takes
   less damage, Dagger faster kills *(sim)*. Unarmed (fists) when nothing is crafted yet.
-- **Proposed: mob traits give weapons a reason.** Each mob shows one trait; the matching
-  weapon gets a clear bonus *(sim)*: Armored (skeletons, Stegodon) → Mace, Evasive (murlocs,
-  panthers, Pterrordax) → Dagger, Tough (big HP: gorillas, bosses) → Axe. Sword has no
-  specialty but a small bonus against everything, the safe "set and forget" pick. Optional
-  "best weapon for this mob" auto-swap among weapons you've crafted.
+- **Mob traits give weapons a reason** (confirmed). Only some creatures have a trait, so
+  they feel special and are worth crafting for. The matching weapon gets a clear bonus
+  *(sim)*. Proposed assignment: every boss is **Tough** → Axe (Hogger, Stitches, King
+  Bangalash, King Mosh); **Armored** → Mace: Skeletal Warrior, Thunderstomp Stegodon;
+  **Evasive** → Dagger: Shadowmaw Panther, Frenzied Pterrordax. The other 8 mobs have no
+  trait; Sword has no specialty but a small bonus against everything (the safe pick).
+  Elwynn only has Hogger, to introduce the idea gently.
+- **Auto-swap** toggle on the equipment screen (an on/off switch): uses the best weapon for
+  the current mob among the ones you've crafted.
+- Proposed for the sim: specialty weapons (Axe, Mace, Dagger) cost more materials but give
+  more Blacksmithing XP per craft than Swords.
 - **Gear stats:** Power (everywhere) and Fire Resistance (Ragnaros only).
 - **Equipment screen:** WoW character sheet with the real empty-slot icons (check that
   Wowhead hosts `inventoryslot_*` icons). Slots: Head, Shoulders, Back, Chest | Hands, Legs,
@@ -197,7 +203,7 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
 ## Still open
 
 - Crafting chains: decided no intermediate steps for now. Ore → weapon, cloth → gear (no
-  bars, no bolts). Recipes keep their real Classic names. Proposed: every material gets at
+  bars, no bolts). Recipes keep their real Classic names. Confirmed: every material gets at
   least one use, by having recipes mix the rank's materials (main ore + stone, second ore,
   gems for the best recipes) so nothing is gathered only to be sold.
 - Balance simulator: XP curve, action times, gold shop steps and costs, tool/potion/food
