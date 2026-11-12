@@ -210,7 +210,28 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
 - Balance simulator: XP curve, action times, gold shop steps and costs, tool/potion/food
   numbers, combat math (HP, damage, weapon flavours, boss strength, Ragnaros FR threshold),
   item pool mix and caps, trap strength.
-- Data step: recipes, reagents, item IDs, icons (see above).
+- Data step: done 2026-11-12, see `docs/DATA.md` (review page with icons) and
+  `data/game_data.json` (built by `tools/build_game_data.py`, every name looked up on
+  Wowhead Classic). Choices made while doing it, for Chakraa to review:
+  - Fishing swaps: Oily Blackmouth → Raw Sagefish (Journeyman), Stonescale Eel → Raw
+    Glossy Mightfish (Artisan), so every rank has cookable fish. Firefin Snapper stays as an
+    Alchemy fish (it feeds the Greater Fire Protection Potion, like Fire Oil in Classic).
+  - Recipe order inside each rank, so recipe 1 only needs the rank's first material:
+    Blacksmithing Dagger, Sword, Axe, Mace (Mace needs the gem); Leatherworking Boots,
+    Gloves, Legs, Chest; Tailoring Cloak, Bag, Shoulders, Hat; Engineering Mining, Skinning,
+    Fishing, Herbalism tool; Alchemy Healing, combat elixir, gathering speed, crafting speed.
+  - Blacksmithing weapons are all one-handers (real Classic recipes).
+  - Tailoring: Classic has no linen hat or shoulders and no mageweave cloak, so 4 pieces
+    are the closest real items ("stand-ins"): Double-stitched Woolen Shoulders, Azure Silk
+    Hood, Shadow Hood, Cindercloth Cloak. Tailoring reagents are cloth only.
+  - Tools are real Classic items even when Engineering didn't make them in Classic
+    (Mining Pick, fishing poles, Herbalist's Gloves, skinning knives).
+  - Fire Resistance set uses real Classic FR gear (values checked on Wowhead): Molten Helm,
+    Volcanic Breastplate, Volcanic Leggings, Corehound Boots (Leatherworking), Cloak of
+    Fire, Flarecore Mantle, Flarecore Gloves (Tailoring), Greater Fire Protection Potion,
+    Dragonbreath Chili. Every armor piece needs a Star Ruby (a reason to gamble on red).
+  - Wowhead hover tooltips show Classic's own stats, not ours. Use our own tooltip for
+    gear, and Wowhead tooltips only for materials and flavour.
 - Main screen layout: mockup to review (character sheet, Field and Workshop, skill/hr).
 - Housekeeping: delete the old HTML-Minigames branch, test generation with the installed
   Archipelago (needs `skillup.apworld` in `custom_worlds`, ask first).

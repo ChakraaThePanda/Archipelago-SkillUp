@@ -1,0 +1,2802 @@
+{
+ "ranks": [
+  {
+   "name": "Apprentice",
+   "start": 1,
+   "cap": 75
+  },
+  {
+   "name": "Journeyman",
+   "start": 75,
+   "cap": 150
+  },
+  {
+   "name": "Expert",
+   "start": 150,
+   "cap": 225
+  },
+  {
+   "name": "Artisan",
+   "start": 225,
+   "cap": 300
+  }
+ ],
+ "unlock_offsets": [
+  0,
+  20,
+  40,
+  55
+ ],
+ "professions": [
+  {
+   "key": "mining",
+   "name": "Mining",
+   "kind": "gathering",
+   "title": "Miner",
+   "icon": "trade_mining",
+   "source": null
+  },
+  {
+   "key": "herbalism",
+   "name": "Herbalism",
+   "kind": "gathering",
+   "title": "Herbalist",
+   "icon": "trade_herbalism",
+   "source": null
+  },
+  {
+   "key": "skinning",
+   "name": "Skinning",
+   "kind": "gathering",
+   "title": "Skinner",
+   "icon": "inv_misc_pelt_wolf_01",
+   "source": null
+  },
+  {
+   "key": "fishing",
+   "name": "Fishing",
+   "kind": "gathering",
+   "title": "Fisherman",
+   "icon": "trade_fishing",
+   "source": null
+  },
+  {
+   "key": "combat",
+   "name": "Combat",
+   "kind": "combat",
+   "title": "Fighter",
+   "icon": "ability_dualwield",
+   "source": null
+  },
+  {
+   "key": "blacksmithing",
+   "name": "Blacksmithing",
+   "kind": "crafting",
+   "title": "Blacksmith",
+   "icon": "trade_blacksmithing",
+   "source": "mining"
+  },
+  {
+   "key": "leatherworking",
+   "name": "Leatherworking",
+   "kind": "crafting",
+   "title": "Leatherworker",
+   "icon": "trade_leatherworking",
+   "source": "skinning"
+  },
+  {
+   "key": "tailoring",
+   "name": "Tailoring",
+   "kind": "crafting",
+   "title": "Tailor",
+   "icon": "trade_tailoring",
+   "source": "combat"
+  },
+  {
+   "key": "engineering",
+   "name": "Engineering",
+   "kind": "crafting",
+   "title": "Engineer",
+   "icon": "trade_engineering",
+   "source": "mining"
+  },
+  {
+   "key": "alchemy",
+   "name": "Alchemy",
+   "kind": "crafting",
+   "title": "Alchemist",
+   "icon": "trade_alchemy",
+   "source": "herbalism"
+  },
+  {
+   "key": "cooking",
+   "name": "Cooking",
+   "kind": "crafting",
+   "title": "Cook",
+   "icon": "inv_misc_food_15",
+   "source": "fishing"
+  }
+ ],
+ "materials": [
+  {
+   "name": "Copper Ore",
+   "id": 2770,
+   "icon": "inv_ore_copper_01",
+   "quality": 1,
+   "sell": 5,
+   "profession": "mining",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1
+  },
+  {
+   "name": "Tin Ore",
+   "id": 2771,
+   "icon": "inv_ore_tin_01",
+   "quality": 1,
+   "sell": 25,
+   "profession": "mining",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21
+  },
+  {
+   "name": "Rough Stone",
+   "id": 2835,
+   "icon": "inv_stone_06",
+   "quality": 1,
+   "sell": 2,
+   "profession": "mining",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41
+  },
+  {
+   "name": "Malachite",
+   "id": 774,
+   "icon": "inv_misc_gem_emerald_03",
+   "quality": 2,
+   "sell": 15,
+   "profession": "mining",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56
+  },
+  {
+   "name": "Iron Ore",
+   "id": 2772,
+   "icon": "inv_ore_iron_01",
+   "quality": 1,
+   "sell": 150,
+   "profession": "mining",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75
+  },
+  {
+   "name": "Silver Ore",
+   "id": 2775,
+   "icon": "inv_stone_16",
+   "quality": 2,
+   "sell": 75,
+   "profession": "mining",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95
+  },
+  {
+   "name": "Heavy Stone",
+   "id": 2838,
+   "icon": "inv_stone_12",
+   "quality": 1,
+   "sell": 60,
+   "profession": "mining",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115
+  },
+  {
+   "name": "Jade",
+   "id": 1529,
+   "icon": "inv_misc_gem_stone_01",
+   "quality": 2,
+   "sell": 700,
+   "profession": "mining",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130
+  },
+  {
+   "name": "Mithril Ore",
+   "id": 3858,
+   "icon": "inv_ore_mithril_02",
+   "quality": 1,
+   "sell": 250,
+   "profession": "mining",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150
+  },
+  {
+   "name": "Gold Ore",
+   "id": 2776,
+   "icon": "inv_ore_copper_01",
+   "quality": 2,
+   "sell": 500,
+   "profession": "mining",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170
+  },
+  {
+   "name": "Solid Stone",
+   "id": 7912,
+   "icon": "inv_stone_10",
+   "quality": 1,
+   "sell": 100,
+   "profession": "mining",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190
+  },
+  {
+   "name": "Citrine",
+   "id": 3864,
+   "icon": "inv_misc_gem_opal_02",
+   "quality": 2,
+   "sell": 800,
+   "profession": "mining",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205
+  },
+  {
+   "name": "Thorium Ore",
+   "id": 10620,
+   "icon": "inv_ore_thorium_02",
+   "quality": 1,
+   "sell": 250,
+   "profession": "mining",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225
+  },
+  {
+   "name": "Truesilver Ore",
+   "id": 7911,
+   "icon": "inv_ore_truesilver_01",
+   "quality": 2,
+   "sell": 500,
+   "profession": "mining",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245
+  },
+  {
+   "name": "Dense Stone",
+   "id": 12365,
+   "icon": "inv_misc_stonetablet_07",
+   "quality": 1,
+   "sell": 250,
+   "profession": "mining",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265
+  },
+  {
+   "name": "Star Ruby",
+   "id": 7910,
+   "icon": "inv_misc_gem_ruby_02",
+   "quality": 2,
+   "sell": 5000,
+   "profession": "mining",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280
+  },
+  {
+   "name": "Peacebloom",
+   "id": 2447,
+   "icon": "inv_misc_flower_02",
+   "quality": 1,
+   "sell": 10,
+   "profession": "herbalism",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1
+  },
+  {
+   "name": "Silverleaf",
+   "id": 765,
+   "icon": "inv_misc_herb_10",
+   "quality": 1,
+   "sell": 10,
+   "profession": "herbalism",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21
+  },
+  {
+   "name": "Earthroot",
+   "id": 2449,
+   "icon": "inv_misc_herb_07",
+   "quality": 1,
+   "sell": 20,
+   "profession": "herbalism",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41
+  },
+  {
+   "name": "Mageroyal",
+   "id": 785,
+   "icon": "inv_jewelry_talisman_03",
+   "quality": 1,
+   "sell": 20,
+   "profession": "herbalism",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56
+  },
+  {
+   "name": "Briarthorn",
+   "id": 2450,
+   "icon": "inv_misc_root_01",
+   "quality": 1,
+   "sell": 25,
+   "profession": "herbalism",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75
+  },
+  {
+   "name": "Bruiseweed",
+   "id": 2453,
+   "icon": "inv_misc_herb_01",
+   "quality": 1,
+   "sell": 25,
+   "profession": "herbalism",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95
+  },
+  {
+   "name": "Wild Steelbloom",
+   "id": 3355,
+   "icon": "inv_misc_flower_01",
+   "quality": 1,
+   "sell": 50,
+   "profession": "herbalism",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115
+  },
+  {
+   "name": "Kingsblood",
+   "id": 3356,
+   "icon": "inv_misc_herb_03",
+   "quality": 1,
+   "sell": 30,
+   "profession": "herbalism",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130
+  },
+  {
+   "name": "Fadeleaf",
+   "id": 3818,
+   "icon": "inv_misc_herb_12",
+   "quality": 1,
+   "sell": 125,
+   "profession": "herbalism",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150
+  },
+  {
+   "name": "Goldthorn",
+   "id": 3821,
+   "icon": "inv_misc_herb_15",
+   "quality": 1,
+   "sell": 150,
+   "profession": "herbalism",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170
+  },
+  {
+   "name": "Khadgar's Whisker",
+   "id": 3358,
+   "icon": "inv_misc_herb_08",
+   "quality": 1,
+   "sell": 175,
+   "profession": "herbalism",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190
+  },
+  {
+   "name": "Purple Lotus",
+   "id": 8831,
+   "icon": "inv_misc_herb_17",
+   "quality": 1,
+   "sell": 300,
+   "profession": "herbalism",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205
+  },
+  {
+   "name": "Sungrass",
+   "id": 8838,
+   "icon": "inv_misc_herb_18",
+   "quality": 1,
+   "sell": 60,
+   "profession": "herbalism",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225
+  },
+  {
+   "name": "Dreamfoil",
+   "id": 13463,
+   "icon": "inv_misc_herb_dreamfoil",
+   "quality": 1,
+   "sell": 100,
+   "profession": "herbalism",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245
+  },
+  {
+   "name": "Mountain Silversage",
+   "id": 13465,
+   "icon": "inv_misc_herb_mountainsilversage",
+   "quality": 1,
+   "sell": 150,
+   "profession": "herbalism",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265
+  },
+  {
+   "name": "Black Lotus",
+   "id": 13468,
+   "icon": "inv_misc_herb_blacklotus",
+   "quality": 2,
+   "sell": 1000,
+   "profession": "herbalism",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280
+  },
+  {
+   "name": "Ruined Leather Scraps",
+   "id": 2934,
+   "icon": "inv_misc_pelt_bear_ruin_05",
+   "quality": 1,
+   "sell": 7,
+   "profession": "skinning",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1
+  },
+  {
+   "name": "Light Leather",
+   "id": 2318,
+   "icon": "inv_misc_leatherscrap_03",
+   "quality": 1,
+   "sell": 15,
+   "profession": "skinning",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21
+  },
+  {
+   "name": "Light Hide",
+   "id": 783,
+   "icon": "inv_misc_pelt_wolf_ruin_02",
+   "quality": 1,
+   "sell": 50,
+   "profession": "skinning",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41
+  },
+  {
+   "name": "Thin Kodo Leather",
+   "id": 5082,
+   "icon": "inv_misc_leatherscrap_06",
+   "quality": 1,
+   "sell": 25,
+   "profession": "skinning",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56
+  },
+  {
+   "name": "Medium Leather",
+   "id": 2319,
+   "icon": "inv_misc_leatherscrap_05",
+   "quality": 1,
+   "sell": 50,
+   "profession": "skinning",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75
+  },
+  {
+   "name": "Medium Hide",
+   "id": 4232,
+   "icon": "inv_misc_pelt_boar_ruin_02",
+   "quality": 1,
+   "sell": 125,
+   "profession": "skinning",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95
+  },
+  {
+   "name": "Heavy Leather",
+   "id": 4234,
+   "icon": "inv_misc_leatherscrap_07",
+   "quality": 1,
+   "sell": 150,
+   "profession": "skinning",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115
+  },
+  {
+   "name": "Heavy Hide",
+   "id": 4235,
+   "icon": "inv_misc_pelt_wolf_ruin_03",
+   "quality": 1,
+   "sell": 200,
+   "profession": "skinning",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130
+  },
+  {
+   "name": "Thick Leather",
+   "id": 4304,
+   "icon": "inv_misc_leatherscrap_08",
+   "quality": 1,
+   "sell": 300,
+   "profession": "skinning",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150
+  },
+  {
+   "name": "Thick Hide",
+   "id": 8169,
+   "icon": "inv_misc_pelt_bear_ruin_01",
+   "quality": 1,
+   "sell": 500,
+   "profession": "skinning",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170
+  },
+  {
+   "name": "Turtle Scale",
+   "id": 8167,
+   "icon": "inv_misc_monsterscales_11",
+   "quality": 1,
+   "sell": 100,
+   "profession": "skinning",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190
+  },
+  {
+   "name": "Scorpid Scale",
+   "id": 8154,
+   "icon": "inv_misc_monsterscales_02",
+   "quality": 1,
+   "sell": 250,
+   "profession": "skinning",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205
+  },
+  {
+   "name": "Rugged Leather",
+   "id": 8170,
+   "icon": "inv_misc_leatherscrap_02",
+   "quality": 1,
+   "sell": 500,
+   "profession": "skinning",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225
+  },
+  {
+   "name": "Rugged Hide",
+   "id": 8171,
+   "icon": "inv_misc_pelt_bear_ruin_02",
+   "quality": 1,
+   "sell": 500,
+   "profession": "skinning",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245
+  },
+  {
+   "name": "Devilsaur Leather",
+   "id": 15417,
+   "icon": "inv_misc_pelt_03",
+   "quality": 1,
+   "sell": 500,
+   "profession": "skinning",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265
+  },
+  {
+   "name": "Black Dragonscale",
+   "id": 15416,
+   "icon": "inv_misc_monsterscales_07",
+   "quality": 1,
+   "sell": 1000,
+   "profession": "skinning",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280
+  },
+  {
+   "name": "Raw Brilliant Smallfish",
+   "id": 6291,
+   "icon": "inv_misc_fish_08",
+   "quality": 1,
+   "sell": 1,
+   "profession": "fishing",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1
+  },
+  {
+   "name": "Raw Slitherskin Mackerel",
+   "id": 6303,
+   "icon": "inv_misc_fish_24",
+   "quality": 1,
+   "sell": 1,
+   "profession": "fishing",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21
+  },
+  {
+   "name": "Raw Longjaw Mud Snapper",
+   "id": 6289,
+   "icon": "inv_misc_fish_32",
+   "quality": 1,
+   "sell": 1,
+   "profession": "fishing",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41
+  },
+  {
+   "name": "Raw Loch Frenzy",
+   "id": 6317,
+   "icon": "inv_misc_fish_03",
+   "quality": 1,
+   "sell": 2,
+   "profession": "fishing",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56
+  },
+  {
+   "name": "Raw Bristle Whisker Catfish",
+   "id": 6308,
+   "icon": "inv_misc_fish_30",
+   "quality": 1,
+   "sell": 2,
+   "profession": "fishing",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75
+  },
+  {
+   "name": "Raw Rainbow Fin Albacore",
+   "id": 6361,
+   "icon": "inv_misc_fish_25",
+   "quality": 1,
+   "sell": 2,
+   "profession": "fishing",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95
+  },
+  {
+   "name": "Raw Sagefish",
+   "id": 21071,
+   "icon": "inv_misc_fish_20",
+   "quality": 1,
+   "sell": 25,
+   "profession": "fishing",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115
+  },
+  {
+   "name": "Firefin Snapper",
+   "id": 6359,
+   "icon": "inv_misc_monsterhead_01",
+   "quality": 1,
+   "sell": 5,
+   "profession": "fishing",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130
+  },
+  {
+   "name": "Raw Rockscale Cod",
+   "id": 6362,
+   "icon": "inv_misc_fish_04",
+   "quality": 1,
+   "sell": 4,
+   "profession": "fishing",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150
+  },
+  {
+   "name": "Raw Mithril Head Trout",
+   "id": 8365,
+   "icon": "inv_misc_fish_02",
+   "quality": 1,
+   "sell": 4,
+   "profession": "fishing",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170
+  },
+  {
+   "name": "Raw Spotted Yellowtail",
+   "id": 4603,
+   "icon": "inv_misc_fish_01",
+   "quality": 1,
+   "sell": 4,
+   "profession": "fishing",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190
+  },
+  {
+   "name": "Raw Redgill",
+   "id": 13758,
+   "icon": "inv_misc_fish_06",
+   "quality": 1,
+   "sell": 4,
+   "profession": "fishing",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205
+  },
+  {
+   "name": "Raw Nightfin Snapper",
+   "id": 13759,
+   "icon": "inv_misc_fish_23",
+   "quality": 1,
+   "sell": 10,
+   "profession": "fishing",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225
+  },
+  {
+   "name": "Raw Sunscale Salmon",
+   "id": 13760,
+   "icon": "inv_misc_fish_19",
+   "quality": 1,
+   "sell": 10,
+   "profession": "fishing",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245
+  },
+  {
+   "name": "Raw Whitescale Salmon",
+   "id": 13889,
+   "icon": "inv_misc_fish_20",
+   "quality": 1,
+   "sell": 5,
+   "profession": "fishing",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265
+  },
+  {
+   "name": "Raw Glossy Mightfish",
+   "id": 13754,
+   "icon": "inv_misc_monsterhead_03",
+   "quality": 1,
+   "sell": 6,
+   "profession": "fishing",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280
+  },
+  {
+   "name": "Linen Cloth",
+   "id": 2589,
+   "icon": "inv_fabric_linen_01",
+   "quality": 1,
+   "sell": 13,
+   "profession": "combat",
+   "rank": 0,
+   "slot": null,
+   "unlock": 1,
+   "note": "dropped by every creature"
+  },
+  {
+   "name": "Silk Cloth",
+   "id": 4306,
+   "icon": "inv_fabric_silk_01",
+   "quality": 1,
+   "sell": 150,
+   "profession": "combat",
+   "rank": 1,
+   "slot": null,
+   "unlock": 75,
+   "note": "dropped by every creature"
+  },
+  {
+   "name": "Mageweave Cloth",
+   "id": 4338,
+   "icon": "inv_fabric_mageweave_01",
+   "quality": 1,
+   "sell": 250,
+   "profession": "combat",
+   "rank": 2,
+   "slot": null,
+   "unlock": 150,
+   "note": "dropped by every creature"
+  },
+  {
+   "name": "Runecloth",
+   "id": 14047,
+   "icon": "inv_fabric_purplefire_01",
+   "quality": 1,
+   "sell": 400,
+   "profession": "combat",
+   "rank": 3,
+   "slot": null,
+   "unlock": 225,
+   "note": "dropped by every creature"
+  }
+ ],
+ "mobs": [
+  {
+   "name": "Kobold Vermin",
+   "npc": 6,
+   "display": 10913,
+   "level": "1-2",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Elwynn Forest",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/161/10913.png",
+   "cloth": "Linen Cloth"
+  },
+  {
+   "name": "Murloc Forager",
+   "npc": 46,
+   "display": 441,
+   "level": "9-10",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Elwynn Forest",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/185/441.png",
+   "cloth": "Linen Cloth"
+  },
+  {
+   "name": "Prowler",
+   "npc": 118,
+   "display": 11415,
+   "level": "9-10",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Elwynn Forest",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/151/11415.png",
+   "cloth": "Linen Cloth"
+  },
+  {
+   "name": "Hogger",
+   "npc": 448,
+   "display": 384,
+   "level": "11",
+   "classification": "Elite",
+   "trait": "Tough",
+   "boss": true,
+   "zone": "Elwynn Forest",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/128/384.png",
+   "cloth": "Linen Cloth"
+  },
+  {
+   "name": "Skeletal Warrior",
+   "npc": 48,
+   "display": 200,
+   "level": "21-22",
+   "classification": "Normal",
+   "trait": "Armored",
+   "boss": false,
+   "zone": "Duskwood",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/200/200.png",
+   "cloth": "Silk Cloth"
+  },
+  {
+   "name": "Rotted One",
+   "npc": 948,
+   "display": 137,
+   "level": "25-26",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Duskwood",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/137/137.png",
+   "cloth": "Silk Cloth"
+  },
+  {
+   "name": "Nightbane Dark Runner",
+   "npc": 205,
+   "display": 736,
+   "level": "28-29",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Duskwood",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/224/736.png",
+   "cloth": "Silk Cloth"
+  },
+  {
+   "name": "Stitches",
+   "npc": 412,
+   "display": 1693,
+   "level": "35",
+   "classification": "Elite",
+   "trait": "Tough",
+   "boss": true,
+   "zone": "Duskwood",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/157/1693.png",
+   "cloth": "Silk Cloth"
+  },
+  {
+   "name": "Mistvale Gorilla",
+   "npc": 1108,
+   "display": 843,
+   "level": "32-33",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Stranglethorn Vale",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/75/843.png",
+   "cloth": "Mageweave Cloth"
+  },
+  {
+   "name": "Shadowmaw Panther",
+   "npc": 684,
+   "display": 633,
+   "level": "37-38",
+   "classification": "Normal",
+   "trait": "Evasive",
+   "boss": false,
+   "zone": "Stranglethorn Vale",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/121/633.png",
+   "cloth": "Mageweave Cloth"
+  },
+  {
+   "name": "Bloodsail Swashbuckler",
+   "npc": 1563,
+   "display": 796,
+   "level": "42-43",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Stranglethorn Vale",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/28/796.png",
+   "cloth": "Mageweave Cloth"
+  },
+  {
+   "name": "King Bangalash",
+   "npc": 731,
+   "display": 616,
+   "level": "43",
+   "classification": "Elite",
+   "trait": "Tough",
+   "boss": true,
+   "zone": "Stranglethorn Vale",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/104/616.png",
+   "cloth": "Mageweave Cloth"
+  },
+  {
+   "name": "Ravasaur Runner",
+   "npc": 6506,
+   "display": 5290,
+   "level": "49-50",
+   "classification": "Normal",
+   "trait": null,
+   "boss": false,
+   "zone": "Un'Goro Crater",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/170/5290.png",
+   "cloth": "Runecloth"
+  },
+  {
+   "name": "Frenzied Pterrordax",
+   "npc": 9167,
+   "display": 8412,
+   "level": "52-54",
+   "classification": "Normal",
+   "trait": "Evasive",
+   "boss": false,
+   "zone": "Un'Goro Crater",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/220/8412.png",
+   "cloth": "Runecloth"
+  },
+  {
+   "name": "Thunderstomp Stegodon",
+   "npc": 6504,
+   "display": 5289,
+   "level": "54-55",
+   "classification": "Elite",
+   "trait": "Armored",
+   "boss": false,
+   "zone": "Un'Goro Crater",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/169/5289.png",
+   "cloth": "Runecloth"
+  },
+  {
+   "name": "King Mosh",
+   "npc": 6584,
+   "display": 5305,
+   "level": "60",
+   "classification": "Rare Elite",
+   "trait": "Tough",
+   "boss": true,
+   "zone": "Un'Goro Crater",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/185/5305.png",
+   "cloth": "Runecloth"
+  }
+ ],
+ "recipes": [
+  {
+   "name": "Copper Dagger",
+   "id": 7166,
+   "icon": "inv_weapon_shortblade_14",
+   "quality": 1,
+   "sell": 194,
+   "profession": "blacksmithing",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Dagger",
+   "reagents": [
+    "Copper Ore"
+   ]
+  },
+  {
+   "name": "Copper Shortsword",
+   "id": 2847,
+   "icon": "inv_sword_26",
+   "quality": 1,
+   "sell": 110,
+   "profession": "blacksmithing",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Sword",
+   "reagents": [
+    "Copper Ore",
+    "Tin Ore"
+   ]
+  },
+  {
+   "name": "Copper Axe",
+   "id": 2845,
+   "icon": "inv_axe_23",
+   "quality": 1,
+   "sell": 109,
+   "profession": "blacksmithing",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Axe",
+   "reagents": [
+    "Copper Ore",
+    "Rough Stone"
+   ]
+  },
+  {
+   "name": "Copper Mace",
+   "id": 2844,
+   "icon": "inv_mace_01",
+   "quality": 1,
+   "sell": 106,
+   "profession": "blacksmithing",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Mace",
+   "reagents": [
+    "Copper Ore",
+    "Rough Stone",
+    "Malachite"
+   ]
+  },
+  {
+   "name": "Big Bronze Knife",
+   "id": 3848,
+   "icon": "inv_weapon_shortblade_04",
+   "quality": 2,
+   "sell": 1426,
+   "profession": "blacksmithing",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Dagger",
+   "reagents": [
+    "Iron Ore"
+   ]
+  },
+  {
+   "name": "Hardened Iron Shortsword",
+   "id": 3849,
+   "icon": "inv_sword_20",
+   "quality": 2,
+   "sell": 5468,
+   "profession": "blacksmithing",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Sword",
+   "reagents": [
+    "Iron Ore",
+    "Silver Ore"
+   ]
+  },
+  {
+   "name": "Bronze Axe",
+   "id": 2849,
+   "icon": "inv_axe_17",
+   "quality": 1,
+   "sell": 1269,
+   "profession": "blacksmithing",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Axe",
+   "reagents": [
+    "Iron Ore",
+    "Heavy Stone"
+   ]
+  },
+  {
+   "name": "Mighty Iron Hammer",
+   "id": 3492,
+   "icon": "inv_hammer_04",
+   "quality": 2,
+   "sell": 4552,
+   "profession": "blacksmithing",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Mace",
+   "reagents": [
+    "Iron Ore",
+    "Heavy Stone",
+    "Jade"
+   ]
+  },
+  {
+   "name": "Searing Golden Blade",
+   "id": 12260,
+   "icon": "inv_weapon_shortblade_05",
+   "quality": 2,
+   "sell": 10395,
+   "profession": "blacksmithing",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Dagger",
+   "reagents": [
+    "Mithril Ore"
+   ]
+  },
+  {
+   "name": "Wicked Mithril Blade",
+   "id": 7943,
+   "icon": "inv_sword_10",
+   "quality": 2,
+   "sell": 15891,
+   "profession": "blacksmithing",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Sword",
+   "reagents": [
+    "Mithril Ore",
+    "Gold Ore"
+   ]
+  },
+  {
+   "name": "Heavy Mithril Axe",
+   "id": 7941,
+   "icon": "inv_axe_14",
+   "quality": 2,
+   "sell": 12520,
+   "profession": "blacksmithing",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Axe",
+   "reagents": [
+    "Mithril Ore",
+    "Solid Stone"
+   ]
+  },
+  {
+   "name": "Runed Mithril Hammer",
+   "id": 7946,
+   "icon": "inv_hammer_17",
+   "quality": 2,
+   "sell": 21660,
+   "profession": "blacksmithing",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Mace",
+   "reagents": [
+    "Mithril Ore",
+    "Solid Stone",
+    "Citrine"
+   ]
+  },
+  {
+   "name": "Heartseeker",
+   "id": 12783,
+   "icon": "inv_sword_17",
+   "quality": 3,
+   "sell": 58215,
+   "profession": "blacksmithing",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Dagger",
+   "reagents": [
+    "Thorium Ore"
+   ]
+  },
+  {
+   "name": "Blazing Rapier",
+   "id": 12777,
+   "icon": "inv_sword_30",
+   "quality": 3,
+   "sell": 38648,
+   "profession": "blacksmithing",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Sword",
+   "reagents": [
+    "Thorium Ore",
+    "Truesilver Ore"
+   ]
+  },
+  {
+   "name": "Annihilator",
+   "id": 12798,
+   "icon": "inv_axe_12",
+   "quality": 3,
+   "sell": 57150,
+   "profession": "blacksmithing",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Axe",
+   "reagents": [
+    "Thorium Ore",
+    "Dense Stone"
+   ]
+  },
+  {
+   "name": "Masterwork Stormhammer",
+   "id": 12794,
+   "icon": "inv_hammer_04",
+   "quality": 3,
+   "sell": 56304,
+   "profession": "blacksmithing",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Mace",
+   "reagents": [
+    "Thorium Ore",
+    "Dense Stone",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Mining Pick",
+   "id": 2901,
+   "icon": "inv_pick_02",
+   "quality": 1,
+   "sell": 16,
+   "profession": "engineering",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Mining tool",
+   "reagents": [
+    "Copper Ore"
+   ]
+  },
+  {
+   "name": "Skinning Knife",
+   "id": 7005,
+   "icon": "inv_weapon_shortblade_01",
+   "quality": 1,
+   "sell": 16,
+   "profession": "engineering",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Skinning tool",
+   "reagents": [
+    "Copper Ore",
+    "Tin Ore"
+   ]
+  },
+  {
+   "name": "Fishing Pole",
+   "id": 6256,
+   "icon": "inv_fishingpole_02",
+   "quality": 1,
+   "sell": 4,
+   "profession": "engineering",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Fishing tool",
+   "reagents": [
+    "Tin Ore",
+    "Rough Stone"
+   ]
+  },
+  {
+   "name": "Herbalist's Gloves",
+   "id": 7349,
+   "icon": "inv_gauntlets_18",
+   "quality": 2,
+   "sell": 861,
+   "profession": "engineering",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Herbalism tool",
+   "reagents": [
+    "Rough Stone",
+    "Malachite"
+   ]
+  },
+  {
+   "name": "Arclight Spanner",
+   "id": 6219,
+   "icon": "inv_misc_wrench_01",
+   "quality": 1,
+   "sell": 144,
+   "profession": "engineering",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Mining tool",
+   "reagents": [
+    "Iron Ore"
+   ]
+  },
+  {
+   "name": "Harpy Skinner",
+   "id": 5279,
+   "icon": "inv_weapon_shortblade_14",
+   "quality": 2,
+   "sell": 1436,
+   "profession": "engineering",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Skinning tool",
+   "reagents": [
+    "Iron Ore",
+    "Silver Ore"
+   ]
+  },
+  {
+   "name": "Strong Fishing Pole",
+   "id": 6365,
+   "icon": "inv_fishingpole_02",
+   "quality": 1,
+   "sell": 180,
+   "profession": "engineering",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Fishing tool",
+   "reagents": [
+    "Silver Ore",
+    "Heavy Stone"
+   ]
+  },
+  {
+   "name": "Flying Tiger Goggles",
+   "id": 4368,
+   "icon": "inv_helmet_47",
+   "quality": 2,
+   "sell": 408,
+   "profession": "engineering",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Herbalism tool",
+   "reagents": [
+    "Heavy Stone",
+    "Jade"
+   ]
+  },
+  {
+   "name": "Goblin Mining Helmet",
+   "id": 10542,
+   "icon": "inv_helmet_25",
+   "quality": 2,
+   "sell": 5255,
+   "profession": "engineering",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Mining tool",
+   "reagents": [
+    "Mithril Ore"
+   ]
+  },
+  {
+   "name": "Zulian Slicer",
+   "id": 19901,
+   "icon": "inv_sword_35",
+   "quality": 3,
+   "sell": 70566,
+   "profession": "engineering",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Skinning tool",
+   "reagents": [
+    "Mithril Ore",
+    "Gold Ore"
+   ]
+  },
+  {
+   "name": "Big Iron Fishing Pole",
+   "id": 6367,
+   "icon": "inv_fishingpole_01",
+   "quality": 1,
+   "sell": 3378,
+   "profession": "engineering",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Fishing tool",
+   "reagents": [
+    "Gold Ore",
+    "Solid Stone"
+   ]
+  },
+  {
+   "name": "Green Tinted Goggles",
+   "id": 4385,
+   "icon": "inv_helmet_47",
+   "quality": 2,
+   "sell": 1410,
+   "profession": "engineering",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Herbalism tool",
+   "reagents": [
+    "Solid Stone",
+    "Citrine"
+   ]
+  },
+  {
+   "name": "Thorium Grenade",
+   "id": 15993,
+   "icon": "inv_misc_bomb_08",
+   "quality": 1,
+   "sell": 1500,
+   "profession": "engineering",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Mining tool",
+   "reagents": [
+    "Thorium Ore"
+   ]
+  },
+  {
+   "name": "Pip's Skinner",
+   "id": 12709,
+   "icon": "inv_sword_33",
+   "quality": 3,
+   "sell": 57991,
+   "profession": "engineering",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Skinning tool",
+   "reagents": [
+    "Thorium Ore",
+    "Truesilver Ore"
+   ]
+  },
+  {
+   "name": "Arcanite Fishing Pole",
+   "id": 19970,
+   "icon": "inv_fishingpole_01",
+   "quality": 3,
+   "sell": 2175,
+   "profession": "engineering",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Fishing tool",
+   "reagents": [
+    "Truesilver Ore",
+    "Dense Stone"
+   ]
+  },
+  {
+   "name": "Deepdive Helmet",
+   "id": 10506,
+   "icon": "inv_helmet_49",
+   "quality": 2,
+   "sell": 5227,
+   "profession": "engineering",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Herbalism tool",
+   "reagents": [
+    "Dense Stone",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Embossed Leather Boots",
+   "id": 2309,
+   "icon": "inv_boots_05",
+   "quality": 2,
+   "sell": 268,
+   "profession": "leatherworking",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Feet",
+   "reagents": [
+    "Ruined Leather Scraps"
+   ]
+  },
+  {
+   "name": "Embossed Leather Gloves",
+   "id": 4239,
+   "icon": "inv_gauntlets_05",
+   "quality": 1,
+   "sell": 71,
+   "profession": "leatherworking",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Hands",
+   "reagents": [
+    "Ruined Leather Scraps",
+    "Light Leather"
+   ]
+  },
+  {
+   "name": "Embossed Leather Pants",
+   "id": 4242,
+   "icon": "inv_pants_02",
+   "quality": 2,
+   "sell": 347,
+   "profession": "leatherworking",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Legs",
+   "reagents": [
+    "Light Leather",
+    "Light Hide"
+   ]
+  },
+  {
+   "name": "Embossed Leather Vest",
+   "id": 2300,
+   "icon": "inv_chest_leather_09",
+   "quality": 2,
+   "sell": 192,
+   "profession": "leatherworking",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Chest",
+   "reagents": [
+    "Light Leather",
+    "Light Hide",
+    "Thin Kodo Leather"
+   ]
+  },
+  {
+   "name": "Dark Leather Boots",
+   "id": 2315,
+   "icon": "inv_boots_05",
+   "quality": 1,
+   "sell": 307,
+   "profession": "leatherworking",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Feet",
+   "reagents": [
+    "Medium Leather"
+   ]
+  },
+  {
+   "name": "Dark Leather Gloves",
+   "id": 4248,
+   "icon": "inv_gauntlets_05",
+   "quality": 2,
+   "sell": 791,
+   "profession": "leatherworking",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Hands",
+   "reagents": [
+    "Medium Leather",
+    "Medium Hide"
+   ]
+  },
+  {
+   "name": "Dark Leather Pants",
+   "id": 5961,
+   "icon": "inv_pants_09",
+   "quality": 2,
+   "sell": 1089,
+   "profession": "leatherworking",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Legs",
+   "reagents": [
+    "Medium Hide",
+    "Heavy Leather"
+   ]
+  },
+  {
+   "name": "Dark Leather Tunic",
+   "id": 2317,
+   "icon": "inv_chest_leather_03",
+   "quality": 2,
+   "sell": 689,
+   "profession": "leatherworking",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Chest",
+   "reagents": [
+    "Medium Hide",
+    "Heavy Leather",
+    "Heavy Hide"
+   ]
+  },
+  {
+   "name": "Nightscape Boots",
+   "id": 8197,
+   "icon": "inv_boots_05",
+   "quality": 2,
+   "sell": 7158,
+   "profession": "leatherworking",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Feet",
+   "reagents": [
+    "Thick Leather"
+   ]
+  },
+  {
+   "name": "Turtle Scale Gloves",
+   "id": 8187,
+   "icon": "inv_gauntlets_05",
+   "quality": 2,
+   "sell": 3477,
+   "profession": "leatherworking",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Hands",
+   "reagents": [
+    "Thick Leather",
+    "Thick Hide"
+   ]
+  },
+  {
+   "name": "Turtle Scale Leggings",
+   "id": 8185,
+   "icon": "inv_pants_02",
+   "quality": 2,
+   "sell": 10952,
+   "profession": "leatherworking",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Legs",
+   "reagents": [
+    "Thick Hide",
+    "Turtle Scale"
+   ]
+  },
+  {
+   "name": "Turtle Scale Breastplate",
+   "id": 8189,
+   "icon": "inv_chest_chain_12",
+   "quality": 2,
+   "sell": 7567,
+   "profession": "leatherworking",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Chest",
+   "reagents": [
+    "Thick Hide",
+    "Turtle Scale",
+    "Scorpid Scale"
+   ]
+  },
+  {
+   "name": "Black Dragonscale Boots",
+   "id": 16984,
+   "icon": "inv_boots_plate_09",
+   "quality": 4,
+   "sell": 32653,
+   "fire_resistance": 24,
+   "profession": "leatherworking",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Feet",
+   "reagents": [
+    "Rugged Leather"
+   ]
+  },
+  {
+   "name": "Devilsaur Gauntlets",
+   "id": 15063,
+   "icon": "inv_gauntlets_26",
+   "quality": 3,
+   "sell": 11701,
+   "profession": "leatherworking",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Hands",
+   "reagents": [
+    "Rugged Leather",
+    "Rugged Hide"
+   ]
+  },
+  {
+   "name": "Devilsaur Leggings",
+   "id": 15062,
+   "icon": "inv_pants_wolf",
+   "quality": 3,
+   "sell": 25709,
+   "profession": "leatherworking",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Legs",
+   "reagents": [
+    "Rugged Hide",
+    "Devilsaur Leather"
+   ]
+  },
+  {
+   "name": "Black Dragonscale Breastplate",
+   "id": 15050,
+   "icon": "inv_chest_plate06",
+   "quality": 3,
+   "sell": 26071,
+   "fire_resistance": 12,
+   "profession": "leatherworking",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Chest",
+   "reagents": [
+    "Rugged Hide",
+    "Devilsaur Leather",
+    "Black Dragonscale"
+   ]
+  },
+  {
+   "name": "Linen Cloak",
+   "id": 2570,
+   "icon": "inv_misc_cape_14",
+   "quality": 1,
+   "sell": 11,
+   "profession": "tailoring",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Back",
+   "reagents": [
+    "Linen Cloth"
+   ]
+  },
+  {
+   "name": "Linen Bag",
+   "id": 4238,
+   "icon": "inv_misc_bag_01",
+   "quality": 1,
+   "sell": 200,
+   "profession": "tailoring",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Bag",
+   "reagents": [
+    "Linen Cloth"
+   ]
+  },
+  {
+   "name": "Double-stitched Woolen Shoulders",
+   "id": 4314,
+   "icon": "inv_shoulder_06",
+   "quality": 1,
+   "sell": 331,
+   "profession": "tailoring",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Shoulder",
+   "reagents": [
+    "Linen Cloth"
+   ],
+   "stand_in": true
+  },
+  {
+   "name": "Azure Silk Hood",
+   "id": 7048,
+   "icon": "inv_helmet_29",
+   "quality": 1,
+   "sell": 745,
+   "profession": "tailoring",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Head",
+   "reagents": [
+    "Linen Cloth"
+   ],
+   "stand_in": true
+  },
+  {
+   "name": "Crimson Silk Cloak",
+   "id": 7056,
+   "icon": "inv_chest_cloth_16",
+   "quality": 2,
+   "sell": 2314,
+   "fire_resistance": 7,
+   "profession": "tailoring",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Back",
+   "reagents": [
+    "Silk Cloth"
+   ]
+  },
+  {
+   "name": "Small Silk Pack",
+   "id": 4245,
+   "icon": "inv_misc_bag_07",
+   "quality": 1,
+   "sell": 2000,
+   "profession": "tailoring",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Bag",
+   "reagents": [
+    "Silk Cloth"
+   ]
+  },
+  {
+   "name": "Crimson Silk Shoulders",
+   "id": 7059,
+   "icon": "inv_shoulder_23",
+   "quality": 2,
+   "sell": 2781,
+   "profession": "tailoring",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Shoulder",
+   "reagents": [
+    "Silk Cloth"
+   ]
+  },
+  {
+   "name": "Shadow Hood",
+   "id": 4323,
+   "icon": "inv_helmet_27",
+   "quality": 2,
+   "sell": 1999,
+   "profession": "tailoring",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Head",
+   "reagents": [
+    "Silk Cloth"
+   ],
+   "stand_in": true
+  },
+  {
+   "name": "Cindercloth Cloak",
+   "id": 14044,
+   "icon": "inv_misc_cape_18",
+   "quality": 2,
+   "sell": 9503,
+   "profession": "tailoring",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Back",
+   "reagents": [
+    "Mageweave Cloth"
+   ],
+   "stand_in": true
+  },
+  {
+   "name": "Mageweave Bag",
+   "id": 10050,
+   "icon": "inv_misc_bag_10_black",
+   "quality": 1,
+   "sell": 2500,
+   "profession": "tailoring",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Bag",
+   "reagents": [
+    "Mageweave Cloth"
+   ]
+  },
+  {
+   "name": "Black Mageweave Shoulders",
+   "id": 10027,
+   "icon": "inv_shoulder_25",
+   "quality": 2,
+   "sell": 5479,
+   "profession": "tailoring",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Shoulder",
+   "reagents": [
+    "Mageweave Cloth"
+   ]
+  },
+  {
+   "name": "Black Mageweave Headband",
+   "id": 10024,
+   "icon": "inv_misc_bandana_01",
+   "quality": 2,
+   "sell": 5421,
+   "profession": "tailoring",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Head",
+   "reagents": [
+    "Mageweave Cloth"
+   ]
+  },
+  {
+   "name": "Runecloth Cloak",
+   "id": 13860,
+   "icon": "inv_misc_cape_10",
+   "quality": 2,
+   "sell": 8741,
+   "profession": "tailoring",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Back",
+   "reagents": [
+    "Runecloth"
+   ]
+  },
+  {
+   "name": "Runecloth Bag",
+   "id": 14046,
+   "icon": "inv_misc_bag_19",
+   "quality": 1,
+   "sell": 5000,
+   "profession": "tailoring",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Bag",
+   "reagents": [
+    "Runecloth"
+   ]
+  },
+  {
+   "name": "Runecloth Shoulders",
+   "id": 13867,
+   "icon": "inv_shoulder_21",
+   "quality": 2,
+   "sell": 12570,
+   "profession": "tailoring",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Shoulder",
+   "reagents": [
+    "Runecloth"
+   ]
+  },
+  {
+   "name": "Runecloth Headband",
+   "id": 13866,
+   "icon": "inv_misc_bandana_03",
+   "quality": 2,
+   "sell": 11358,
+   "profession": "tailoring",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Head",
+   "reagents": [
+    "Runecloth"
+   ]
+  },
+  {
+   "name": "Minor Healing Potion",
+   "id": 118,
+   "icon": "inv_potion_49",
+   "quality": 1,
+   "sell": 5,
+   "profession": "alchemy",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Healing",
+   "reagents": [
+    "Peacebloom"
+   ]
+  },
+  {
+   "name": "Elixir of Lion's Strength",
+   "id": 2454,
+   "icon": "inv_potion_56",
+   "quality": 1,
+   "sell": 20,
+   "profession": "alchemy",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Combat elixir",
+   "reagents": [
+    "Peacebloom",
+    "Silverleaf"
+   ]
+  },
+  {
+   "name": "Swiftness Potion",
+   "id": 2459,
+   "icon": "inv_potion_95",
+   "quality": 1,
+   "sell": 25,
+   "profession": "alchemy",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Gathering speed",
+   "reagents": [
+    "Silverleaf",
+    "Earthroot"
+   ]
+  },
+  {
+   "name": "Elixir of Wisdom",
+   "id": 3383,
+   "icon": "inv_potion_06",
+   "quality": 1,
+   "sell": 100,
+   "profession": "alchemy",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Crafting speed",
+   "reagents": [
+    "Earthroot",
+    "Mageroyal"
+   ]
+  },
+  {
+   "name": "Healing Potion",
+   "id": 929,
+   "icon": "inv_potion_51",
+   "quality": 1,
+   "sell": 75,
+   "profession": "alchemy",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Healing",
+   "reagents": [
+    "Briarthorn"
+   ]
+  },
+  {
+   "name": "Elixir of Ogre's Strength",
+   "id": 3391,
+   "icon": "inv_potion_57",
+   "quality": 1,
+   "sell": 20,
+   "profession": "alchemy",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Combat elixir",
+   "reagents": [
+    "Briarthorn",
+    "Bruiseweed"
+   ]
+  },
+  {
+   "name": "Free Action Potion",
+   "id": 5634,
+   "icon": "inv_potion_04",
+   "quality": 1,
+   "sell": 75,
+   "profession": "alchemy",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Gathering speed",
+   "reagents": [
+    "Bruiseweed",
+    "Wild Steelbloom"
+   ]
+  },
+  {
+   "name": "Elixir of Greater Intellect",
+   "id": 9179,
+   "icon": "inv_potion_10",
+   "quality": 1,
+   "sell": 1000,
+   "profession": "alchemy",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Crafting speed",
+   "reagents": [
+    "Wild Steelbloom",
+    "Kingsblood"
+   ]
+  },
+  {
+   "name": "Superior Healing Potion",
+   "id": 3928,
+   "icon": "inv_potion_53",
+   "quality": 1,
+   "sell": 250,
+   "profession": "alchemy",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Healing",
+   "reagents": [
+    "Fadeleaf"
+   ]
+  },
+  {
+   "name": "Elixir of Giants",
+   "id": 9206,
+   "icon": "inv_potion_61",
+   "quality": 1,
+   "sell": 700,
+   "profession": "alchemy",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Combat elixir",
+   "reagents": [
+    "Fadeleaf",
+    "Goldthorn"
+   ]
+  },
+  {
+   "name": "Elixir of Agility",
+   "id": 8949,
+   "icon": "inv_potion_93",
+   "quality": 1,
+   "sell": 200,
+   "profession": "alchemy",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Gathering speed",
+   "reagents": [
+    "Goldthorn",
+    "Khadgar's Whisker"
+   ]
+  },
+  {
+   "name": "Mageblood Potion",
+   "id": 20007,
+   "icon": "inv_potion_45",
+   "quality": 1,
+   "sell": 1000,
+   "profession": "alchemy",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Crafting speed",
+   "reagents": [
+    "Khadgar's Whisker",
+    "Purple Lotus"
+   ]
+  },
+  {
+   "name": "Major Healing Potion",
+   "id": 13446,
+   "icon": "inv_potion_54",
+   "quality": 1,
+   "sell": 1000,
+   "profession": "alchemy",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Healing",
+   "reagents": [
+    "Sungrass"
+   ]
+  },
+  {
+   "name": "Elixir of the Mongoose",
+   "id": 13452,
+   "icon": "inv_potion_32",
+   "quality": 1,
+   "sell": 1250,
+   "profession": "alchemy",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Combat elixir",
+   "reagents": [
+    "Sungrass",
+    "Dreamfoil"
+   ]
+  },
+  {
+   "name": "Living Action Potion",
+   "id": 20008,
+   "icon": "inv_potion_07",
+   "quality": 1,
+   "sell": 600,
+   "profession": "alchemy",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Gathering speed",
+   "reagents": [
+    "Dreamfoil",
+    "Mountain Silversage"
+   ]
+  },
+  {
+   "name": "Elixir of the Sages",
+   "id": 13447,
+   "icon": "inv_potion_29",
+   "quality": 1,
+   "sell": 1250,
+   "profession": "alchemy",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Crafting speed",
+   "reagents": [
+    "Mountain Silversage",
+    "Black Lotus"
+   ]
+  },
+  {
+   "name": "Brilliant Smallfish",
+   "id": 6290,
+   "icon": "inv_misc_fish_07",
+   "quality": 1,
+   "sell": 1,
+   "profession": "cooking",
+   "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "XP food (Field)",
+   "reagents": [
+    "Raw Brilliant Smallfish"
+   ]
+  },
+  {
+   "name": "Slitherskin Mackerel",
+   "id": 787,
+   "icon": "inv_misc_fish_24",
+   "quality": 1,
+   "sell": 1,
+   "profession": "cooking",
+   "rank": 0,
+   "slot": 1,
+   "unlock": 21,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Slitherskin Mackerel"
+   ]
+  },
+  {
+   "name": "Longjaw Mud Snapper",
+   "id": 4592,
+   "icon": "inv_misc_fish_32",
+   "quality": 1,
+   "sell": 1,
+   "profession": "cooking",
+   "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "XP food (Workshop)",
+   "reagents": [
+    "Raw Longjaw Mud Snapper"
+   ]
+  },
+  {
+   "name": "Loch Frenzy Delight",
+   "id": 6316,
+   "icon": "inv_potion_01",
+   "quality": 1,
+   "sell": 3,
+   "profession": "cooking",
+   "rank": 0,
+   "slot": 3,
+   "unlock": 56,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Loch Frenzy"
+   ]
+  },
+  {
+   "name": "Bristle Whisker Catfish",
+   "id": 4593,
+   "icon": "inv_misc_fish_30",
+   "quality": 1,
+   "sell": 4,
+   "profession": "cooking",
+   "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "XP food (Field)",
+   "reagents": [
+    "Raw Bristle Whisker Catfish"
+   ]
+  },
+  {
+   "name": "Rainbow Fin Albacore",
+   "id": 5095,
+   "icon": "inv_misc_fish_27",
+   "quality": 1,
+   "sell": 3,
+   "profession": "cooking",
+   "rank": 1,
+   "slot": 1,
+   "unlock": 95,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Rainbow Fin Albacore"
+   ]
+  },
+  {
+   "name": "Smoked Sagefish",
+   "id": 21072,
+   "icon": "inv_misc_fish_20",
+   "quality": 1,
+   "sell": 40,
+   "profession": "cooking",
+   "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "XP food (Workshop)",
+   "reagents": [
+    "Raw Sagefish"
+   ]
+  },
+  {
+   "name": "Sagefish Delight",
+   "id": 21217,
+   "icon": "inv_misc_fish_21",
+   "quality": 1,
+   "sell": 125,
+   "profession": "cooking",
+   "rank": 1,
+   "slot": 3,
+   "unlock": 130,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Sagefish",
+    "Raw Rainbow Fin Albacore"
+   ]
+  },
+  {
+   "name": "Rockscale Cod",
+   "id": 4594,
+   "icon": "inv_misc_fish_04",
+   "quality": 1,
+   "sell": 6,
+   "profession": "cooking",
+   "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "XP food (Field)",
+   "reagents": [
+    "Raw Rockscale Cod"
+   ]
+  },
+  {
+   "name": "Mithril Head Trout",
+   "id": 8364,
+   "icon": "inv_misc_fish_02",
+   "quality": 1,
+   "sell": 6,
+   "profession": "cooking",
+   "rank": 2,
+   "slot": 1,
+   "unlock": 170,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Mithril Head Trout"
+   ]
+  },
+  {
+   "name": "Spotted Yellowtail",
+   "id": 6887,
+   "icon": "inv_misc_fish_01",
+   "quality": 1,
+   "sell": 5,
+   "profession": "cooking",
+   "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "XP food (Workshop)",
+   "reagents": [
+    "Raw Spotted Yellowtail"
+   ]
+  },
+  {
+   "name": "Filet of Redgill",
+   "id": 13930,
+   "icon": "inv_misc_fish_06",
+   "quality": 1,
+   "sell": 5,
+   "profession": "cooking",
+   "rank": 2,
+   "slot": 3,
+   "unlock": 205,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Redgill"
+   ]
+  },
+  {
+   "name": "Nightfin Soup",
+   "id": 13931,
+   "icon": "inv_drink_17",
+   "quality": 1,
+   "sell": 12,
+   "profession": "cooking",
+   "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "XP food (Field)",
+   "reagents": [
+    "Raw Nightfin Snapper"
+   ]
+  },
+  {
+   "name": "Poached Sunscale Salmon",
+   "id": 13932,
+   "icon": "inv_misc_fish_19",
+   "quality": 1,
+   "sell": 12,
+   "profession": "cooking",
+   "rank": 3,
+   "slot": 1,
+   "unlock": 245,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Sunscale Salmon"
+   ]
+  },
+  {
+   "name": "Baked Salmon",
+   "id": 13935,
+   "icon": "inv_misc_fish_20",
+   "quality": 1,
+   "sell": 10,
+   "profession": "cooking",
+   "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "XP food (Workshop)",
+   "reagents": [
+    "Raw Whitescale Salmon"
+   ]
+  },
+  {
+   "name": "Cooked Glossy Mightfish",
+   "id": 13927,
+   "icon": "inv_misc_monsterhead_03",
+   "quality": 1,
+   "sell": 8,
+   "profession": "cooking",
+   "rank": 3,
+   "slot": 3,
+   "unlock": 280,
+   "role": "Combat food",
+   "reagents": [
+    "Raw Glossy Mightfish"
+   ]
+  }
+ ],
+ "fire_resistance_set": [
+  {
+   "name": "Molten Helm",
+   "id": 16983,
+   "icon": "inv_helmet_08",
+   "quality": 4,
+   "sell": 25709,
+   "fire_resistance": 29,
+   "profession": "leatherworking",
+   "slot": "Head",
+   "unlock": 280,
+   "reagents": [
+    "Rugged Leather",
+    "Black Dragonscale",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Volcanic Breastplate",
+   "id": 15053,
+   "icon": "inv_chest_leather_07",
+   "quality": 2,
+   "sell": 17275,
+   "fire_resistance": 20,
+   "profession": "leatherworking",
+   "slot": "Chest",
+   "unlock": 280,
+   "reagents": [
+    "Rugged Leather",
+    "Black Dragonscale",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Volcanic Leggings",
+   "id": 15054,
+   "icon": "inv_pants_06",
+   "quality": 2,
+   "sell": 14559,
+   "fire_resistance": 20,
+   "profession": "leatherworking",
+   "slot": "Legs",
+   "unlock": 280,
+   "reagents": [
+    "Rugged Leather",
+    "Black Dragonscale",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Corehound Boots",
+   "id": 16982,
+   "icon": "inv_boots_07",
+   "quality": 4,
+   "sell": 24397,
+   "fire_resistance": 24,
+   "profession": "leatherworking",
+   "slot": "Feet",
+   "unlock": 280,
+   "reagents": [
+    "Rugged Leather",
+    "Devilsaur Leather",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Cloak of Fire",
+   "id": 14134,
+   "icon": "inv_misc_cape_18",
+   "quality": 3,
+   "sell": 11280,
+   "fire_resistance": 6,
+   "profession": "tailoring",
+   "slot": "Back",
+   "unlock": 280,
+   "reagents": [
+    "Runecloth",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Flarecore Mantle",
+   "id": 16980,
+   "icon": "inv_shoulder_23",
+   "quality": 4,
+   "sell": 21365,
+   "fire_resistance": 24,
+   "profession": "tailoring",
+   "slot": "Shoulder",
+   "unlock": 280,
+   "reagents": [
+    "Runecloth",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Flarecore Gloves",
+   "id": 16979,
+   "icon": "inv_gauntlets_26",
+   "quality": 4,
+   "sell": 14902,
+   "fire_resistance": 25,
+   "profession": "tailoring",
+   "slot": "Hands",
+   "unlock": 280,
+   "reagents": [
+    "Runecloth",
+    "Star Ruby"
+   ]
+  },
+  {
+   "name": "Greater Fire Protection Potion",
+   "id": 13457,
+   "icon": "inv_potion_24",
+   "quality": 1,
+   "sell": 750,
+   "profession": "alchemy",
+   "slot": "Potion",
+   "unlock": 280,
+   "reagents": [
+    "Dreamfoil",
+    "Firefin Snapper"
+   ]
+  },
+  {
+   "name": "Dragonbreath Chili",
+   "id": 12217,
+   "icon": "inv_drink_17",
+   "quality": 1,
+   "sell": 300,
+   "profession": "cooking",
+   "slot": "Food",
+   "unlock": 280,
+   "reagents": [
+    "Raw Glossy Mightfish",
+    "Sungrass"
+   ]
+  }
+ ],
+ "traits": {
+  "Tough": {
+   "weapon": "Axe",
+   "text": "Huge health. Axes crit harder and chew through it."
+  },
+  "Armored": {
+   "weapon": "Mace",
+   "text": "Heavy armor. Crushing mace blows ignore it."
+  },
+  "Evasive": {
+   "weapon": "Dagger",
+   "text": "Hard to hit. Fast dagger strikes land more often."
+  }
+ },
+ "boss": {
+  "name": "Ragnaros",
+  "npc": 11502
+ },
+ "ui_icons": {
+  "slot_Head": "inventoryslot_head",
+  "slot_Shoulder": "inventoryslot_shoulder",
+  "slot_Back": "inventoryslot_chest",
+  "slot_Chest": "inventoryslot_chest",
+  "slot_Hands": "inventoryslot_hands",
+  "slot_Legs": "inventoryslot_legs",
+  "slot_Feet": "inventoryslot_feet",
+  "slot_MainHand": "inventoryslot_mainhand",
+  "slot_Bag": "inventoryslot_bag",
+  "unarmed": "ability_meleedamage",
+  "gold": "inv_misc_coin_01",
+  "silver": "inv_misc_coin_03",
+  "copper": "inv_misc_coin_05",
+  "rested": "spell_nature_sleep",
+  "res_sickness": "spell_holy_resurrection",
+  "molten_core": "inv_hammer_unique_sulfuras",
+  "ragnaros": "achievement_boss_ragnaros",
+  "fire_resistance": "spell_fire_fire",
+  "offline": "inv_misc_pocketwatch_01",
+  "storage": "inv_misc_bag_08",
+  "trap_murloc": "inv_misc_head_murloc_01"
+ }
+}

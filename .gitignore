@@ -9,3 +9,4 @@ __pycache__/
 # docs/ holds the design plan. It's committed while the game is being built so it can't get
 # lost; once implemented, ignore /docs/ again (internal dev notes aren't published).
 # Player-facing docs live under worlds/skillup/docs/ instead, which ships inside the apworld.
+/tools/.wowhead_cache/
