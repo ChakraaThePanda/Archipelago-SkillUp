@@ -280,7 +280,9 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     Dragonbreath Chili. Every armor piece needs a Star Ruby (a reason to gamble on red).
   - Wowhead hover tooltips show Classic's own stats, not ours. Use our own tooltip for
     gear, and Wowhead tooltips only for materials and flavour.
-- Main screen layout: mockup to review (character sheet, Field and Workshop, skill/hr).
+- Main screen layout: mockup at https://claude.ai/artifact/LWxAwo3tHX8mWt3Wgs6GmS (private).
+  Profession list order decided: Fighting (Combat) on top, then Gathering, then Crafting,
+  so gathering and crafting sit together.
 - Housekeeping: delete the old HTML-Minigames branch, test generation with the installed
   Archipelago (needs `skillup.apworld` in `custom_worlds`, ask first).
 
