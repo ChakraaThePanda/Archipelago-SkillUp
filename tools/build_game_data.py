@@ -120,13 +120,14 @@ RAGNAROS = ("Ragnaros", 11502)
 # Quantities come from the simulator.
 RECIPES = {
     "blacksmithing": {
-        "roles": ["Dagger", "Sword", "Axe", "Mace"],
+        # Axe last: it's the boss weapon, and it unlocks at +55 together with the zone's boss.
+        "roles": ["Dagger", "Sword", "Mace", "Axe"],
         "reagents": [["m1"], ["m1", "m2"], ["m1", "m3"], ["m1", "m3", "m4"]],
         "items": [
-            ["Copper Dagger", "Copper Shortsword", "Copper Axe", "Copper Mace"],
-            ["Big Bronze Knife", "Hardened Iron Shortsword", "Bronze Axe", "Mighty Iron Hammer"],
-            ["Searing Golden Blade", "Wicked Mithril Blade", "Heavy Mithril Axe", "Runed Mithril Hammer"],
-            ["Heartseeker", "Blazing Rapier", "Annihilator", "Masterwork Stormhammer"],
+            ["Copper Dagger", "Copper Shortsword", "Copper Mace", "Copper Axe"],
+            ["Big Bronze Knife", "Hardened Iron Shortsword", "Mighty Iron Hammer", "Bronze Axe"],
+            ["Searing Golden Blade", "Wicked Mithril Blade", "Runed Mithril Hammer", "Heavy Mithril Axe"],
+            ["Heartseeker", "Blazing Rapier", "Masterwork Stormhammer", "Annihilator"],
         ],
     },
     "engineering": {

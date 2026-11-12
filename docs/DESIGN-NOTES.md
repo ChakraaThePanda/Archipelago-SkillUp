@@ -217,7 +217,7 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     Glossy Mightfish (Artisan), so every rank has cookable fish. Firefin Snapper stays as an
     Alchemy fish (it feeds the Greater Fire Protection Potion, like Fire Oil in Classic).
   - Recipe order inside each rank, so recipe 1 only needs the rank's first material:
-    Blacksmithing Dagger, Sword, Axe, Mace (Mace needs the gem); Leatherworking Boots,
+    Blacksmithing Dagger, Sword, Mace, Axe (Axe needs the gem and unlocks with the zone boss); Leatherworking Boots,
     Gloves, Legs, Chest; Tailoring Cloak, Bag, Shoulders, Hat; Engineering Mining, Skinning,
     Fishing, Herbalism tool; Alchemy Healing, combat elixir, gathering speed, crafting speed.
   - Blacksmithing weapons are all one-handers (real Classic recipes).

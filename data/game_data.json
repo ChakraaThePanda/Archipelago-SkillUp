@@ -1146,22 +1146,6 @@
    ]
   },
   {
-   "name": "Copper Axe",
-   "id": 2845,
-   "icon": "inv_axe_23",
-   "quality": 1,
-   "sell": 109,
-   "profession": "blacksmithing",
-   "rank": 0,
-   "slot": 2,
-   "unlock": 41,
-   "role": "Axe",
-   "reagents": [
-    "Copper Ore",
-    "Rough Stone"
-   ]
-  },
-  {
    "name": "Copper Mace",
    "id": 2844,
    "icon": "inv_mace_01",
@@ -1169,9 +1153,25 @@
    "sell": 106,
    "profession": "blacksmithing",
    "rank": 0,
+   "slot": 2,
+   "unlock": 41,
+   "role": "Mace",
+   "reagents": [
+    "Copper Ore",
+    "Rough Stone"
+   ]
+  },
+  {
+   "name": "Copper Axe",
+   "id": 2845,
+   "icon": "inv_axe_23",
+   "quality": 1,
+   "sell": 109,
+   "profession": "blacksmithing",
+   "rank": 0,
    "slot": 3,
    "unlock": 56,
-   "role": "Mace",
+   "role": "Axe",
    "reagents": [
     "Copper Ore",
     "Rough Stone",
@@ -1210,22 +1210,6 @@
    ]
   },
   {
-   "name": "Bronze Axe",
-   "id": 2849,
-   "icon": "inv_axe_17",
-   "quality": 1,
-   "sell": 1269,
-   "profession": "blacksmithing",
-   "rank": 1,
-   "slot": 2,
-   "unlock": 115,
-   "role": "Axe",
-   "reagents": [
-    "Iron Ore",
-    "Heavy Stone"
-   ]
-  },
-  {
    "name": "Mighty Iron Hammer",
    "id": 3492,
    "icon": "inv_hammer_04",
@@ -1233,9 +1217,25 @@
    "sell": 4552,
    "profession": "blacksmithing",
    "rank": 1,
+   "slot": 2,
+   "unlock": 115,
+   "role": "Mace",
+   "reagents": [
+    "Iron Ore",
+    "Heavy Stone"
+   ]
+  },
+  {
+   "name": "Bronze Axe",
+   "id": 2849,
+   "icon": "inv_axe_17",
+   "quality": 1,
+   "sell": 1269,
+   "profession": "blacksmithing",
+   "rank": 1,
    "slot": 3,
    "unlock": 130,
-   "role": "Mace",
+   "role": "Axe",
    "reagents": [
     "Iron Ore",
     "Heavy Stone",
@@ -1274,22 +1274,6 @@
    ]
   },
   {
-   "name": "Heavy Mithril Axe",
-   "id": 7941,
-   "icon": "inv_axe_14",
-   "quality": 2,
-   "sell": 12520,
-   "profession": "blacksmithing",
-   "rank": 2,
-   "slot": 2,
-   "unlock": 190,
-   "role": "Axe",
-   "reagents": [
-    "Mithril Ore",
-    "Solid Stone"
-   ]
-  },
-  {
    "name": "Runed Mithril Hammer",
    "id": 7946,
    "icon": "inv_hammer_17",
@@ -1297,9 +1281,25 @@
    "sell": 21660,
    "profession": "blacksmithing",
    "rank": 2,
+   "slot": 2,
+   "unlock": 190,
+   "role": "Mace",
+   "reagents": [
+    "Mithril Ore",
+    "Solid Stone"
+   ]
+  },
+  {
+   "name": "Heavy Mithril Axe",
+   "id": 7941,
+   "icon": "inv_axe_14",
+   "quality": 2,
+   "sell": 12520,
+   "profession": "blacksmithing",
+   "rank": 2,
    "slot": 3,
    "unlock": 205,
-   "role": "Mace",
+   "role": "Axe",
    "reagents": [
     "Mithril Ore",
     "Solid Stone",
@@ -1338,22 +1338,6 @@
    ]
   },
   {
-   "name": "Annihilator",
-   "id": 12798,
-   "icon": "inv_axe_12",
-   "quality": 3,
-   "sell": 57150,
-   "profession": "blacksmithing",
-   "rank": 3,
-   "slot": 2,
-   "unlock": 265,
-   "role": "Axe",
-   "reagents": [
-    "Thorium Ore",
-    "Dense Stone"
-   ]
-  },
-  {
    "name": "Masterwork Stormhammer",
    "id": 12794,
    "icon": "inv_hammer_04",
@@ -1361,9 +1345,25 @@
    "sell": 56304,
    "profession": "blacksmithing",
    "rank": 3,
+   "slot": 2,
+   "unlock": 265,
+   "role": "Mace",
+   "reagents": [
+    "Thorium Ore",
+    "Dense Stone"
+   ]
+  },
+  {
+   "name": "Annihilator",
+   "id": 12798,
+   "icon": "inv_axe_12",
+   "quality": 3,
+   "sell": 57150,
+   "profession": "blacksmithing",
+   "rank": 3,
    "slot": 3,
    "unlock": 280,
-   "role": "Mace",
+   "role": "Axe",
    "reagents": [
     "Thorium Ore",
     "Dense Stone",
