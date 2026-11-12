@@ -227,10 +227,15 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     faster with them, so Alchemy and Cooking pull their weight.
   - Waiting for rank items: 30 min average wait costs about 50 min overall, 2 h waits
     cost about 6 h (the other slot keeps busy, but the Field runs out of open professions).
-  - Offline: repeating only the last action is nearly worthless (things go grey, ranks
-    cap, crafting runs dry), so the game must keep choosing smartly while closed (next
-    material, next recipe, never shopping). With smart offline and the 8 h cap, 1 h of
-    play a day finishes in about 1.2 days; 4 offline items barely change it.
+  - Offline (decided with Chakraa: offline must stay weaker than playing; bags are the
+    reason to come back): while closed, each slot only repeats what it was doing, at full
+    speed, up to the 8 h cap. It limits itself: the material goes grey, the rank caps, or
+    crafting runs out of materials (bigger bags = longer offline crafting). At 1 h of play
+    a day, repeat offline adds about 20% to a day's progress; "smart" offline (the game
+    keeps choosing) was 3-4x a play session, far too strong. Slowing repeat offline to 50-
+    75% barely changes it (the grey limit dominates), so no slowdown is needed.
+    A longer offline cap makes things worse (time past the cap becomes Rested XP, which
+    beats repeating a grey action), so the "Longer offline time" pool items should go.
   - Traps: one of each costs at most about 1-2 minutes. Mild, as intended.
   - Red: proposed rule, attempts also take (1 + levels below / 25) times longer. Star
     Ruby from Mining 1 then takes about 5 h bare, 2.5 h with typical upgrades; from 200,

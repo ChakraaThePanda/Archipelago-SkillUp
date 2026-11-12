@@ -132,8 +132,9 @@
     "per_item_hours": 4,
     "rested_per_hour": 10,
     "rested_cap": 120,
-    "mode": "auto",
-    "_mode": "auto = while closed, the game keeps making the same smart choices (next material, next recipe) but never shops; repeat = it only repeats the last action"
+    "mode": "repeat",
+    "_mode": "repeat = while closed, each slot only repeats what it was doing (chosen: keeps offline weaker than playing). auto = it keeps choosing the next material and recipe (tested, too strong)",
+    "speed": 1.0
   },
 
   "ragnaros": {

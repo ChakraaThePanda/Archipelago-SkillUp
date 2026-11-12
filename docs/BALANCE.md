@@ -106,15 +106,22 @@ Every rank except the starting ones comes from other players. Here each one arri
 
 ## Offline time and play schedules
 
-Real days until Ragnaros is ready, for someone who opens the page this many hours a day. While closed, both slots repeat what they were doing (no new choices, no shopping) up to the offline cap; time past it becomes Rested XP. *Smart* = the game keeps choosing the next material and recipe by itself (but never shops); *repeat-only* = it just repeats the last action. Item pool spread over the real days.
+Total skill levels (all 11 professions, 3300 = everything maxed) at the end of each day's play session, for someone who opens the page this many hours a day. Before closing, the player sets both slots on something worth repeating. Time past the offline cap becomes Rested XP.
 
-| Page open per day | Smart offline, 8 h cap | Smart offline, 24 h cap | Repeat-only offline, 8 h cap | No offline progress |
+| Open per day | While closed | Day 1 | Day 2 | Day 3 |
 | --- | --- | --- | --- | --- |
-| 24 h | 0.5 days | same | same | same |
-| 8 h | 0.6 days | 0.6 days | 1.2 days | 1.2 days |
-| 4 h | 0.8 days | 0.7 days | 2.0 days | 2.1 days |
-| 2 h | 1.1 days | 1.0 days | 3.1 days | 4.0 days |
-| 1 h | 1.2 days | 1.0 days | 5.0 days | 8.0 days |
+| 1 h | No offline progress (Rested XP only) | 372 | 814 | 1289 |
+| 1 h | Repeat last action, 8 h cap | 372 | 902 | 1669 |
+| 1 h | Repeat last action, 24 h cap | 372 | 788 | 1079 |
+| 1 h | Smart (keeps choosing), 8 h cap | 372 | 2084 | 3299 |
+| 2 h | No offline progress (Rested XP only) | 630 | 1533 | 2440 |
+| 2 h | Repeat last action, 8 h cap | 630 | 1730 | 2728 |
+| 2 h | Repeat last action, 24 h cap | 630 | 1373 | 2002 |
+| 2 h | Smart (keeps choosing), 8 h cap | 630 | 2899 | 3300 |
+| 4 h | No offline progress (Rested XP only) | 1104 | 2431 | 3299 |
+| 4 h | Repeat last action, 8 h cap | 1104 | 2784 | 3299 |
+| 4 h | Repeat last action, 24 h cap | 1104 | 2265 | 3249 |
+| 4 h | Smart (keeps choosing), 8 h cap | 1104 | 3300 | 3300 |
 
 ## Traps
 

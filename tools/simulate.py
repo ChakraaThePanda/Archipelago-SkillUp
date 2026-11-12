@@ -104,6 +104,7 @@ class Sim:
         self.last_field = self.last_recipe = None
         self.offline = False
         self.offline_mode = offline_mode or BAL["offline"]["mode"]
+        self.offline_speed = BAL["offline"].get("speed", 1.0)
         self.sell_value = {e["name"]: max(self.gold_cfg["min_sell"], e["sell"] * self.gold_cfg["sell_mult"])
                            for e in DATA["materials"] + DATA["recipes"] + DATA["fire_resistance_set"]}
 
@@ -153,6 +154,8 @@ class Sim:
             s *= 1 + self.buff_value("Gathering speed")
         if prof in CRAFT:
             s *= 1 + self.buff_value("Crafting speed")
+        if self.offline:
+            s *= self.offline_speed
         if prof == "combat" and self.debuff.get("Resurrection Sickness", 0) > self.t:
             s *= BAL["traps"]["Resurrection Sickness"]["combat_slow"]
         return s
@@ -430,6 +433,30 @@ class Sim:
             return t + death
         return 0.0
 
+    def set_up_for_offline(self):
+        """Before closing the page, a player sets both slots on something worth repeating:
+        the Field on the best XP action of its lowest open profession, the Workshop on the
+        best recipe it can keep crafting from stock."""
+        todo = [p for p in FIELD if self.open(p)]
+        if todo:
+            prof = min(todo, key=lambda p: self.level[p])
+            opts = [o for o in self.field_options(prof) if o[0] > 0]
+            if opts:
+                self.last_field = max(opts, key=lambda o: (o[0], o[2]["slot"]))
+        best = None
+        for r in DATA["recipes"]:
+            if not self.open(r["profession"]) or self.level[r["profession"]] < r["unlock"]:
+                continue
+            xp, t = self.recipe_xp(r)
+            if xp <= 0:
+                continue
+            runs = min(self.stock[n] for n in r["reagents"]) / self.qty(r)
+            score = min(runs * t, self.offline_cap) * xp / t
+            if best is None or score > best[0]:
+                best = (score, r)
+        if best:
+            self.last_recipe = best[1]
+
     # ---- main loop -----------------------------------------------------------------------
     def active_at(self, t):
         if not self.schedule:
@@ -457,7 +484,10 @@ class Sim:
             if self.schedule:
                 day = self.t // 86400 * 86400
                 closed_at = day + self.schedule["active_hours"] * H
+                was_offline = self.offline
                 self.offline = self.t >= closed_at
+                if self.offline and not was_offline:
+                    self.set_up_for_offline()
                 if self.offline and self.t >= closed_at + self.offline_cap:
                     past_cap = day + 86400 - (closed_at + self.offline_cap)
                     if past_cap > 0:
@@ -568,26 +598,29 @@ def delay_report():
 
 
 def schedule_report():
+    def marks(active, mode, cap_items=0):
+        sim = Sim("Normal", schedule={"active_hours": active}, offline_mode=mode, offline_items=cap_items)
+        out, orig = [], sim.set_up_for_offline
+
+        def mark():
+            out.append(sum(sim.level.values()))
+            orig()
+        sim.set_up_for_offline = mark
+        sim.run(limit_h=24 * 2 + active)
+        out.append(sum(sim.level.values()))
+        return out + [3300] * (3 - len(out))
+
+    rows = [("No offline progress (Rested XP only)", "repeat", -2), ("Repeat last action, 8 h cap", "repeat", 0),
+            ("Repeat last action, 24 h cap", "repeat", 4), ("Smart (keeps choosing), 8 h cap", "auto", 0)]
     out = ["## Offline time and play schedules", "",
-           "Real days until Ragnaros is ready, for someone who opens the page this many hours a day. While "
-           "closed, both slots repeat what they were doing (no new choices, no shopping) up to the offline "
-           "cap; time past it becomes Rested XP. *Smart* = the game keeps choosing the next material and "
-           "recipe by itself (but never shops); *repeat-only* = it just repeats the last action. Item pool "
-           "spread over the real days.", "",
-           "| Page open per day | Smart offline, 8 h cap | Smart offline, 24 h cap | Repeat-only offline, 8 h cap | No offline progress |",
-           "| --- | --- | --- | --- | --- |"]
-    for a in (24, 8, 4, 2, 1):
-        sched = {"active_hours": a} if a < 24 else None
-        if not sched:
-            out.append(f"| 24 h | {fmt_days(seed().ragnaros_ready)} | same | same | same |")
-            continue
-        row = [fmt_days(seed(schedule=sched).ragnaros_ready),
-               fmt_days(seed(schedule=sched, offline_items=4).ragnaros_ready),
-               fmt_days(seed(schedule=sched, offline_mode="repeat").ragnaros_ready)]
-        nooff = Sim("Normal", schedule=sched)
-        nooff.offline_cap = 0
-        row.append(fmt_days(nooff.run().ragnaros_ready))
-        out.append(f"| {a} h | " + " | ".join(row) + " |")
+           "Total skill levels (all 11 professions, 3300 = everything maxed) at the end of each day's play "
+           "session, for someone who opens the page this many hours a day. Before closing, the player sets "
+           "both slots on something worth repeating. Time past the offline cap becomes Rested XP.", "",
+           "| Open per day | While closed | Day 1 | Day 2 | Day 3 |", "| --- | --- | --- | --- | --- |"]
+    for a in (1, 2, 4):
+        for label, mode, cap in rows:
+            m = marks(a, mode, cap)
+            out.append(f"| {a} h | {label} | {m[0]} | {m[1]} | {m[2]} |")
     return "\n".join(out)
 
 
