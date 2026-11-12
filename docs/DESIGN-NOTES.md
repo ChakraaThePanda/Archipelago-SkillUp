@@ -285,8 +285,8 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   so gathering and crafting sit together.
   Wording on screen: no "Field" or "Workshop" (not WoW terms; they stay internal names
   in these notes and the simulator). The two running slots are labelled by what they do:
-  "Gathering" or "Fighting", and "Crafting". The list marks running professions with a
-  green "Active" tag; no extra tag for capped ranks (the full bar shows it). Skill colors
+  "Gathering" or "Fighting", and "Crafting". The list shows running professions as a
+  green-tinted row (no tag); no extra tag for capped ranks (the full bar shows it). Skill colors
   show as the unlock level colored the WoW way, never as words.
 - Housekeeping: delete the old HTML-Minigames branch, test generation with the installed
   Archipelago (needs `skillup.apworld` in `custom_worlds`, ask first).
