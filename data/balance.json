@@ -136,7 +136,11 @@
     "rested_cap": 120,
     "mode": "repeat",
     "_mode": "repeat = while closed, each slot only repeats what it was doing (chosen: keeps offline weaker than playing). auto = it keeps choosing the next material and recipe (tested, too strong)",
-    "speed": 1.0
+    "speed": 1.0,
+    "sells": false,
+    "when_full": "discard",
+    "_when_full": "offline, once a material's storage is full: discard = keep gathering for XP, extra materials are lost; stop = gathering stops",
+    "_sells": "false = nothing auto-sells while the page is closed: gathering stops when that material's storage is full, so bags cap offline gold"
   },
 
   "ragnaros": {

@@ -109,18 +109,18 @@ Total skill levels (all 11 professions, 3300 = everything maxed) at the end of e
 
 | Open per day | While closed | Day 1 | Day 2 | Day 3 |
 | --- | --- | --- | --- | --- |
-| 1 h | No offline progress (Rested XP only) | 383 | 829 | 1393 |
-| 1 h | Repeat last action, 8 h cap | 383 | 947 | 1676 |
-| 1 h | Repeat last action, 24 h cap | 383 | 812 | 1202 |
-| 1 h | Smart (keeps choosing), 8 h cap | 383 | 2195 | 3299 |
+| 1 h | No offline progress (Rested XP only) | 383 | 828 | 1353 |
+| 1 h | Repeat last action, 8 h cap | 383 | 834 | 1452 |
+| 1 h | Repeat last action, 24 h cap | 383 | 675 | 1019 |
+| 1 h | Smart (keeps choosing), 8 h cap | 383 | 2037 | 3298 |
 | 2 h | No offline progress (Rested XP only) | 662 | 1511 | 2371 |
-| 2 h | Repeat last action, 8 h cap | 662 | 1770 | 2922 |
-| 2 h | Repeat last action, 24 h cap | 662 | 1429 | 2120 |
-| 2 h | Smart (keeps choosing), 8 h cap | 662 | 2853 | 3300 |
-| 4 h | No offline progress (Rested XP only) | 1088 | 2523 | 3300 |
-| 4 h | Repeat last action, 8 h cap | 1088 | 3146 | 3300 |
-| 4 h | Repeat last action, 24 h cap | 1088 | 2665 | 3299 |
-| 4 h | Smart (keeps choosing), 8 h cap | 1088 | 3300 | 3300 |
+| 2 h | Repeat last action, 8 h cap | 662 | 1703 | 2762 |
+| 2 h | Repeat last action, 24 h cap | 662 | 1407 | 1920 |
+| 2 h | Smart (keeps choosing), 8 h cap | 662 | 2563 | 3300 |
+| 4 h | No offline progress (Rested XP only) | 1088 | 2526 | 3300 |
+| 4 h | Repeat last action, 8 h cap | 1088 | 2572 | 3300 |
+| 4 h | Repeat last action, 24 h cap | 1088 | 2106 | 2969 |
+| 4 h | Smart (keeps choosing), 8 h cap | 1088 | 3269 | 3300 |
 
 ## Traps
 

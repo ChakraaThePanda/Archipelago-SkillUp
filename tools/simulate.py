@@ -105,6 +105,7 @@ class Sim:
         self.offline = False
         self.offline_mode = offline_mode or BAL["offline"]["mode"]
         self.offline_speed = BAL["offline"].get("speed", 1.0)
+        self.unsold_crafts = 0.0
         self.sell_value = {e["name"]: max(self.gold_cfg["min_sell"], e["sell"] * self.gold_cfg["sell_mult"])
                            for e in DATA["materials"] + DATA["recipes"] + DATA["fire_resistance_set"]}
 
@@ -184,11 +185,13 @@ class Sim:
         self.gold_earned += copper
         self.earned_by[source] += copper
 
+    def storage_cap(self):
+        return BAL["storage"]["start"] * BAL["storage"]["per_bag_mult"] ** self.bags * (1 + self.storage_bonus)
+
     def store(self, name, qty):
-        cap = BAL["storage"]["start"] * BAL["storage"]["per_bag_mult"] ** self.bags * (1 + self.storage_bonus)
-        kept = min(qty, max(0.0, cap - self.stock[name]))
+        kept = min(qty, max(0.0, self.storage_cap() - self.stock[name]))
         self.stock[name] += kept
-        if qty > kept:
+        if qty > kept and not (self.offline and not BAL["offline"]["sells"]):
             self.earn((qty - kept) * self.sell_value[name] * (1 + self.sell_bonus))
 
     def buy_upgrades(self):
@@ -269,7 +272,13 @@ class Sim:
 
     def do_field(self):
         if self.offline and self.offline_mode == "repeat":
-            return self.run_field(self.last_field) if self.last_field else 5.0
+            if not self.last_field:
+                return 5.0
+            e = self.last_field[2]
+            if (not BAL["offline"]["sells"] and BAL["offline"]["when_full"] == "stop"
+                    and self.last_field[1] == "gather" and self.stock[e["name"]] >= self.storage_cap()):
+                return 60.0  # storage full: gathering stops until the player comes back
+            return self.run_field(self.last_field)
         if self.need:
             mat = self.mat_by_name[self.need]
             prof = mat["profession"]
@@ -375,7 +384,9 @@ class Sim:
         elif role in BUFF_ROLES and self.use_buffs and len(self.consumables[role]) < self.buff_cfg["keep"]:
             self.consumables[role].append(r["rank"])
             keep = True
-        if not keep:
+        if not keep and self.offline and not BAL["offline"]["sells"]:
+            self.unsold_crafts += self.craft_price(r)
+        elif not keep:
             self.earn(self.craft_price(r) * (1 + self.sell_bonus), "selling crafts")
 
     def craft_price(self, r):
@@ -462,6 +473,12 @@ class Sim:
                 best = (score, r)
         if best:
             self.last_recipe = best[1]
+        # make room: sell the stock of the material the Field will gather, unless the Workshop needs it
+        if self.last_field and self.last_field[1] == "gather" and not BAL["offline"]["sells"]:
+            name = self.last_field[2]["name"]
+            if not (self.last_recipe and name in self.last_recipe["reagents"]):
+                self.earn(self.stock[name] * self.sell_value[name] * (1 + self.sell_bonus))
+                self.stock[name] = 0.0
 
     # ---- main loop -----------------------------------------------------------------------
     def active_at(self, t):
@@ -494,6 +511,9 @@ class Sim:
                 self.offline = self.t >= closed_at
                 if self.offline and not was_offline:
                     self.set_up_for_offline()
+                if was_offline and not self.offline and self.unsold_crafts:
+                    self.earn(self.unsold_crafts * (1 + self.sell_bonus), "selling crafts")
+                    self.unsold_crafts = 0.0
                 if self.offline and self.t >= closed_at + self.offline_cap:
                     past_cap = day + 86400 - (closed_at + self.offline_cap)
                     if past_cap > 0:

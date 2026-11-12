@@ -240,6 +240,13 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     A longer offline cap makes things worse (time past the cap becomes Rested XP, which
     beats repeating a grey action). Decided: the offline cap stays a fixed 8 h (covers a
     night); the 4 "Longer offline time" pool items became 4 more storage items (8 total).
+  - Offline and gold (proposed): nothing auto-sells while the page is closed. Once a
+    material's storage is full, gathering keeps going for XP but extra materials are lost;
+    crafted items made offline sell when you come back. Without this, one night of
+    repeating sold up to 800-2200g of materials (40-70 shop upgrades at once). With it,
+    offline gold is limited by your bags and the shop is paced by actual play. Before
+    leaving, a player can "Sell all" a material to make room. The shop never buys
+    anything by itself; you spend what you have when you return.
   - Traps: one of each costs at most about 1-2 minutes. Mild, as intended.
   - Red: proposed rule, attempts also take (1 + levels below / 25) times longer. Star
     Ruby from Mining 1 then takes about 5 h bare, 2.5 h with typical upgrades; from 200,
