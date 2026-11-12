@@ -376,7 +376,13 @@ class Sim:
             self.consumables[role].append(r["rank"])
             keep = True
         if not keep:
-            self.earn(self.sell_value[r["name"]] * self.gold_cfg["crafted_sell_mult"] * (1 + self.sell_bonus), "selling crafts")
+            self.earn(self.craft_price(r) * (1 + self.sell_bonus), "selling crafts")
+
+    def craft_price(self, r):
+        g = self.gold_cfg
+        if g.get("crafted_price") == "materials":
+            return sum(self.sell_value[n] * self.qty(r) for n in r["reagents"]) * g["crafted_markup"]
+        return self.sell_value[r["name"]] * g["crafted_sell_mult"]
 
     def craft_fr(self):
         q = self.rec["fr_qty"]

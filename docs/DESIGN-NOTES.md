@@ -213,12 +213,15 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   pool, potions and food, each rank item arriving 30 min after it's needed) reaches
   Ragnaros in about 22 h (Long), 12 h (Normal), 6 h (Fast). Use these in the
   `game_speed` YAML text. Findings:
-  - Gold: Wowhead sell prices x1 for materials, x0.25 for crafts; trainer upgrades cost
-    10s doubling each step (10 steps of +15% speed, 10 of +10% XP). Players own about 4
-    upgrades per profession at 2 h, 6 at 4 h, 8 by the end, so the shop matters all game.
-    Most gold comes from selling crafts; combat loot is small (a knob to raise in playtest).
+  - Gold: materials sell at their Wowhead vendor price; extra crafted items sell for the
+    value of their materials x1.5 (Wowhead's own craft prices jump ~7x at Expert and made
+    late game flood: up to 585g/h with 370g unspent at the end). Now income stays at about
+    60-120g/h from hour 4 on. Trainer upgrades cost 10s doubling each step (10 steps of
+    +15% speed, 10 of +10% XP); players own about 2 per profession at 1 h, 5 at 4 h, 8-9
+    by the end, so the shop matters all game and the last steps stay aspirational. Gold
+    comes mostly from extra crafts and material overflow, about 10-15% from coin pouches.
   - Crafting earns 1.4x XP per second: one Workshop slot levels 6 professions while the
-    Field levels 5, so both finish together. XP cost base 14.
+    Field levels 5, so both finish together. XP cost base 13.
   - Item pool (178 slots), material crates cut: useful 22 speed +7%, 22 XP +7%, 4 storage
     +15%, 3 sell price +10%, 4 offline +4 h; filler 60 coin pouches (50s x rank growth),
     25 Rested XP (1 min each), 35 XP tomes (1 skill point's worth). Full pool: about 15%

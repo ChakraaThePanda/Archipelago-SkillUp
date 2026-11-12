@@ -3,7 +3,7 @@
 
   "xp": {
     "_about": "Skill point L -> L+1 costs base * (1 + L / per_level) XP. Colors multiply XP per action.",
-    "base": 14,
+    "base": 13,
     "per_level": 25,
     "colors": {"orange": [15, 1.0], "yellow": [30, 0.75], "green": [45, 0.25], "grey": [9999, 0.0]},
     "game_speed": {"Long": 0.5, "Normal": 1.0, "Fast": 2.0}
@@ -43,6 +43,9 @@
     "_about": "Sell value = Wowhead vendor price (copper) * sell_mult, minimum min_sell. Upgrade n of a profession costs cost_base * cost_growth^n copper.",
     "sell_mult": 1,
     "crafted_sell_mult": 0.25,
+    "crafted_price": "materials",
+    "crafted_markup": 1.5,
+    "_crafted_price": "materials = a craft sells for the vendor value of its materials x crafted_markup (smooth); wowhead = Wowhead vendor price x crafted_sell_mult (jumps a lot at Expert/Artisan)",
     "min_sell": 2,
     "speed_step": 0.15,
     "xp_step": 0.10,

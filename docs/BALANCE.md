@@ -8,89 +8,89 @@ potions and food used automatically, no traps, no red gambles.
 
 ### Long speed
 
-- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **21h55**; Fire Resistance set done 21h58
-- Same seed without the item pool: 29h41
-- Workshop idle waiting for materials: 3h05; Field time fetching materials for it: 2h29
-- Gold earned 2692g, spent 1687g (selling crafts 2071g, combat loot 47g, selling materials 447g, coin pouches 128g); deaths about 9
-- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 3.2/3.1, 4h 4.4/4.4, 6h 5.8/5.8, 8h 6.8/6.7, 10h 7.5/7.5, 12h 8.1/8.0, 14h 8.4/8.4, 16h 8.7/8.7, 18h 9.1/9.0, 20h 9.5/9.4, 22h 9.5/9.5, 24h 9.5/9.5, 26h 9.5/9.5, 28h 9.5/9.5, 30h 9.5/9.5, 32h 9.5/9.5, 34h 9.5/9.5, 36h 9.5/9.5, 38h 9.5/9.5, 40h 9.5/9.5, 42h 9.5/9.5, 44h 9.5/9.5, 46h 9.5/9.5, 48h 9.5/9.5, 50h 9.5/9.5, 52h 9.5/9.5, 54h 9.5/9.5, 56h 9.5/9.5, 58h 9.5/9.5, 60h 9.5/9.5, 62h 9.5/9.5, 64h 9.5/9.5, 66h 9.5/9.5, 68h 9.5/9.5, 70h 9.5/9.5, 72h 9.5/9.5, 74h 9.5/9.5, 76h 9.5/9.5, 78h 9.5/9.5, 80h 9.5/9.5, 82h 9.5/9.5, 84h 9.5/9.5, 86h 9.5/9.5, 88h 9.5/9.5, 90h 9.5/9.5, 92h 9.5/9.5, 94h 9.5/9.5, 96h 9.5/9.5, 98h 9.5/9.5, 100h 9.5/9.5, 102h 9.5/9.5, 104h 9.5/9.5, 106h 9.5/9.5, 108h 9.5/9.5, 110h 9.5/9.5, 112h 9.5/9.5, 114h 9.5/9.5, 116h 9.5/9.5, 118h 9.5/9.5, 120h 9.5/9.5, 122h 9.5/9.5, 124h 9.5/9.5, 126h 9.5/9.5, 128h 9.5/9.5, 130h 9.5/9.5, 132h 9.5/9.5, 134h 9.5/9.5, 136h 9.5/9.5, 138h 9.5/9.5, 140h 9.5/9.5, 142h 9.5/9.5, 144h 9.5/9.5, 146h 9.5/9.5, 148h 9.5/9.5, 150h 9.5/9.5, 152h 9.5/9.5, 154h 9.5/9.5, 156h 9.5/9.5, 158h 9.5/9.5, 160h 9.5/9.5, 162h 9.5/9.5, 164h 9.5/9.5, 166h 9.5/9.5, 168h 9.5/9.5, 170h 9.5/9.5, 172h 9.5/9.5, 174h 9.5/9.5, 176h 9.5/9.5, 178h 9.5/9.5, 180h 9.5/9.5, 182h 9.5/9.5, 184h 9.5/9.5, 186h 9.5/9.5, 188h 9.5/9.5, 190h 9.5/9.5, 192h 9.5/9.5, 194h 9.5/9.5, 196h 9.5/9.5, 198h 9.5/9.5, 200h 9.5/9.5, 202h 9.5/9.5, 204h 9.5/9.5, 206h 9.5/9.5, 208h 9.5/9.5, 210h 9.5/9.5, 212h 9.5/9.5, 214h 9.5/9.5, 216h 9.5/9.5, 218h 9.5/9.5, 220h 9.5/9.5, 222h 9.5/9.5, 224h 9.5/9.5, 226h 9.5/9.5, 228h 9.5/9.5, 230h 9.5/9.5, 232h 9.5/9.5, 234h 9.5/9.5, 236h 9.5/9.5, 238h 9.5/9.5, 240h 9.5/9.5, 242h 9.5/9.5, 244h 9.5/9.5, 246h 9.5/9.5, 248h 9.5/9.5, 250h 9.5/9.5, 252h 9.5/9.5, 254h 9.5/9.5, 256h 9.5/9.5, 258h 9.5/9.5, 260h 9.5/9.5, 262h 9.5/9.5, 264h 9.5/9.5, 266h 9.5/9.5, 268h 9.5/9.5, 270h 9.5/9.5, 272h 9.5/9.5, 274h 9.5/9.5, 276h 9.5/9.5, 278h 9.5/9.5, 280h 9.5/9.5, 282h 9.5/9.5, 284h 9.5/9.5, 286h 9.5/9.5, 288h 9.5/9.5, 290h 9.5/9.5, 292h 9.5/9.5, 294h 9.5/9.5, 296h 9.5/9.5, 298h 9.5/9.5, 300h 9.5/9.5, 302h 9.5/9.5, 304h 9.5/9.5, 306h 9.5/9.5, 308h 9.5/9.5, 310h 9.5/9.5, 312h 9.5/9.5, 314h 9.5/9.5, 316h 9.5/9.5, 318h 9.5/9.5, 320h 9.5/9.5, 322h 9.5/9.5, 324h 9.5/9.5, 326h 9.5/9.5, 328h 9.5/9.5, 330h 9.5/9.5, 332h 9.5/9.5, 334h 9.5/9.5, 336h 9.5/9.5, 338h 9.5/9.5, 340h 9.5/9.5, 342h 9.5/9.5, 344h 9.5/9.5, 346h 9.5/9.5, 348h 9.5/9.5, 350h 9.5/9.5, 352h 9.5/9.5, 354h 9.5/9.5, 356h 9.5/9.5, 358h 9.5/9.5, 360h 9.5/9.5, 362h 9.5/9.5, 364h 9.5/9.5, 366h 9.5/9.5, 368h 9.5/9.5, 370h 9.5/9.5, 372h 9.5/9.5, 374h 9.5/9.5, 376h 9.5/9.5, 378h 9.5/9.5, 380h 9.5/9.5, 382h 9.5/9.5, 384h 9.5/9.5, 386h 9.5/9.5, 388h 9.5/9.5, 390h 9.5/9.5, 392h 9.5/9.5, 394h 9.5/9.5, 396h 9.5/9.5, 398h 9.5/9.5, 400h 9.5/9.5, 402h 9.5/9.5, 404h 9.5/9.5, 406h 9.5/9.5, 408h 9.5/9.5, 410h 9.5/9.5, 412h 9.5/9.5, 414h 9.5/9.5, 416h 9.5/9.5, 418h 9.5/9.5, 420h 9.5/9.5, 422h 9.5/9.5, 424h 9.5/9.5, 426h 9.5/9.5, 428h 9.5/9.5, 430h 9.5/9.5, 432h 9.5/9.5, 434h 9.5/9.5, 436h 9.5/9.5, 438h 9.5/9.5, 440h 9.5/9.5, 442h 9.5/9.5, 444h 9.5/9.5, 446h 9.5/9.5, 448h 9.5/9.5, 450h 9.5/9.5, 452h 9.5/9.5, 454h 9.5/9.5, 456h 9.5/9.5, 458h 9.5/9.5, 460h 9.5/9.5, 462h 9.5/9.5, 464h 9.5/9.5, 466h 9.5/9.5, 468h 9.5/9.5, 470h 9.5/9.5, 472h 9.5/9.5, 474h 9.5/9.5, 476h 9.5/9.5, 478h 9.5/9.5, 480h 9.5/9.5, 482h 9.5/9.5, 484h 9.5/9.5, 486h 9.5/9.5, 488h 9.5/9.5, 490h 9.5/9.5, 492h 9.5/9.5, 494h 9.5/9.5, 496h 9.5/9.5, 498h 9.5/9.5, 500h 9.5/9.5, 502h 9.5/9.5, 504h 9.5/9.5, 506h 9.5/9.5, 508h 9.5/9.5, 510h 9.5/9.5, 512h 9.5/9.5, 514h 9.5/9.5, 516h 9.5/9.5, 518h 9.5/9.5, 520h 9.5/9.5, 522h 9.5/9.5, 524h 9.5/9.5, 526h 9.5/9.5, 528h 9.5/9.5, 530h 9.5/9.5, 532h 9.5/9.5, 534h 9.5/9.5, 536h 9.5/9.5, 538h 9.5/9.5, 540h 9.5/9.5, 542h 9.5/9.5, 544h 9.5/9.5, 546h 9.5/9.5, 548h 9.5/9.5, 550h 9.5/9.5, 552h 9.5/9.5, 554h 9.5/9.5, 556h 9.5/9.5, 558h 9.5/9.5, 560h 9.5/9.5, 562h 9.5/9.5, 564h 9.5/9.5, 566h 9.5/9.5, 568h 9.5/9.5, 570h 9.5/9.5, 572h 9.5/9.5, 574h 9.5/9.5, 576h 9.5/9.5, 578h 9.5/9.5, 580h 9.5/9.5, 582h 9.5/9.5, 584h 9.5/9.5, 586h 9.5/9.5, 588h 9.5/9.5, 590h 9.5/9.5, 592h 9.5/9.5, 594h 9.5/9.5, 596h 9.5/9.5, 598h 9.5/9.5, 600h 9.5/9.5, 602h 9.5/9.5, 604h 9.5/9.5, 606h 9.5/9.5, 608h 9.5/9.5, 610h 9.5/9.5, 612h 9.5/9.5, 614h 9.5/9.5, 616h 9.5/9.5, 618h 9.5/9.5, 620h 9.5/9.5, 622h 9.5/9.5, 624h 9.5/9.5, 626h 9.5/9.5, 628h 9.5/9.5, 630h 9.5/9.5, 632h 9.5/9.5, 634h 9.5/9.5, 636h 9.5/9.5, 638h 9.5/9.5, 640h 9.5/9.5, 642h 9.5/9.5, 644h 9.5/9.5, 646h 9.5/9.5, 648h 9.5/9.5, 650h 9.5/9.5, 652h 9.5/9.5, 654h 9.5/9.5, 656h 9.5/9.5, 658h 9.5/9.5, 660h 9.5/9.5, 662h 9.5/9.5, 664h 9.5/9.5, 666h 9.5/9.5, 668h 9.5/9.5, 670h 9.5/9.5, 672h 9.5/9.5, 674h 9.5/9.5, 676h 9.5/9.5, 678h 9.5/9.5, 680h 9.5/9.5, 682h 9.5/9.5, 684h 9.5/9.5, 686h 9.5/9.5, 688h 9.5/9.5, 690h 9.5/9.5, 692h 9.5/9.5, 694h 9.5/9.5, 696h 9.5/9.5, 698h 9.5/9.5, 700h 9.5/9.5, 702h 9.5/9.5, 704h 9.5/9.5, 706h 9.5/9.5, 708h 9.5/9.5, 710h 9.5/9.5, 712h 9.5/9.5, 714h 9.5/9.5, 716h 9.5/9.5, 718h 9.5/9.5, 720h 9.5/9.5
+- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **21h50**; Fire Resistance set done 21h54
+- Same seed without the item pool: 28h06
+- Workshop idle waiting for materials: 3h22; Field time fetching materials for it: 2h27
+- Gold earned 2012g, spent 1483g (selling crafts 1477g, combat loot 44g, selling materials 396g, coin pouches 95g); deaths about 9
+- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 3.1/3.1, 4h 4.3/4.3, 6h 5.8/5.8, 8h 7.0/7.0, 10h 7.5/7.5, 12h 8.1/8.0, 14h 8.5/8.4, 16h 8.6/8.6, 18h 9.0/8.9, 20h 9.2/9.1
 
 | Profession | 75 | 150 | 225 | 300 |
 | --- | --- | --- | --- | --- |
-| Mining | 3h48 | 8h50 | 13h56 | 19h37 |
-| Herbalism | 3h50 | 8h51 | 13h57 | 19h38 |
-| Skinning | 3h51 | 8h52 | 13h59 | 19h39 |
-| Fishing | 3h52 | 8h53 | 14h00 | 19h40 |
-| Combat | 3h53 | 8h54 | 14h03 | 19h44 |
-| Blacksmithing | 7h00 | 14h55 | 19h55 | 21h01 |
-| Leatherworking | 7h04 | 14h56 | 20h43 | 21h55 |
-| Tailoring | 3h39 | 7h27 | 12h43 | 18h06 |
-| Engineering | 7h07 | 14h59 | 21h03 | - |
-| Alchemy | 7h07 | 15h00 | 19h11 | 21h02 |
-| Cooking | 2h27 | 7h09 | 12h10 | 17h44 |
+| Mining | 3h40 | 8h28 | 13h02 | 18h27 |
+| Herbalism | 3h41 | 8h29 | 13h04 | 18h28 |
+| Skinning | 3h42 | 8h30 | 13h05 | 18h29 |
+| Fishing | 3h43 | 8h31 | 13h06 | 18h30 |
+| Combat | 3h44 | 8h33 | 13h09 | 18h32 |
+| Blacksmithing | 6h31 | 14h03 | 19h08 | 21h50 |
+| Leatherworking | 6h36 | 14h04 | 19h09 | 21h07 |
+| Tailoring | 3h32 | 7h38 | 11h59 | 17h09 |
+| Engineering | 6h38 | 14h06 | 19h08 | 21h30 |
+| Alchemy | 6h39 | 14h07 | 17h48 | 18h58 |
+| Cooking | 2h24 | 6h57 | 11h28 | 16h41 |
 
 ### Normal speed
 
-- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **12h05**; Fire Resistance set done 12h08
-- Same seed without the item pool: 14h12
-- Workshop idle waiting for materials: 2h57; Field time fetching materials for it: 1h50
-- Gold earned 1493g, spent 1124g (selling crafts 1199g, combat loot 21g, selling materials 188g, coin pouches 85g); deaths about 1
-- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 3.3/3.2, 4h 5.1/5.1, 6h 6.5/6.5, 8h 7.5/7.5, 10h 8.3/8.2, 12h 8.7/8.7
+- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **12h07**; Fire Resistance set done 12h10
+- Same seed without the item pool: 15h42
+- Workshop idle waiting for materials: 2h30; Field time fetching materials for it: 1h29
+- Gold earned 1044g, spent 1022g (selling crafts 752g, combat loot 24g, selling materials 183g, coin pouches 86g); deaths about 0
+- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 3.4/3.3, 4h 5.3/5.3, 6h 6.8/6.7, 8h 7.5/7.5, 10h 8.1/8.1, 12h 8.5/8.5
 
 | Profession | 75 | 150 | 225 | 300 |
 | --- | --- | --- | --- | --- |
-| Mining | 2h08 | 5h10 | 8h13 | 10h36 |
-| Herbalism | 2h09 | 5h11 | 8h14 | 10h36 |
-| Skinning | 2h09 | 5h11 | 8h14 | 10h36 |
-| Fishing | 2h09 | 5h12 | 8h15 | 10h37 |
-| Combat | 2h10 | 5h13 | 8h15 | 10h37 |
-| Blacksmithing | 3h24 | 6h38 | 10h36 | 12h05 |
-| Leatherworking | 3h26 | 6h39 | 10h35 | 11h49 |
-| Tailoring | 3h28 | 6h40 | 8h19 | 10h18 |
-| Engineering | 3h28 | 6h41 | 10h22 | 11h49 |
-| Alchemy | 3h29 | 6h41 | 9h00 | 10h16 |
-| Cooking | 1h28 | 6h41 | 8h20 | 10h17 |
+| Mining | 2h02 | 4h48 | 7h37 | 10h17 |
+| Herbalism | 2h02 | 4h49 | 7h37 | 10h18 |
+| Skinning | 2h03 | 4h50 | 7h38 | 10h18 |
+| Fishing | 2h03 | 4h50 | 7h38 | 10h19 |
+| Combat | 2h04 | 4h51 | 7h39 | 10h21 |
+| Blacksmithing | 3h09 | 6h37 | 9h52 | 12h07 |
+| Leatherworking | 3h11 | 6h37 | 9h52 | 11h54 |
+| Tailoring | 3h12 | 6h38 | 9h53 | 11h55 |
+| Engineering | 3h13 | 6h39 | 9h41 | 11h55 |
+| Alchemy | 3h07 | 6h39 | 9h53 | 11h55 |
+| Cooking | 1h24 | 4h04 | 6h49 | 9h31 |
 
 ### Fast speed
 
-- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **6h04**; Fire Resistance set done 6h07
-- Same seed without the item pool: 8h32
-- Workshop idle waiting for materials: 1h22; Field time fetching materials for it: 1h03
-- Gold earned 726g, spent 715g (selling crafts 621g, combat loot 11g, selling materials 27g, coin pouches 67g); deaths about 1
-- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 3.8/3.8, 4h 7.0/7.0, 6h 8.2/8.2
+- **Ragnaros ready** (300 in Combat, Blacksmithing, Leatherworking, Tailoring, Alchemy, Cooking): **5h58**; Fire Resistance set done 6h01
+- Same seed without the item pool: 7h17
+- Workshop idle waiting for materials: 1h36; Field time fetching materials for it: 1h04
+- Gold earned 472g, spent 446g (selling crafts 354g, combat loot 13g, selling materials 20g, coin pouches 85g); deaths about 3
+- Trainer upgrades owned per profession, by hour (speed/XP, out of 10): 0h 0.0/0.0, 2h 4.1/4.0, 4h 6.4/6.3, 6h 7.6/7.5
 
 | Profession | 75 | 150 | 225 | 300 |
 | --- | --- | --- | --- | --- |
-| Mining | 1h23 | 2h51 | 4h10 | 5h35 |
-| Herbalism | 1h23 | 2h52 | 4h10 | 5h35 |
-| Skinning | 1h24 | 2h53 | 4h10 | 5h36 |
-| Fishing | 1h25 | 2h53 | 4h11 | 5h36 |
-| Combat | 1h09 | 2h47 | 4h11 | 5h36 |
-| Blacksmithing | 30m | 3h17 | 4h31 | 6h04 |
-| Leatherworking | 1h41 | 3h17 | 4h20 | 6h00 |
-| Tailoring | 1h41 | 3h18 | 4h21 | 6h00 |
-| Engineering | 1h42 | 3h01 | 4h21 | 6h00 |
-| Alchemy | 1h42 | 2h58 | 4h21 | 6h00 |
-| Cooking | 56m | 2h30 | 4h21 | 6h00 |
+| Mining | 1h19 | 2h53 | 4h02 | 5h16 |
+| Herbalism | 1h19 | 2h53 | 4h02 | 5h16 |
+| Skinning | 1h20 | 2h53 | 4h03 | 5h17 |
+| Fishing | 1h20 | 2h53 | 4h03 | 5h17 |
+| Combat | 1h03 | 2h26 | 3h16 | 4h21 |
+| Blacksmithing | 27m | 3h08 | 4h29 | 5h58 |
+| Leatherworking | 1h36 | 3h07 | 4h18 | 5h54 |
+| Tailoring | 1h38 | 3h08 | 4h29 | 5h54 |
+| Engineering | 1h37 | 2h54 | 4h18 | 5h54 |
+| Alchemy | 1h38 | 2h57 | 4h18 | 5h54 |
+| Cooking | 53m | 2h19 | 4h18 | 5h54 |
 
 ## Item pool
 
-Without the pool: 14h19. With every pool item: **11h17** (21% faster).
+Without the pool: 13h35. With every pool item: **10h41** (21% faster).
 Measured with rank items arriving on time (waiting adds noise). Each row adds only that item to an empty pool. Offline items only matter with a play schedule (see below).
 
 | Item | Count | Time saved, all copies | Per copy |
 | --- | --- | --- | --- |
-| Speed boost (useful) | 22 | 40m | 1.8 min |
-| XP boost (useful) | 22 | 1h42 | 4.6 min |
-| Bigger storage (useful) | 4 | 7m | 1.8 min |
-| Better prices (useful) | 3 | 15m | 5.2 min |
+| Speed boost (useful) | 22 | 39m | 1.8 min |
+| XP boost (useful) | 22 | 1h03 | 2.9 min |
+| Bigger storage (useful) | 4 | 6m | 1.4 min |
+| Better prices (useful) | 3 | 19m | 6.3 min |
 | Longer offline time (useful) | 4 | 0m | 0.0 min |
-| Coin pouch (filler) | 60 | 23m | 0.4 min |
-| Rested XP (filler) | 25 | 15m | 0.6 min |
-| Tome of experience (filler) | 35 | 38m | 1.1 min |
+| Coin pouch (filler) | 60 | 28m | 0.5 min |
+| Rested XP (filler) | 25 | 23m | 0.9 min |
+| Tome of experience (filler) | 35 | 34m | 1.0 min |
 
 ## Potions and food
 
-With potions and food used automatically: **12h05**. Without any: 15h08 (20% faster with them). Deaths: 1 with, 0 without.
+With potions and food used automatically: **12h07**. Without any: 13h50 (12% faster with them). Deaths: 0 with, 1 without.
 
 ## Waiting for rank items
 
@@ -98,11 +98,11 @@ Every rank except the starting ones comes from other players. Here each one arri
 
 | Average wait per rank | Ragnaros ready | Field idle (all its professions capped) |
 | --- | --- | --- |
-| 0 min | 11h17 | 1h29 |
-| 15 min | 11h51 | 2h22 |
-| 30 min | 12h05 | 2h28 |
-| 60 min | 14h43 | 3h50 |
-| 120 min | 17h59 | 6h06 |
+| 0 min | 10h41 | 1h47 |
+| 15 min | 11h11 | 2h16 |
+| 30 min | 12h07 | 2h52 |
+| 60 min | 13h42 | 3h09 |
+| 120 min | 16h14 | 709h16 |
 
 ## Offline time and play schedules
 
@@ -110,18 +110,18 @@ Total skill levels (all 11 professions, 3300 = everything maxed) at the end of e
 
 | Open per day | While closed | Day 1 | Day 2 | Day 3 |
 | --- | --- | --- | --- | --- |
-| 1 h | No offline progress (Rested XP only) | 372 | 814 | 1289 |
-| 1 h | Repeat last action, 8 h cap | 372 | 902 | 1669 |
-| 1 h | Repeat last action, 24 h cap | 372 | 788 | 1079 |
-| 1 h | Smart (keeps choosing), 8 h cap | 372 | 2084 | 3299 |
-| 2 h | No offline progress (Rested XP only) | 630 | 1533 | 2440 |
-| 2 h | Repeat last action, 8 h cap | 630 | 1730 | 2728 |
-| 2 h | Repeat last action, 24 h cap | 630 | 1373 | 2002 |
-| 2 h | Smart (keeps choosing), 8 h cap | 630 | 2899 | 3300 |
-| 4 h | No offline progress (Rested XP only) | 1104 | 2431 | 3299 |
-| 4 h | Repeat last action, 8 h cap | 1104 | 2784 | 3299 |
-| 4 h | Repeat last action, 24 h cap | 1104 | 2265 | 3249 |
-| 4 h | Smart (keeps choosing), 8 h cap | 1104 | 3300 | 3300 |
+| 1 h | No offline progress (Rested XP only) | 383 | 829 | 1393 |
+| 1 h | Repeat last action, 8 h cap | 383 | 947 | 1676 |
+| 1 h | Repeat last action, 24 h cap | 383 | 812 | 1202 |
+| 1 h | Smart (keeps choosing), 8 h cap | 383 | 2195 | 3299 |
+| 2 h | No offline progress (Rested XP only) | 662 | 1511 | 2371 |
+| 2 h | Repeat last action, 8 h cap | 662 | 1770 | 2922 |
+| 2 h | Repeat last action, 24 h cap | 662 | 1429 | 2120 |
+| 2 h | Smart (keeps choosing), 8 h cap | 662 | 2853 | 3300 |
+| 4 h | No offline progress (Rested XP only) | 1088 | 2523 | 3300 |
+| 4 h | Repeat last action, 8 h cap | 1088 | 3146 | 3300 |
+| 4 h | Repeat last action, 24 h cap | 1088 | 2665 | 3299 |
+| 4 h | Smart (keeps choosing), 8 h cap | 1088 | 3300 | 3300 |
 
 ## Traps
 
@@ -129,10 +129,10 @@ One copy of each trap, sprung a third of the way into a seed (no item pool, to i
 
 | Trap | Time lost | Notes |
 | --- | --- | --- |
-| Resurrection Sickness | 0m |  |
-| Repair Bill | 1m | lost 0.0g |
-| Broken Tool | 0m |  |
-| Murloc Ambush | 0m |  |
+| Resurrection Sickness | 3m |  |
+| Repair Bill | 4m | lost 0.2g |
+| Broken Tool | 3m |  |
+| Murloc Ambush | 3m |  |
 
 At 2% of 120 filler slots, a default seed has about 2 traps.
 
@@ -144,19 +144,19 @@ Expected time to the first success on each rank's last Mining material (the gem)
 | --- | --- | --- | --- | --- |
 | Malachite (56) | 1 | 5% | 3m | 2m |
 | Malachite (56) | 50 | 10% | 1m | 0m |
-| Jade (130) | 1 | 2% | 25m | 14m |
+| Jade (130) | 1 | 2% | 25m | 13m |
 | Jade (130) | 50 | 2% | 17m | 9m |
 | Jade (130) | 100 | 5% | 4m | 1m |
-| Citrine (205) | 1 | 1% | 2h08 | 1h09 |
-| Citrine (205) | 50 | 1% | 1h41 | 54m |
-| Citrine (205) | 100 | 2% | 36m | 13m |
+| Citrine (205) | 1 | 1% | 2h08 | 1h08 |
+| Citrine (205) | 50 | 1% | 1h41 | 53m |
+| Citrine (205) | 100 | 2% | 36m | 14m |
 | Citrine (205) | 150 | 5% | 9m | 3m |
 | Citrine (205) | 200 | 10% | 2m | 0m |
-| Star Ruby (280) | 1 | 1% | 4h49 | 2h35 |
-| Star Ruby (280) | 50 | 1% | 4h02 | 2h10 |
-| Star Ruby (280) | 100 | 1% | 3h15 | 1h07 |
-| Star Ruby (280) | 150 | 2% | 1h14 | 25m |
-| Star Ruby (280) | 200 | 2% | 50m | 13m |
+| Star Ruby (280) | 1 | 1% | 4h49 | 2h34 |
+| Star Ruby (280) | 50 | 1% | 4h02 | 2h09 |
+| Star Ruby (280) | 100 | 1% | 3h15 | 1h12 |
+| Star Ruby (280) | 150 | 2% | 1h14 | 27m |
+| Star Ruby (280) | 200 | 2% | 50m | 14m |
 | Star Ruby (280) | 250 | 5% | 10m | 2m |
 
 ## Ragnaros
