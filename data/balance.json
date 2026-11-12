@@ -1,0 +1,107 @@
+{
+  "_about": "Every tunable number in Skillup. tools/simulate.py reads this with data/game_data.json and reports how long things take. Change numbers here, re-run, compare.",
+
+  "xp": {
+    "_about": "Skill point L -> L+1 costs base * (1 + L / per_level) XP. Colors multiply XP per action.",
+    "base": 12,
+    "per_level": 25,
+    "colors": {"orange": [15, 1.0], "yellow": [30, 0.75], "green": [45, 0.25], "grey": [9999, 0.0]},
+    "game_speed": {"Long": 0.5, "Normal": 1.0, "Fast": 2.0}
+  },
+
+  "actions": {
+    "_about": "Base time (s) and XP of the k-th thing (slot 0-3) of rank r: time * rank_growth^r * (1 + slot_growth * k). XP per action = time * xp_per_second, so every action pays the same XP per second before upgrades; upgrades make it faster.",
+    "gather_time": 2.0,
+    "craft_time": 3.0,
+    "combat_time": 3.0,
+    "rank_growth": 1.7,
+    "slot_growth": 0.15,
+    "xp_per_second": 1.0,
+    "craft_xp_mult": 1.4,
+    "_craft_xp_mult": "crafting earns more XP per second: one Workshop slot levels 6 professions while the Field levels 5",
+    "boss_time_mult": 2.5,
+    "min_action_time": 0.5,
+    "gather_yield": 3,
+    "_gather_yield": "materials per gather action (WoW nodes give several ore)"
+  },
+
+  "recipes": {
+    "_about": "Units of each reagent per craft, by role. XP multiplier by role (Sword = 1).",
+    "reagent_qty": 2,
+    "role_qty_mult": {"Dagger": 0.5, "Mace": 1.5, "Axe": 1.5},
+    "role_xp_mult": {"Dagger": 0.7, "Mace": 1.3, "Axe": 1.3},
+    "fr_qty": 5
+  },
+
+  "storage": {
+    "_about": "Cap per material. Each first-crafted Tailoring bag doubles it. Overflow sells.",
+    "start": 50,
+    "per_bag_mult": 2
+  },
+
+  "gold": {
+    "_about": "Sell value = Wowhead vendor price (copper) * sell_mult, minimum min_sell. Upgrade n of a profession costs cost_base * cost_growth^n copper.",
+    "sell_mult": 1,
+    "crafted_sell_mult": 0.25,
+    "min_sell": 2,
+    "speed_step": 0.15,
+    "xp_step": 0.10,
+    "steps": 10,
+    "cost_base": 1000,
+    "cost_growth": 2.0
+  },
+
+  "tools": {
+    "_about": "An Engineering tool of rank r makes its gathering profession (r+1) * step faster.",
+    "step": 0.25
+  },
+
+  "combat": {
+    "_about": "Power needed by the k-th mob of rank r: need_base * rank_growth^r * (1 + slot_growth * k); bosses x boss_mult. Your power = fists + weapon + armor. Kill time scales with need / power (clamped). Deaths add death_time.",
+    "need_base": 10,
+    "rank_growth": 1.8,
+    "slot_growth": 0.2,
+    "boss_mult": 2.0,
+    "fists": 5,
+    "weapon_power": 10,
+    "armor_power": 2,
+    "_power": "weapon/armor power of rank r = value * rank_growth^r",
+    "trait_match": 1.5,
+    "trait_miss": 0.8,
+    "sword_bonus": 1.1,
+    "dagger_speed": 1.0,
+    "ratio_min": 0.4,
+    "ratio_max": 4.0,
+    "death_ratio": 1.25,
+    "death_time": 30,
+    "cloth_per_kill": 1.5,
+    "gold_per_kill": 40,
+    "_gold_per_kill": "copper, times rank_growth^r"
+  },
+
+  "pool": {
+    "_about": "Non-progression items in the pool, for the default start (220 checks - 42 progression = 178). Useful items are each weaker than one trainer upgrade. The simulator spreads them evenly over a seed and applies each to the lowest-level profession that isn't maxed (Rested XP and storage are global).",
+    "useful": {
+      "Speed boost": {"count": 22, "speed": 0.05, "_": "+5% speed to one profession"},
+      "XP boost": {"count": 22, "xp": 0.05, "_": "+5% XP to one profession"},
+      "Bigger storage": {"count": 4, "storage": 0.15, "_": "+15% storage cap each"},
+      "Better prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"},
+      "Longer offline time": {"count": 4, "_": "+4 h offline cap each (not simulated: active play)"}
+    },
+    "filler": {
+      "Coin pouch": {"count": 45, "gold": 1500, "_": "copper, times combat rank_growth^(highest rank)"},
+      "Rested XP": {"count": 25, "rested_min": 2, "_": "minutes of double XP"},
+      "Tome of experience": {"count": 25, "levels": 1.5, "_": "skill points' worth of XP to one profession"},
+      "Crate of materials": {"count": 25, "mats": 15, "_": "units of the material your crafting is waiting on (else a current-rank one)"}
+    },
+    "trap_percent": 2
+  },
+
+  "ragnaros": {
+    "_about": "Ragnaros fight: power needed and Fire Resistance needed for a good win chance.",
+    "power_need": 220,
+    "fr_need": 120,
+    "potion_fr": 25,
+    "food_fr": 10
+  }
+}

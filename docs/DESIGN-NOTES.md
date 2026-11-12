@@ -207,9 +207,24 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   bars, no bolts). Recipes keep their real Classic names. Confirmed: every material gets at
   least one use, by having recipes mix the rank's materials (main ore + stone, second ore,
   gems for the best recipes) so nothing is gathered only to be sold.
-- Balance simulator: XP curve, action times, gold shop steps and costs, tool/potion/food
-  numbers, combat math (HP, damage, weapon flavours, boss strength, Ragnaros FR threshold),
-  item pool mix and caps, trap strength.
+- Balance simulator: first pass done 2026-11-12. `tools/simulate.py` plays a typical
+  player from `data/game_data.json` + `data/balance.json` (every tunable number) and writes
+  `docs/BALANCE.md`. Results with the item pool: Ragnaros ready in about 23.5 h (Long),
+  12 h (Normal), 6 h (Fast). Use these in the `game_speed` YAML text. Findings:
+  - Gold: Wowhead sell prices x1 for materials, x0.25 for crafts; trainer upgrades cost
+    10s doubling each step (10 steps of +15% speed, 10 of +10% XP). Players own about 2
+    upgrades per profession at 1 h, 5 at 4 h, 8 by the end, so the shop matters all game.
+    Most gold comes from selling crafts; combat loot is small (a knob to raise in playtest).
+  - Crafting earns 1.4x XP per second: one Workshop slot levels 6 professions while the
+    Field levels 5, so both now finish together.
+  - Item pool (178 slots): 22 speed +5%, 22 XP +5%, 4 storage +15%, 3 sell price +10%,
+    4 offline +4 h; filler 45 coin pouches, 25 Rested XP (2 min each), 25 XP tomes, 25
+    material crates (give what your crafting is waiting on). The full pool makes a seed
+    about 15-18% faster. Storage is the strongest useful item per copy (storage is a real
+    early bottleneck, as intended); material crates barely matter.
+  - Not modelled yet: buffs (potions, food), red attempts, offline time, the Ragnaros fight
+    itself, traps, and waiting for rank items from other players. The combat model is
+    rough (power ratio); deaths are rare with on-time gear.
 - Data step: done 2026-11-12, see `docs/DATA.md` (review page with icons) and
   `data/game_data.json` (built by `tools/build_game_data.py`, every name looked up on
   Wowhead Classic). Choices made while doing it, for Chakraa to review:
