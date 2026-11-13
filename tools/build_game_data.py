@@ -210,12 +210,9 @@ UI_ICONS = {
     "slot_Chest": "inventoryslot_chest", "slot_Hands": "inventoryslot_hands",
     "slot_Legs": "inventoryslot_legs", "slot_Feet": "inventoryslot_feet",
     "slot_MainHand": "inventoryslot_mainhand", "slot_Bag": "inventoryslot_bag",
-    "unarmed": "ability_meleedamage",
     "gold": "inv_misc_coin_01", "silver": "inv_misc_coin_03", "copper": "inv_misc_coin_05",
-    "rested": "spell_nature_sleep", "res_sickness": "spell_holy_resurrection",
-    "molten_core": "inv_hammer_unique_sulfuras", "ragnaros": "achievement_boss_ragnaros",
-    "fire_resistance": "spell_fire_fire", "offline": "inv_misc_pocketwatch_01",
-    "storage": "inv_misc_bag_08", "trap_murloc": "inv_misc_head_murloc_01",
+    "res_sickness": "spell_holy_resurrection",
+    "ragnaros": "achievement_boss_ragnaros",
 }
 
 # ---------------------------------------------------------------------------------------

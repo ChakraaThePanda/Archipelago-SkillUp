@@ -6,7 +6,7 @@ data/balance.json (every tunable number), and reports how long everything takes.
 
 Usage:
     python tools/simulate.py                  # Normal speed summary
-    python tools/simulate.py --speed Fast
+    python tools/simulate.py --speed Sync
     python tools/simulate.py --write          # full report of every test -> docs/BALANCE.md
 
 How the simulated player plays (Field and Workshop run at the same time):
@@ -49,6 +49,9 @@ TOOL_FOR = {"Mining tool": "mining", "Skinning tool": "skinning", "Fishing tool"
             "Herbalism tool": "herbalism"}
 BUFF_ROLES = set(BAL["buffs"]["effects"]) | {"Healing"}
 H = 3600.0
+# The realistic player per game speed: minutes between check-ins at the start of a run and near
+# the end (busy early while bags are small, calmer later). Sync players watch closely.
+PLAYERS = {"Long": (2, 5), "Normal": (2, 5), "Sync": (1, 3)}
 
 
 def fmt_t(sec: float | None) -> str:
@@ -61,10 +64,17 @@ def fmt_t(sec: float | None) -> str:
 class Sim:
     def __init__(self, speed="Normal", pool=None, delay=30.0, schedule=None, buffs=True,
                  traps=None, offline_cap_h=None, offline_mode=None, start=None, combat_delay=None,
-                 goal="ragnaros", master_n=4):
+                 goal="ragnaros", master_n=4, trinket_at=None, attention=None):
         """start: professions you start with (default: Mining + Blacksmithing + Combat).
         combat_delay: minutes until Apprentice Combat arrives when it isn't a starting item.
-        goal: "ragnaros", "master" (master_n professions at 300) or "both"."""
+        goal: "ragnaros", "master" (master_n professions at 300) or "both".
+        trinket_at: the skill point (counting every profession) on which the Darkmoon Card is found,
+        or None for never. Its extra points are given on average (bonus_chance per point).
+        attention: minutes between the player's check-ins (None = a perfect player who reacts
+        instantly), or "ramp" for the realistic player of this speed (see PLAYERS): checking in
+        often at the start of a run, less often as skills near 300. Between check-ins both slots keep repeating what they were doing (selling
+        overflow as usual); at a check-in the player picks the best thing for each slot and
+        spends gold in the Shop."""
         start = START if start is None else start
         self.goal, self.master_n, self.goal_time = goal, master_n, None
         # A player going for "master N professions" levels N of them first: the starting ones,
@@ -74,11 +84,17 @@ class Sim:
         self.xpb, self.act, self.rec = BAL["xp"], BAL["actions"], BAL["recipes"]
         self.gold_cfg, self.cmb, self.buff_cfg = BAL["gold"], BAL["combat"], BAL["buffs"]
         self.game_speed = BAL["xp"]["game_speed"][speed]
+        self.speed_name = speed
         self.delay = delay * 60
         self.schedule = schedule            # {"active_hours": A} or None (page always open)
         self.use_buffs = buffs
         self.offline_cap = (BAL["offline"]["cap_hours"] if offline_cap_h is None else offline_cap_h) * H
         self.t = 0.0
+        self.attention = attention if attention == "ramp" else attention * 60 if attention else None
+        self.next_check = 0.0
+        self.decide = {"field": True, "work": True}
+        self.points = 0                     # skill points gained so far, every profession
+        self.trinket_at, self.trinket_acc, self.trinket_bonus = trinket_at, 0.0, 0
         self.level = {k: 1 for k in PROFS}
         self.xp = {k: 0.0 for k in PROFS}
         self.ranks = {k: (1 if k in start else 0) for k in PROFS}
@@ -112,7 +128,6 @@ class Sim:
         self.last_field = self.last_recipe = None
         self.offline = False
         self.offline_mode = offline_mode or BAL["offline"]["mode"]
-        self.offline_speed = BAL["offline"].get("speed", 1.0)
         self.unsold_crafts = 0.0
         self.sell_value = {e["name"]: max(self.gold_cfg["min_sell"], e["sell"] * self.gold_cfg["sell_mult"])
                            for e in DATA["materials"] + DATA["recipes"] + DATA["fire_resistance_set"]}
@@ -146,14 +161,24 @@ class Sim:
         self.xp[prof] += amount
         while self.level[prof] < self.cap(prof) and self.xp[prof] >= self.xp_needed(self.level[prof]):
             self.xp[prof] -= self.xp_needed(self.level[prof])
-            self.level[prof] += 1
-            if self.level[prof] in RANK_CAPS:
-                self.milestones[prof][self.level[prof]] = self.t
+            self.level_up(prof)
+            self.points += 1
+            if self.trinket_at is not None and self.points > self.trinket_at and self.level[prof] < self.cap(prof):
+                self.trinket_acc += BAL["trinket"]["bonus_chance"]
+                if self.trinket_acc >= 1:
+                    self.trinket_acc -= 1
+                    self.trinket_bonus += 1
+                    self.level_up(prof)
         if self.level[prof] >= self.cap(prof):
             self.xp[prof] = 0
             if self.ranks[prof] < 4 and self.requested[prof] == self.ranks[prof]:
                 self.requested[prof] += 1
                 self.arrivals.append((self.t + self.delay, prof))
+
+    def level_up(self, prof):
+        self.level[prof] += 1
+        if self.level[prof] in RANK_CAPS:
+            self.milestones[prof][self.level[prof]] = self.t
 
     def speed(self, prof):
         s = 1 + self.speed_up[prof] * self.gold_cfg["speed_step"] + self.pool_speed[prof]
@@ -163,8 +188,6 @@ class Sim:
             s *= 1 + self.buff_value("Gathering speed")
         if prof in CRAFT:
             s *= 1 + self.buff_value("Crafting speed")
-        if self.offline:
-            s *= self.offline_speed
         if prof == "combat" and self.debuff.get("Resurrection Sickness", 0) > self.t:
             s *= BAL["traps"]["Resurrection Sickness"]["combat_slow"]
         return s
@@ -194,12 +217,13 @@ class Sim:
         self.earned_by[source] += copper
 
     def storage_cap(self):
-        return BAL["storage"]["start"] * BAL["storage"]["per_bag_mult"] ** self.bags * (1 + self.storage_bonus)
+        start = BAL["storage"]["start_by_speed"].get(self.speed_name, BAL["storage"]["start"])
+        return start * BAL["storage"]["per_bag_mult"] ** self.bags * (1 + self.storage_bonus)
 
     def store(self, name, qty):
         kept = min(qty, max(0.0, self.storage_cap() - self.stock[name]))
         self.stock[name] += kept
-        if qty > kept and not (self.offline and not BAL["offline"]["sells"]):
+        if qty > kept and not self.offline:      # nothing sells while the page is closed
             self.earn((qty - kept) * self.sell_value[name] * (1 + self.sell_bonus))
 
     def buy_upgrades(self):
@@ -275,9 +299,9 @@ class Sim:
         expected = c["base_hp"] + 7 * c["armor_hp"] * c["rank_growth"] ** e * (min(1.0, 1 + e) if e < 0 else 1)
         return c["danger"] * expected * (c["boss_damage_mult"] if mob["boss"] else 1)
 
-    def death_chance(self, mob):
+    def death_chance(self, mob, extra_hp=0.0):
         c = self.cmb
-        taken = self.mob_damage(mob) / self.max_hp()
+        taken = self.mob_damage(mob) / (self.max_hp() + extra_hp)
         return min(1.0, max(0.0, (taken - c["death_start"]) / c["death_span"]))
 
     # ---- the Field -----------------------------------------------------------------------
@@ -300,16 +324,35 @@ class Sim:
                 out.append((xp * self.color_mult(prof, m["unlock"]) / t, "gather", m))
         return out
 
-    def do_field(self):
+    def check_interval(self):
+        """Seconds until the player looks at the game again."""
+        if self.attention != "ramp":
+            return self.attention
+        start, end = PLAYERS[self.speed_name]
+        progress = sum(self.level.values()) / (300 * len(PROFS))
+        return (start + (end - start) * progress) * 60
+
+    def on_autopilot(self, slot):
+        """True when this slot just repeats its last action: the page is closed (repeat mode),
+        or the player isn't looking right now (between check-ins)."""
         if self.offline and self.offline_mode == "repeat":
+            return True
+        if not self.attention or self.ragnaros_ready is not None:
+            return False
+        if self.decide[slot]:
+            self.decide[slot] = False
+            return False
+        return True
+
+    def do_field(self):
+        if self.on_autopilot("field"):
             if not self.last_field:
                 return 5.0
-            e = self.last_field[2]
-            if (not BAL["offline"]["sells"] and BAL["offline"]["when_full"] == "stop"
-                    and self.last_field[1] == "gather" and self.stock[e["name"]] >= self.storage_cap()):
-                return 60.0  # storage full: gathering stops until the player comes back
-            return self.run_field(self.last_field)
-        if self.need:
+            return self.run_field(self.last_field)   # storage full: still gains skill, extras are lost
+        # A player who isn't watching every second gathers what levels their skills while crafting
+        # still has materials in the bags, and stocks up for crafting once the bags run dry.
+        if self.need and (not self.attention or not self.focused([p for p in FIELD if self.open(p)])
+                          or self.sustainable_recipe(self.check_interval()) is None):
             mat = self.mat_by_name[self.need]
             prof = mat["profession"]
             if prof == "combat":
@@ -340,8 +383,10 @@ class Sim:
             self.store(e["cloth"], self.cmb["cloth_per_kill"])
             self.earn(self.cmb["gold_per_kill"] * self.cmb["rank_growth"] ** e["rank"], "combat loot")
             if death and self.use_buffs and self.consumables["Healing"]:
-                self.consumables["Healing"].pop()
-                death /= 2
+                best = max(self.consumables["Healing"])          # the best potion is drunk
+                self.consumables["Healing"].remove(best)
+                # the same fight, checked again with the potion's HP added
+                death *= self.death_chance(e, self.buff_cfg["healing_hp"][best]) / self.death_chance(e)
             self.deaths += death / self.cmb["death_time"]
             return t + death
         prof = e["profession"]
@@ -364,7 +409,7 @@ class Sim:
         return self.base_time("craft_time", r["rank"], r["slot"]) * self.act["xp_per_second"] * self.act["craft_xp_mult"] * col, t
 
     def do_workshop(self):
-        if self.offline and self.offline_mode == "repeat":
+        if self.on_autopilot("work"):
             r = self.last_recipe
             if r and self.missing(r) is None:
                 xp, t = self.recipe_xp(r)
@@ -375,7 +420,15 @@ class Sim:
             return 5.0
         if self.ragnaros_ready is not None:
             return self.craft_fr()
-        first_missing = None
+        if self.attention:      # checking in: craft what the bags can keep going until the next check-in
+            r = self.sustainable_recipe(self.check_interval())
+            if r:
+                xp, t = self.recipe_xp(r)
+                self.need, self.last_recipe = None, r
+                self.craft(r)
+                self.add_xp(r["profession"], xp, False)
+                return t
+        first_missing = waiting_on = None
         for prof in sorted(self.focused([p for p in CRAFT if self.open(p)]), key=lambda p: self.level[p]):
             cands = []
             for r in DATA["recipes"]:
@@ -392,8 +445,11 @@ class Sim:
                     self.craft(r)
                     self.add_xp(prof, xp, False)
                     return t
-                first_missing = first_missing or miss
+                if not first_missing:
+                    first_missing, waiting_on = miss, r
         self.need = first_missing
+        if waiting_on:          # like the game: the recipe stays set and starts once its materials arrive
+            self.last_recipe = waiting_on
         self.idle_workshop += 5
         return 5.0
 
@@ -414,16 +470,14 @@ class Sim:
         elif role in BUFF_ROLES and self.use_buffs and len(self.consumables[role]) < self.buff_cfg["keep"]:
             self.consumables[role].append(r["rank"])
             keep = True
-        if not keep and self.offline and not BAL["offline"]["sells"]:
+        if not keep and self.offline:
             self.unsold_crafts += self.craft_price(r)
         elif not keep:
             self.earn(self.craft_price(r) * (1 + self.sell_bonus), "selling crafts")
 
     def craft_price(self, r):
-        g = self.gold_cfg
-        if g.get("crafted_price") == "materials":
-            return sum(self.sell_value[n] * self.qty(r) for n in r["reagents"]) * g["crafted_markup"]
-        return self.sell_value[r["name"]] * g["crafted_sell_mult"]
+        """A crafted item sells for the value of its materials, marked up."""
+        return sum(self.sell_value[n] * self.qty(r) for n in r["reagents"]) * self.gold_cfg["crafted_markup"]
 
     def craft_fr(self):
         q = self.rec["fr_qty"]
@@ -479,6 +533,25 @@ class Sim:
             return (t + death) * cfg["fights"]
         return 0.0
 
+    def sustainable_recipe(self, horizon):
+        """The recipe that earns the most skill over `horizon` seconds from what's in the bags
+        (what a player picks before looking away), or None if nothing can be crafted."""
+        best = None
+        for r in DATA["recipes"]:
+            if not self.focused_open(r["profession"]) or self.level[r["profession"]] < r["unlock"]:
+                continue
+            xp, t = self.recipe_xp(r)
+            runs = min(self.stock[n] for n in r["reagents"]) // self.qty(r)
+            if xp <= 0 or runs < 1:
+                continue
+            score = min(runs * t, horizon) * xp / t
+            if best is None or score > best[0]:
+                best = (score, r)
+        return best[1] if best else None
+
+    def focused_open(self, prof):
+        return self.open(prof) and prof in self.focused([p for p in PROFS if self.open(p)])
+
     def set_up_for_offline(self):
         """Before closing the page, a player sets both slots on something worth repeating:
         the Field on the best XP action of its lowest open profession, the Workshop on the
@@ -489,21 +562,11 @@ class Sim:
             opts = [o for o in self.field_options(prof) if o[0] > 0]
             if opts:
                 self.last_field = max(opts, key=lambda o: (o[0], o[2]["slot"]))
-        best = None
-        for r in DATA["recipes"]:
-            if not self.open(r["profession"]) or self.level[r["profession"]] < r["unlock"]:
-                continue
-            xp, t = self.recipe_xp(r)
-            if xp <= 0:
-                continue
-            runs = min(self.stock[n] for n in r["reagents"]) / self.qty(r)
-            score = min(runs * t, self.offline_cap) * xp / t
-            if best is None or score > best[0]:
-                best = (score, r)
+        best = self.sustainable_recipe(self.offline_cap)
         if best:
-            self.last_recipe = best[1]
+            self.last_recipe = best
         # make room: sell the stock of the material the Field will gather, unless the Workshop needs it
-        if self.last_field and self.last_field[1] == "gather" and not BAL["offline"]["sells"]:
+        if self.last_field and self.last_field[1] == "gather":
             name = self.last_field[2]["name"]
             if not (self.last_recipe and name in self.last_recipe["reagents"]):
                 self.earn(self.stock[name] * self.sell_value[name] * (1 + self.sell_bonus))
@@ -567,7 +630,13 @@ class Sim:
             else:
                 self.t = nw
                 nw += self.do_workshop()
-            if not self.offline:
+            if self.attention and self.t >= self.next_check:      # the player looks at the game
+                while self.next_check <= self.t:
+                    self.next_check += self.check_interval()
+                self.decide = {"field": True, "work": True}
+                if not self.offline:
+                    self.buy_upgrades()
+            elif not self.offline and not self.attention:
                 self.buy_upgrades()
             if self.t >= len(self.hourly) * H:
                 n = len(PROFS)
@@ -591,8 +660,10 @@ def build_pool(finish, only=None):
     return [(finish * (0.02 + 0.93 * (j + 0.5) / n), name, spec) for j, (_, name, spec) in enumerate(queue)]
 
 
-def seed(speed="Normal", pool=True, **kw):
-    """A seed with its full item pool, spread over its own length."""
+def seed(speed="Normal", pool=True, perfect=False, **kw):
+    """A seed with its full item pool, spread over its own length, played by the realistic player
+    of that speed (or a perfect one)."""
+    kw.setdefault("attention", None if perfect else "ramp")
     base = Sim(speed, **kw).run()
     if not pool:
         return base
@@ -601,8 +672,12 @@ def seed(speed="Normal", pool=True, **kw):
     return sim
 
 
-def main_report(sim, speed):
+def main_report(sim, speed, perfect=None):
     out = [f"### {speed} speed", ""]
+    if perfect:
+        start, end = PLAYERS[speed]
+        out.append(f"- **Goal done: {fmt_t(sim.goal_time)}** for a player checking in every {start} min early, every "
+                   f"{end} min late; a perfect player (reacts instantly) {fmt_t(perfect.goal_time)}")
     out.append(f"- **Ragnaros ready** (300 in {', '.join(PROFS[p]['name'] for p in RAGNAROS_NEEDS)}): "
                f"**{fmt_t(sim.ragnaros_ready)}**; Fire Resistance set done {fmt_t(sim.fr_finished)}")
     if getattr(sim, "no_pool", None):
@@ -721,6 +796,27 @@ def traps_report():
     return "\n".join(out)
 
 
+def trinket_report():
+    """The Darkmoon Card: how likely a game finds it, and how much time it saves when it does."""
+    find = BAL["trinket"]["find_chance"]
+    out = ["## Darkmoon Card (hidden legendary trinket)", "",
+           f"Each skill point has a {find:.1%} chance to find it; once worn, each skill point has a "
+           f"{BAL['trinket']['bonus_chance']:.0%} chance to give one more (never past the rank's cap). "
+           "Extra points don't roll again. Time saved by when in the game it's found:", "",
+           "| Speed | Skill points in a game | Chance to find it | Found at the start | A quarter in | Halfway | Three quarters in |",
+           "| --- | --- | --- | --- | --- | --- | --- |"]
+    for speed in ("Normal", "Sync"):
+        base = seed(speed)
+        n, t0 = base.points, base.goal_time
+        chance = 1 - (1 - find) ** n
+        cells = []
+        for frac in (0, 0.25, 0.5, 0.75):
+            t = seed(speed, trinket_at=int(n * frac)).goal_time
+            cells.append(f"{fmt_t(max(0, t0 - t))} ({(t0 - t) / t0:.0%})")
+        out.append(f"| {speed} ({fmt_t(t0)}) | {n} | {chance:.0%} | " + " | ".join(cells) + " |")
+    return "\n".join(out)
+
+
 def red_chance(gap):
     for upto, chance in BAL["red"]["chances"]:
         if gap <= upto:
@@ -796,18 +892,23 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--speed", default="Normal", choices=list(BAL["xp"]["game_speed"]))
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--trinket", action="store_true", help="only the Darkmoon Card report")
     a = ap.parse_args()
-    if not a.write:
+    if a.trinket:
+        print(trinket_report())
+    elif not a.write:
         print(main_report(seed(a.speed), a.speed))
     else:
         parts = ["# SkillUp: balance simulation", "",
                  "Generated by `tools/simulate.py` from `data/balance.json` and `data/game_data.json`.",
                  "Unless a section says otherwise: page always open, each rank item arrives 30 min after it's needed, full item pool,",
-                 "potions and food used automatically, no traps, no red gambles.", "",
+                 "potions and food used automatically, no traps, no red gambles, and a realistic player: between check-ins both",
+                 "slots keep repeating what they were doing (see PLAYERS in the script for how often each speed's player looks).",
+                 "Sections built on `Sim(...)` directly (item pool, traps, offline schedules) use the perfect player to compare options.", "",
                  "## Game speeds", ""]
         for s in BAL["xp"]["game_speed"]:
-            parts += [main_report(seed(s), s), ""]
-        for fn in (options_report, pool_report, buffs_report, delay_report, schedule_report, traps_report, red_report, ragnaros_report):
+            parts += [main_report(seed(s), s, seed(s, perfect=True)), ""]
+        for fn in (options_report, trinket_report, pool_report, buffs_report, delay_report, schedule_report, traps_report, red_report, ragnaros_report):
             parts += [fn(), ""]
         text = "\n".join(parts)
         (ROOT / "docs" / "BALANCE.md").write_text(text, encoding="utf-8")

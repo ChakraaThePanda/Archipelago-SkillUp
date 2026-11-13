@@ -377,3 +377,41 @@ body { display: flex; flex-direction: column; }
 .slot .fight .sbar > span { font-size: 12px; line-height: 14px; }
 .slot .fight .sbar > i { transition: width .2s ease-out; }
 .plate .lv .mhp { color: #ff8a7a; font-weight: 700; }
+
+/* the game's version, bottom right of the footer and of the connect card */
+.site-foot { position: relative; }
+.ver { display: block; width: fit-content; margin: 6px 0 0 auto; font-size: 12px; color: var(--mute); text-decoration: none; }
+.ver:hover { color: var(--gold); text-decoration: underline; }
+.site-foot .ver { position: absolute; right: 0; bottom: 0; margin: 0; }
+@media (max-width: 780px) { .site-foot .ver { position: static; margin: 8px auto 0; } }
+
+/* solo play on the connect screen */
+.solo { margin-top: 16px; border-top: 1px solid var(--steel-dk); padding-top: 12px; display: grid; gap: 8px; }
+.solo .or { text-align: center; color: var(--mute); font-size: 13px; }
+.solo .wbtn { width: 100%; padding: 9px; }
+.solo .fld { margin-bottom: 4px; }
+.solo select, .solo .fld input { font: inherit; font-size: 15px; color: var(--ink); background: #070916; border: 1px solid var(--steel-dk); border-radius: 4px; padding: 8px 10px; width: 100%; }
+.solo select:focus { border-color: var(--gold-dk); outline: none; }
+.solo .warn { color: var(--orange); font-size: 13px; }
+.solo .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tag-solo { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold);
+  border: 1px solid var(--gold-dk); border-radius: 3px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+
+/* the trinket slot (hidden until the Darkmoon Card is found) */
+.doll .col .eq.trinket { animation: trinket-glow 3s ease-in-out infinite; }
+@keyframes trinket-glow { 50% { box-shadow: 0 0 0 1px #000, 0 0 0 2px #ff8000, 0 0 14px rgba(255, 128, 0, .7); } }
+
+/* a legendary find: a glowing card in the middle of the screen */
+.legend-ov { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px;
+  background: radial-gradient(circle at 50% 45%, rgba(120, 60, 0, .45), rgba(0, 0, 0, .8)); animation: amb-in .4s ease-out; cursor: pointer; }
+.legend-card { width: min(400px, 100%); padding: 24px 22px 20px; display: grid; gap: 10px; justify-items: center; text-align: center;
+  border-color: #ff8000; box-shadow: 0 0 0 1px #000, 0 0 50px rgba(255, 128, 0, .55), 0 20px 60px #000; animation: legend-pulse 2.4s ease-in-out infinite; }
+.legend-card .lk { font-family: var(--f-title); font-weight: 700; font-size: 14px; letter-spacing: .2em; text-transform: uppercase; color: #ff8000; }
+.legend-card img { width: 84px; height: 84px; border-radius: 6px; box-shadow: 0 0 0 2px #ff8000, 0 0 30px rgba(255, 128, 0, .9);
+  animation: legend-spin 1s ease-out; }
+.legend-card .nm { font-family: var(--f-title); font-weight: 700; font-size: 22px; color: #ff8000; text-shadow: 0 0 12px rgba(255, 128, 0, .6), 0 2px 4px #000; }
+.legend-card .fx { color: #1eff00; font-size: 14px; }
+.legend-card .sub { color: var(--mute); font-size: 13px; }
+@keyframes legend-pulse { 50% { box-shadow: 0 0 0 1px #000, 0 0 80px rgba(255, 150, 20, .8), 0 20px 60px #000; } }
+@keyframes legend-spin { from { transform: scale(.3) rotate(-20deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .legend-ov, .legend-card, .legend-card img, .doll .col .eq.trinket { animation: none; } }

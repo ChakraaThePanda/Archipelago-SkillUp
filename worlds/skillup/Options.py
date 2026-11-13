@@ -18,7 +18,7 @@ class Goal(Choice):
 
 class ProfessionsToMaster(Range):
     """How many professions must reach 300 for the Master Professions goal (and Both).
-    Estimated play time on Normal speed: 1 about 4 hours, 6 about 10 to 11 hours, 11 about 11 to 12 hours."""
+    Estimated play time on Normal speed: 1 about 4 hours, 4 about 7 hours, 11 about 10 hours."""
     display_name = "Professions to Master"
     range_start = 1
     range_end = 11
@@ -26,12 +26,13 @@ class ProfessionsToMaster(Range):
 
 
 class GameSpeed(Choice):
-    """How fast you gain skill. Estimated play time for the Ragnaros goal with the page open:
-    Long about 22 hours, Normal about 11 to 12 hours, Fast about 6 hours."""
+    """How fast you gain skill. Estimated play time for the Ragnaros goal, with the page open and
+    checked on every few minutes: Long about 20 hours, Normal about 10 hours, Sync about 4 hours
+    (made for a sync game played in one sitting: watch it closely, you start with more bag space)."""
     display_name = "Game Speed"
     option_long = 0
     option_normal = 1
-    option_fast = 2
+    option_sync = 3
     default = 1
 
 

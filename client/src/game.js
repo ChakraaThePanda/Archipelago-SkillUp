@@ -27,6 +27,8 @@ const GEAR_PROFS = new Set(["blacksmithing", "leatherworking", "tailoring", "eng
 for (const r of GD.recipes) if (GEAR_PROFS.has(r.profession)) r.quality = r.rank + 1;   // white, green, blue, purple
 for (const f of GD.fire_resistance_set) { f.legendary = true; f.rank = 3; if (GEAR_PROFS.has(f.profession)) f.quality = 5; }
 const BY_NAME = Object.fromEntries([...GD.materials, ...GD.recipes, ...GD.fire_resistance_set].map(e => [e.name, e]));
+const TRINKET = BAL.trinket;   // the hidden legendary trinket
+BY_NAME[TRINKET.name] = { name: TRINKET.name, icon: TRINKET.icon, quality: 5, legendary: true, role: "Trinket" };
 const MOB = Object.fromEntries(GD.mobs.map(m => [m.name, m]));
 const ARMOR_SLOTS = ["Head", "Shoulder", "Back", "Chest", "Hands", "Legs", "Feet"];
 const WEAPONS = ["Sword", "Dagger", "Mace", "Axe"];
@@ -56,7 +58,8 @@ function newSave() {
   return { v: SAVE_VERSION, savedAt: Date.now(), clock: 0, level: per(1), xp: per(0), speedLv: per(0), xpLv: per(0),
     gold: 0, stock: {}, bags: 0, crafted: [], firsts: [], weapons: {}, armor: {}, tools: {}, supplies: {}, buffs: {},
     debuffs: {}, rested: 0, field: null, fieldT: 0, work: null, workT: 0, applied: 0, bagBonus: 0, sellBonus: 0,
-    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, goalSent: false, deaths: 0, deathStreak: 0 };
+    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, goalSent: false, deaths: 0, deathStreak: 0,
+    trinket: false, trinketNew: false, trinketBonus: 0 };
 }
 
 // ============================================================================================
@@ -65,9 +68,10 @@ function newSave() {
 const cap = k => ranks[k] ? RANK_CAPS[ranks[k] - 1] : 0;
 const learned = k => (ranks[k] || 0) > 0;
 const xpNeed = L => BAL.xp.base * (1 + L / BAL.xp.per_level);
-const gameSpeed = () => BAL.xp.game_speed[{ long: "Long", normal: "Normal", fast: "Fast" }[slotData.game_speed] || "Normal"];
+const speedName = () => ({ long: "Long", normal: "Normal", sync: "Sync" }[slotData.game_speed] || "Normal");
+const gameSpeed = () => BAL.xp.game_speed[speedName()];
 const baseTime = (kind, rank, slot) => BAL.actions[kind] * BAL.actions.rank_growth ** rank * (1 + BAL.actions.slot_growth * slot);
-const bagCap = () => Math.floor(BAL.storage.start * BAL.storage.per_bag_mult ** S.bags * (1 + S.bagBonus));
+const bagCap = () => Math.floor((BAL.storage.start_by_speed[speedName()] ?? BAL.storage.start) * BAL.storage.per_bag_mult ** S.bags * (1 + S.bagBonus));
 
 function colorOf(level, unlock) {
   const gap = level - unlock;
@@ -168,11 +172,27 @@ function addXp(k, amount, field) {
   S.xp[k] += amount;
   while (S.level[k] < cap(k) && S.xp[k] >= xpNeed(S.level[k])) {
     S.xp[k] -= xpNeed(S.level[k]);
-    S.level[k]++;
-    const r = RANK_CAPS.indexOf(S.level[k]);
-    if (r >= 0) check(milestoneName(k, r));
+    levelUp(k);
+    skillPoint(k);
   }
   if (S.level[k] >= cap(k)) S.xp[k] = 0;
+}
+function levelUp(k) {
+  S.level[k]++;
+  const r = RANK_CAPS.indexOf(S.level[k]);
+  if (r >= 0) check(milestoneName(k, r));
+}
+// Every skill point gained: a tiny chance to find the Darkmoon Card, and once it's worn, a chance
+// of one more point (never past the rank's cap; the extra point doesn't roll again).
+function skillPoint(k) {
+  if (!S.trinket) {
+    if (Math.random() < TRINKET.find_chance) {
+      S.trinket = true; S.trinketNew = true;
+      log(`<span class="pl-me">You</span> found <span class="q5">${esc(TRINKET.name)}</span>, a legendary trinket! It is now equipped.`);
+    }
+    return;
+  }
+  if (S.level[k] < cap(k) && Math.random() < TRINKET.bonus_chance) { levelUp(k); S.trinketBonus++; }
 }
 
 function baseValue(name) {
@@ -200,11 +220,14 @@ function finishField(offline) {
   first(k, e.name);
 }
 
-// How a fight ends. A Healing Potion is drunk only when a fight goes wrong, and saves you half the time.
+// How a fight ends. A Healing Potion is drunk only when a fight goes wrong: the best one you have
+// restores its HP (balance.json buffs.healing_hp) and the same fight is checked again with that HP.
+const healingHp = name => BAL.buffs.healing_hp[BY_NAME[name].rank];
 function rollFight(m) {
-  if (Math.random() >= deathChance(m)) return { dies: false, potion: false };
-  const potion = (S.supplies.Healing || []).length > 0;
-  return { dies: !(potion && Math.random() < .5), potion };
+  const roll = Math.random(), hp = maxHp();
+  if (roll >= deathChance(m, hp)) return { dies: false, potion: false };
+  const heal = Math.max(0, ...(S.supplies.Healing || []).map(healingHp));
+  return { dies: roll < deathChance(m, hp + heal), potion: heal > 0 };
 }
 function fateFor(m) { // this fight's outcome, rolled once when it starts
   if (S.fightFate?.mob !== m.name) S.fightFate = { ...rollFight(m), mob: m.name };
@@ -364,6 +387,7 @@ function first(k, name) {
 const pendingChecks = new Set();
 function check(locName) { pendingChecks.add(locName); }
 function flushChecks() {
+  if (solo) return soloChecks();
   if (!ws || ws.readyState !== 1 || !nameToLoc) return;
   const ids = [...pendingChecks].map(n => nameToLoc[n]).filter(id => id !== undefined && !checked.has(id));
   pendingChecks.clear();
@@ -382,6 +406,7 @@ function goalDone() {
   return g === "ragnaros" ? rag : g === "master_professions" ? mas : rag && mas;
 }
 function checkGoal(resend = false) {
+  if (solo && !S.goalSent && goalDone()) { S.goalSent = true; dirty = true; toast("Goal complete!"); log(`<span class="pl-me">You</span> completed your goal!`); }
   if ((S.goalSent && !resend) || !goalDone() || !ws || ws.readyState !== 1) return;
   send([{ cmd: "StatusUpdate", status: 30 }]);
   if (!S.goalSent) toast("Goal complete!");
@@ -393,13 +418,13 @@ function applyItems() {
   ranks = Object.fromEntries(PROFS.map(p => [p.key, 0]));
   moltenCore = false;
   for (const it of received) {
-    const name = itemIdToName[it.item];
+    const name = it.name ?? itemIdToName[it.item];
     const prof = PROFS.find(p => name === `Progressive ${p.name}`);
     if (prof) ranks[prof.key] = Math.min(4, ranks[prof.key] + 1);
     if (name === "Molten Core") moltenCore = true;
   }
   if (!S) return;
-  for (; S.applied < received.length; S.applied++) oneShot(itemIdToName[received[S.applied].item]);
+  for (; S.applied < received.length; S.applied++) oneShot(received[S.applied].name ?? itemIdToName[received[S.applied].item]);
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || selected;
 }
 function oneShot(name) {
@@ -428,6 +453,88 @@ function oneShot(name) {
   }
 }
 
+// ---- solo play: no server, the game places and hands out its own items ---------------------------
+// Same pool and the same logic as the apworld (worlds/skillup/__init__.py and Rules.py), so a solo
+// game plays like a one-player seed. One solo save per browser, kept apart from every room's save.
+let solo = false;
+const SOLO_KEY = "skillup:solo";
+const SOLO_CONN = { solo: true, seed: "solo", team: 0, slot: 0, slotName: "Solo", server: "this browser", players: { 0: "You" } };
+const PAIRS = { mining: "blacksmithing", herbalism: "alchemy", skinning: "leatherworking", fishing: "cooking" };
+const USEFUL = Object.fromEntries(Object.entries(BAL.pool.useful).map(([n, v]) => [n, v.count]));
+const FILLER = { "Coin Pouch": BAL.pool.filler["Coin pouch"].count, "Rested XP": BAL.pool.filler["Rested XP"].count,
+  "Tome of Experience": BAL.pool.filler["Tome of experience"].count };
+const TRAPS = ["Resurrection Sickness", "Repair Bill", "Broken Tool", "Murloc Ambush"];
+const itemKind = n => n.startsWith("Progressive ") || n === "Molten Core" ? "prog" : n in USEFUL ? "use" : TRAPS.includes(n) ? "trap" : "fill";
+// every check: 16 firsts and 4 rank milestones per profession
+const LOCATIONS = PROFS.flatMap(p => [0, 1, 2, 3].flatMap(r => [
+  ...thingsOf(p.key, r).map(e => ({ name: locationName(p.key, e.name), k: p.key, rank: r, boss: !!e.boss })),
+  { name: milestoneName(p.key, r), k: p.key, rank: r, milestone: true }]));
+function soloLogic(have) { // Rules.py: ranks gate everything, fighting also needs armor
+  const R = (p, n) => n <= 0 || (have[p] || 0) >= n;
+  const armor = n => n <= 0 || (R("leatherworking", n) && R("tailoring", n) && R("skinning", n) && fight(n - 1));
+  const fight = r => R("combat", r + 1) && armor(r);
+  const mats = (k, r) => P[k].source === "combat" ? fight(r) : R(P[k].source, r + 1);
+  const reach = (k, r) => P[k].kind === "gathering" ? R(k, r + 1) : P[k].kind === "combat" ? fight(r) : R(k, r + 1) && mats(k, r);
+  return { loc: l => l.milestone || P[l.k].kind !== "combat" ? reach(l.k, l.rank) : fight(l.rank) && (!l.boss || armor(l.rank + 1)) };
+}
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function makeSoloGame(opts) {
+  const pairs = Object.keys(PAIRS);
+  const first = opts.starting_pair in PAIRS ? opts.starting_pair : pairs[Math.floor(Math.random() * 4)];
+  const starting = [first, PAIRS[first], "combat"];
+  const prog = PROFS.flatMap(p => Array(4 - (starting.includes(p.key) ? 1 : 0)).fill(`Progressive ${p.name}`));
+  if (opts.goal !== "master_professions") prog.push("Molten Core");
+  // Assumed fill: place each progression item where it can be reached with everything not yet placed.
+  let placement = null;
+  for (let tries = 0; !placement && tries < 50; tries++) {
+    placement = {};
+    const left = shuffle([...prog]), open = new Set(LOCATIONS.map(l => l.name));
+    while (left.length) {
+      const item = left.pop(), have = {};
+      for (const k of starting) have[k] = 1;
+      for (const n of left) { const p = PROFS.find(p => n === `Progressive ${p.name}`); if (p) have[p.key] = (have[p.key] || 0) + 1; }
+      const rules = soloLogic(have);
+      const spots = LOCATIONS.filter(l => open.has(l.name) && rules.loc(l));
+      if (!spots.length) { placement = null; break; }
+      const spot = spots[Math.floor(Math.random() * spots.length)].name;
+      placement[spot] = item; open.delete(spot);
+    }
+  }
+  const rest = shuffle(LOCATIONS.map(l => l.name).filter(n => !(n in placement)));
+  const extras = Object.entries(USEFUL).flatMap(([n, c]) => Array(c).fill(n));
+  const pick = table => { let r = Math.random() * Object.values(table).reduce((a, b) => a + b, 0);
+    for (const [n, w] of Object.entries(table)) if ((r -= w) < 0) return n; return Object.keys(table)[0]; };
+  while (extras.length < rest.length) extras.push(Math.random() * 100 < BAL.pool.trap_percent ? TRAPS[Math.floor(Math.random() * 4)] : pick(FILLER));
+  rest.forEach((loc, i) => placement[loc] = extras[i]);
+  return { opts: { ...opts, starting_professions: starting }, placement, received: starting.map(k => `Progressive ${P[k].name}`), checked: [] };
+}
+function soloChecks() { // a check in solo hands out the item placed there
+  let got = false;
+  for (const loc of pendingChecks) {
+    if (checked.has(loc) || !(loc in S.solo.placement)) continue;
+    const item = S.solo.placement[loc];
+    checked.add(loc); S.solo.checked.push(loc); S.solo.received.push(item); received.push({ name: item });
+    const html = `<span class="it-${itemKind(item)}">${esc(item)}</span>`;
+    log(`<span class="pl-me">You</span> found your ${html} (<span class="loc">${esc(loc)}</span>)`);
+    if (started) popup(`You found your ${html}`, "sent");
+    got = dirty = true;
+  }
+  pendingChecks.clear();
+  if (got) { applyItems(); if (started) render(); }
+}
+const soloSaved = () => { try { const x = JSON.parse(lsGet(SOLO_KEY) || "null"); return x?.v === SAVE_VERSION && x.solo ? x : null; } catch { return null; } };
+function startSolo(opts) {
+  if (ws) { sock++; ws.onclose = ws.onmessage = null; ws.close(); ws = null; }
+  solo = true; conn = SOLO_CONN;
+  S = opts ? Object.assign(newSave(), { solo: makeSoloGame(opts) }) : normalize(soloSaved());
+  slotData = S.solo.opts;
+  received = S.solo.received.map(name => ({ name }));
+  checked = new Set(S.solo.checked);
+  applyItems();
+  log(`<span class="sys">${opts ? "New solo game. Every check you do gives you one of this game's items." : "Solo game resumed."}</span>`);
+  startGame();
+}
+
 // ---- shop --------------------------------------------------------------------------------------
 const shopCost = lv => BAL.gold.cost_base * BAL.gold.cost_growth ** lv;
 function buy(k, kind) {
@@ -444,7 +551,7 @@ function sellEverything() { Object.keys(S.stock).forEach(sell); render(); }
 // Saving: a copy in this browser + the Archipelago server's data storage (any device can resume)
 // ============================================================================================
 const storageKey = () => `skillup_save_${conn.team}_${conn.slot}`;
-const localKey = () => `skillup:${conn.seed}:${conn.team}:${conn.slot}`;
+const localKey = () => solo ? SOLO_KEY : `skillup:${conn.seed}:${conn.team}:${conn.slot}`;
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 let dirty = false;
@@ -464,8 +571,12 @@ function loadSave(remote) {
   try { local = JSON.parse(lsGet(localKey()) || "null"); } catch {}
   const pick = [remote, local].filter(x => x && x.v === SAVE_VERSION && (!x.room || x.room === roomId()))
     .sort((a, b) => b.savedAt - a.savedAt)[0];
-  S = Object.assign(newSave(), pick || {});
-  for (const k of ["level", "xp", "speedLv", "xpLv"]) S[k] = { ...newSave()[k], ...S[k] };
+  S = normalize(pick);
+}
+function normalize(saved) { // fills in anything an older save doesn't have
+  const s = Object.assign(newSave(), saved || {});
+  for (const k of ["level", "xp", "speedLv", "xpLv"]) s[k] = { ...newSave()[k], ...s[k] };
+  return s;
 }
 
 // ============================================================================================
@@ -605,16 +716,21 @@ function uuid() {
 function rememberRoom() {
   let rooms = [];
   try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
-  rooms = rooms.filter(r => !(r.server === conn.server && r.slot === conn.slotName));
-  rooms.unshift({ server: conn.server, slot: conn.slotName, at: Date.now(), checks: checked.size, done: S.goalSent });
-  lsSet("skillup:rooms", JSON.stringify(rooms.slice(0, 5)));
+  rooms = rooms.filter(r => solo ? !r.solo : r.solo || !(r.server === conn.server && r.slot === conn.slotName));
+  rooms.unshift(solo ? { solo: true, at: Date.now(), checks: checked.size, done: S.goalSent }
+    : { server: conn.server, slot: conn.slotName, at: Date.now(), checks: checked.size, done: S.goalSent });
+  // the solo game always stays in the list, plus up to 5 rooms
+  const soloRow = rooms.find(r => r.solo);
+  rooms = rooms.filter(r => !r.solo).slice(0, 5);
+  if (soloRow) rooms.splice(rooms.filter(r => r.at > soloRow.at).length, 0, soloRow);
+  lsSet("skillup:rooms", JSON.stringify(rooms));
 }
 
 // ============================================================================================
 // Interface
 // ============================================================================================
 const DEBUFFS = [   // shown top right in the header while active
-  ["Resurrection Sickness", GD.ui_icons.res_sickness, "fighting at half speed"],
+  ["Resurrection Sickness", GD.ui_icons.res_sickness, `combat speed -${Math.round((1 - BAL.traps["Resurrection Sickness"].combat_slow) * 100)}%`],
   ["Broken Tool", "inv_misc_wrench_01", "your gathering tools don't help"],
 ];
 const pct = v => `${Math.round(v * 100)}%`;
@@ -656,12 +772,15 @@ function log(html, cls = "") {
 }
 const LOG_SKELETON = `<div class="log" id="logbox" role="log" aria-live="polite"></div>
   <form class="say" id="say" autocomplete="off"><input id="say-text" maxlength="500" placeholder="Message or !command" aria-label="Message to the room"><button class="wbtn" type="submit">Send</button></form>`;
+const SOLO_LOG = `<div class="log" id="logbox" role="log" aria-live="polite"></div>`;
 function renderLog(el) {
-  if (el._html === LOG_SKELETON) return;          // already showing: new lines are added as they arrive
-  el.html = LOG_SKELETON;
+  const skeleton = solo ? SOLO_LOG : LOG_SKELETON;
+  if (el._html === skeleton) return;          // already showing: new lines are added as they arrive
+  el.html = skeleton;
   const box = $("logbox");
-  box.innerHTML = logLines.join("") || `<p class="sys empty">Messages from the Archipelago server show here.</p>`;
+  box.innerHTML = logLines.join("") || `<p class="sys empty">${solo ? "The items you find show here." : "Messages from the Archipelago server show here."}</p>`;
   box.scrollTop = box.scrollHeight;
+  if (solo) return;
   $("say").onsubmit = ev => {
     ev.preventDefault();
     const text = $("say-text").value.trim();
@@ -688,10 +807,11 @@ function perHourFight(m) {
   return { c, t, win: 1 - p, hr: S.level.combat >= cap("combat") ? 0 : 3600 * xp / (t + p * (C.corpse_run + t)) / xpNeed(S.level.combat) };
 }
 
+// Your bag: the Small Brown Pouch you start with, then the best bag you've crafted.
+const bagIconName = () => GD.recipes.filter(r => r.role === "Bag" && S.crafted.includes(r.name)).sort((a, b) => b.rank - a.rank)[0]?.icon || "inv_misc_bag_09";
 function renderHeader() {
   $("gold").html = coins(S.gold);
-  const bag = [...GD.recipes].filter(r => r.role === "Bag" && S.crafted.includes(r.name)).sort((a, b) => b.rank - a.rank)[0];
-  $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bag ? bag.icon : "inv_misc_bag_09")}" alt=""> ${bagCap()} each</span>`;
+  $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bagIconName())}" alt=""> ${bagCap()} each</span>`;
   $("rested").textContent = `${Math.round(S.rested / 60)} min`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
@@ -699,7 +819,8 @@ function renderHeader() {
     const left = S.debuffs[name].until - S.clock;
     return `<span class="debuff" title="${name}: ${what}"><img class="icon" src="${ic(icon)}" alt="${name}"><span>${fmtT(left)}</span></span>`;
   }).join("");
-  $("who").textContent = conn.slotName; $("where").textContent = "· " + conn.server;
+  $("who").textContent = conn.slotName; $("where").textContent = solo ? "" : "· " + conn.server;
+  $("online").hidden = solo;
 }
 
 function renderList() {
@@ -733,20 +854,27 @@ function slotHtml(slot) {
     <div class="what q${e.quality || 1}">${esc(e.name)}</div><div class="sub">${status}</div></div>${bars}</div>`;
 }
 // ---- tooltips, styled like the game's ------------------------------------------------------------
+const BUFF_TEXT = { "Gathering speed": "gathering speed", "Crafting speed": "crafting speed", "Combat elixir": "damage",
+  "Combat food": "health", "Gathering XP food": "skill gain from gathering and fighting", "Crafting XP food": "skill gain from crafting" };
 function itemTip(name, note) {
   const e = BY_NAME[name];
   if (!e) return `<div class="tt-name">${esc(name)}</div>`;
   const q = e.legendary ? 5 : e.quality || 1, role = e.role || e.slot, L = [];
   const row = (a, b = "") => L.push(`<div class="tt-row"><span>${a}</span><span>${b}</span></div>`);
   const line = (t, cls = "") => L.push(`<div class="${cls}">${t}</div>`);
-  if (ARMOR_SLOTS.includes(role)) { row(role, e.legendary ? "Legendary" : ""); line(`Gear Level ${ilvl(name)}`, "tt-gold"); }
+  if (role === "Trinket") {
+    row("Trinket", "Legendary");
+    line(`Equip: Each skill point you gain has a ${pct(TRINKET.bonus_chance)} chance to give you one more, up to your rank's cap.`, "tt-green");
+    if (S.trinketBonus) line(`Extra skill points so far: ${S.trinketBonus}`, "tt-mute");
+  }
+  else if (ARMOR_SLOTS.includes(role)) { row(role, e.legendary ? "Legendary" : ""); line(`Gear Level ${ilvl(name)}`, "tt-gold"); }
   else if (WEAPONS.includes(role)) { row("Main Hand", role); line(STRONG[role], "tt-green"); }
-  else if (TOOL_FOR[role]) line(`Equip: ${P[TOOL_FOR[role]].name} ${Math.round((e.rank + 1) * BAL.tools.step * 100)}% faster.`, "tt-green");
+  else if (TOOL_FOR[role]) line(`Equip: Increases your ${P[TOOL_FOR[role]].name} speed by ${Math.round((e.rank + 1) * BAL.tools.step * 100)}%.`, "tt-green");
   else if (role === "Bag") line("Crafting your first one doubles how much of each material you can hold.", "tt-green");
-  else if (role === "Healing") line("Use: drunk when a fight would kill you, saves you half the time.", "tt-green");
-  else if (BAL.buffs.effects[role]) line(`Use: ${role} +${Math.round(BAL.buffs.effects[role] * (1 + BAL.buffs.rank_scale * e.rank) * 100)}% for ${BAL.buffs.minutes} min.`, "tt-green");
-  else if (e.legendary && e.slot === "Potion") line("Use: fire protection for the Ragnaros fight.", "tt-green");
-  else if (e.legendary && e.slot === "Food") line("Use: fire protection food for the Ragnaros fight.", "tt-green");
+  else if (role === "Healing") line(`Use: Restores ${healingHp(name)} health. Automatically consumed when a fight would kill you.`, "tt-green");
+  else if (BAL.buffs.effects[role]) line(`Use: Increases your ${BUFF_TEXT[role]} by ${Math.round(BAL.buffs.effects[role] * (1 + BAL.buffs.rank_scale * e.rank) * 100)}% for ${BAL.buffs.minutes} min.`, "tt-green");
+  else if (e.legendary && e.slot === "Potion") line(`Use: Increases your Fire Resistance by ${BAL.ragnaros.potion_fr} for the Ragnaros fight.`, "tt-green");
+  else if (e.legendary && e.slot === "Food") line(`Use: Increases your Fire Resistance by ${BAL.ragnaros.food_fr} for the Ragnaros fight.`, "tt-green");
   if (e.reagents) {
     const k = e.profession, ok = S.level[k] >= e.unlock;
     line(`Requires ${P[k].name} (${e.unlock})`, ok ? "" : "tt-red");
@@ -773,6 +901,7 @@ function showTip(el, x, y) {
     tt.innerHTML = el.dataset.item ? itemTip(el.dataset.item, el.dataset.note) : textTip(el.dataset.tip || "");
     tt.hidden = false;
   }
+  tt.style.left = "0px";   // measure at full width: near the right edge the browser would squish it
   const pad = 14, w = tt.offsetWidth, h = tt.offsetHeight;
   tt.style.left = Math.min(x + pad, innerWidth - w - 6) + "px";
   tt.style.top = (y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
@@ -828,6 +957,22 @@ function renderAmbush() {
   ov.querySelector('[data-amb="you"]').style.width = pct(yours / you);
   ov.querySelector('[data-amb="you-t"]').textContent = `${yours.toLocaleString("en-US")} / ${Math.round(you).toLocaleString("en-US")}`;
 }
+// ---- a legendary find: a glowing card in the middle of the screen, then it's worn -------------------
+function renderLegend() {
+  let ov = $("legend");
+  if (!S?.trinketNew) { if (ov) ov.remove(); return; }
+  if (ov) return;
+  ov = document.createElement("div"); ov.id = "legend"; ov.className = "legend-ov";
+  ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Legendary item found");
+  ov.innerHTML = `<div class="legend-card frame"><div class="lk">Legendary item found</div>
+    <img src="${ic(TRINKET.icon)}" alt=""><div class="nm">${esc(TRINKET.name)}</div>
+    <div class="fx">Equip: Each skill point you gain has a ${pct(TRINKET.bonus_chance)} chance to give you one more, up to your rank's cap.</div>
+    <div class="sub">A hidden trinket, found by pure luck. It is now equipped for the rest of your game.</div>
+    <button class="wbtn" data-legend="1">Equip</button></div>`;
+  ov.addEventListener("click", () => { S.trinketNew = false; dirty = true; ov.remove(); rtab = "char"; render(); });
+  document.body.append(ov);
+  ov.querySelector("button").focus();
+}
 function renderSlots() {
   if (ambushView) renderAmbush();
 
@@ -873,7 +1018,7 @@ function renderDetail() {
       <div class="mini">${[["Speed", S.speedLv[k], BAL.gold.speed_step], ["XP", S.xpLv[k], BAL.gold.xp_step]].map(([l, lv, st]) =>
         `<span class="mt"><span class="mute">${l}</span>${pips(lv)}<b>+${Math.round(lv * st * 100)}%</b></span>`).join("")}</div></div>`;
   const tabs = `<div class="rtabs" role="tablist">${RANKS.map((r, i) =>
-    `<button class="${i === tab ? "on" : ""} ${i >= owned ? "locked" : ""}" data-t="${i}" ${i >= owned ? 'title="Locked: this rank comes from the multiworld"' : ""}><span>${i >= owned ? '<span class="lock">🔒 </span>' : ""}${r.name}</span><small>${r.start}-${r.cap}</small></button>`).join("")}</div>`;
+    `<button class="${i === tab ? "on" : ""} ${i >= owned ? "locked" : ""}" data-t="${i}" ${i >= owned ? `title="Locked: this rank comes from ${solo ? "one of your checks" : "the multiworld"}"` : ""}><span>${i >= owned ? '<span class="lock">🔒 </span>' : ""}${r.name}</span><small>${r.start}-${r.cap}</small></button>`).join("")}</div>`;
   let body;
   if (tab >= owned) body = `<div class="locked">🔒 Locked</div>`;
   else if (p.kind === "combat") body = combatHtml();
@@ -884,7 +1029,7 @@ function checkLabel(done) { return `<span class="chk ${done ? "done" : "todo"}" 
 function rowsHtml(k) {
   const kind = P[k].kind === "crafting" ? "craft" : "gather";
   const list = thingsOf(k, tab).concat(kind === "craft" && tab === 3 && moltenCore ? GD.fire_resistance_set.filter(f => f.profession === k) : []);
-  const bagIcon = ic(GD.ui_icons.slot_Bag);
+  const bagIcon = ic(bagIconName());
   return `<div class="rows">` + list.map((e, i) => {
     const hr = kind === "craft" ? perHourCraft(k, e) : perHourGather(k, e);
     const running = (S.field && S.field.name === e.name) || (S.work && S.work.name === e.name);
@@ -952,7 +1097,7 @@ function renderPane() {
         <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat"))}</div><div class="k">DPS</div></div>
           <div><div class="v hp" title="HP: refills after every fight. Armor and combat food raise it.">${Math.round(maxHp()).toLocaleString("en-US")}</div><div class="k">HP</div></div>
           <div title="Gear Level: the average of your 7 armor slots (white 20, green 40, blue 60, purple 80, legendary 100). Empty slots count as 0."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
-        <div class="col">${["Hands", "Legs", "Feet"].map(s => eqBox(S.armor[s], s)).join("")}</div></div>
+        <div class="col">${["Hands", "Legs", "Feet"].map(s => eqBox(S.armor[s], s)).join("")}${S.trinket ? eqBox(TRINKET.name, "Trinket").replace('class="eq', 'class="eq trinket') : ""}</div></div>
       <div class="weapons" style="margin-top:14px">${WEAPONS.map(w => `<div class="${w === now ? "now" : ""}">${S.weapons[w] ? eqBox(S.weapons[w], "MainHand")
         : `<div class="eq empty" title="${w}: ${STRONG[w]} Craft one with Blacksmithing."><img src="${ic(GD.ui_icons.slot_MainHand)}" alt="${w} empty"></div>`}${w}</div>`).join("")}</div>
       <div class="subh">Tools</div>
@@ -990,7 +1135,7 @@ function renderGoal() {
   const reqs = ["combat", "blacksmithing", "leatherworking", "tailoring", "alchemy", "cooking"];
   let html = `<img src="https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/113/11121.png" alt="Ragnaros"><div>`;
   if (showRag) html += `<div class="title" style="font-size:15px">Defeat Ragnaros</div><ul>
-      ${moltenCore ? `<li class="ok">✓ Molten Core</li>` : `<li class="no">✗ Molten Core (from the multiworld)</li>`}
+      ${moltenCore ? `<li class="ok">✓ Molten Core</li>` : `<li class="no">✗ Molten Core (from ${solo ? "one of your checks" : "the multiworld"})</li>`}
       <li class="${legendary === 7 ? "ok" : "no"}">${legendary === 7 ? "✓" : "·"} Legendary armor ${legendary} / 7</li>
       ${S.ragnarosWon ? `<li class="ok">✓ Ragnaros defeated</li>` : moltenCore ? `<li><button class="wbtn ragbtn" data-rag="1" ${S.field?.kind === "ragnaros" ? "disabled" : ""}>Fight Ragnaros · win ${pct(odds.win)}</button></li>` : ""}</ul>`;
   if (showMaster) html += `<div class="title" style="font-size:15px;margin-top:6px">Master Professions</div><ul>
@@ -1000,7 +1145,7 @@ function renderGoal() {
 }
 function render() {
   if (!S) return;
-  renderHeader(); renderList(); $("vt-main").textContent = P[selected].name; renderSlots(); renderDetail(); renderPane(); renderGoal();
+  renderHeader(); renderList(); $("vt-main").textContent = P[selected].name; renderSlots(); renderDetail(); renderPane(); renderGoal(); renderLegend();
   refreshTip();
 }
 
@@ -1008,8 +1153,8 @@ function render() {
 document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t || !S) return;
-  if (t.matches(".prof")) { selected = t.dataset.k; tab = Math.max(0, (ranks[selected] || 1) - 1); showView("main"); render(); return; }
-  if (t.dataset.t !== undefined) { tab = +t.dataset.t; renderDetail(); return; }
+  if (t.matches(".prof")) { selected = t.dataset.k; tab = rankTabFor(selected); showView("main"); render(); return; }
+  if (t.dataset.t !== undefined) { tab = +t.dataset.t; (S.lastTab ||= {})[selected] = tab; dirty = true; renderDetail(); return; }
   if (t.dataset.tab) { rtab = t.dataset.tab; renderPane(); return; }
   if (t.dataset.do) {
     const name = t.dataset.name, slot = t.dataset.do === "craft" ? "work" : "field";
@@ -1023,6 +1168,17 @@ document.addEventListener("click", ev => {
   if (t.dataset.sellall) { sellEverything(); dirty = true; return; }
   if (t.dataset.rag) { S.field = { kind: "ragnaros", name: "Ragnaros" }; S.fieldT = 0; dirty = true; render(); return; }
 });
+// Which rank to show when opening a profession: the one you last looked at, else the one running there,
+// else the highest you own.
+function rankTabFor(k) {
+  const owned = ranks[k] || 1, last = S.lastTab?.[k];
+  if (last !== undefined && last < owned) return last;
+  for (const a of [S.field, S.work]) {
+    const e = a && (a.kind === "mob" ? MOB[a.name] : BY_NAME[a.name]);
+    if (e && (a.kind === "mob" ? "combat" : e.profession) === k) return Math.min(e.rank, owned - 1);
+  }
+  return owned - 1;
+}
 // Phone: the tab bar shows one view at a time (Professions, the open profession, Character).
 function showView(v) { document.body.dataset.view = v; window.scrollTo(0, 0); }
 $("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) showView(b.dataset.view); };
@@ -1032,11 +1188,47 @@ $("to-connect").onclick = () => { save(); location.href = location.pathname; };
 function showRecent() {
   let rooms = [];
   try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
-  $("recent").html = rooms.length ? `<div class="glabel" style="padding:0">Recent rooms</div>` + rooms.map(r =>
-    `<button type="button" data-server="${esc(r.server)}" data-slot="${esc(r.slot)}"><b>${esc(r.slot)}</b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
-     <span class="mute" style="font-size:13px">${esc(r.server)} · ${r.done ? "Goal complete" : `${r.checks}/220 checks`}</span></button>`).join("") : "";
-  $("recent").querySelectorAll("button").forEach(b => b.onclick = () => { $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit(); });
+  if (!soloSaved()) rooms = rooms.filter(r => !r.solo);
+  const status = r => r.done ? "Goal complete" : `${r.checks}/220 checks`;
+  $("recent").html = rooms.length ? `<div class="glabel" style="padding:0">Recent rooms</div>` + rooms.map(r => r.solo
+    ? `<button type="button" data-solo="1"><b>Solo game<span class="tag-solo">Solo</span></b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
+       <span class="mute" style="font-size:13px">Saved in this browser · ${status(r)}</span></button>`
+    : `<button type="button" data-server="${esc(r.server)}" data-slot="${esc(r.slot)}"><b>${esc(r.slot)}</b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
+     <span class="mute" style="font-size:13px">${esc(r.server)} · ${status(r)}</span></button>`).join("") : "";
+  $("recent").querySelectorAll("button").forEach(b => b.onclick = () => {
+    if (b.dataset.solo) return startSolo();
+    $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit();
+  });
+  showSolo(false);
 }
+// Solo play: one game per browser, no server. Starting a new one replaces the old one.
+function showSolo(open) {
+  const saved = soloSaved();
+  if (!open) {
+    $("solo").html = saved
+      ? `<button type="button" class="wbtn" data-solo-new="1" style="background:none;border-color:var(--steel-dk)">New solo game</button>`
+      : `<div class="or">No room? Play on your own.</div><button type="button" class="wbtn" data-solo-new="1">Play solo</button>`;
+  } else {
+    const opt = (v, t, on) => `<option value="${v}" ${on ? "selected" : ""}>${t}</option>`;
+    $("solo").html = `<div class="glabel" style="padding:0">New solo game</div>
+      <div class="fld"><label for="s-goal">Goal</label><select id="s-goal">${opt("ragnaros", "Defeat Ragnaros", 1)}${opt("master_professions", "Master professions")}${opt("both", "Both")}</select></div>
+      <div class="fld" id="s-master-f" hidden><label for="s-master">Professions to master</label><input id="s-master" type="number" min="1" max="11" value="6"></div>
+      <div class="row2"><div class="fld"><label for="s-speed">Game speed</label><select id="s-speed">${opt("long", "Long (~20 h)")}${opt("normal", "Normal (~10 h)", 1)}${opt("sync", "Sync (~4 h)")}</select></div>
+      <div class="fld"><label for="s-pair">Starting pair</label><select id="s-pair">${opt("random", "Random", 1)}${Object.entries(PAIRS).map(([g, c]) => opt(g, `${P[g].name} + ${P[c].name}`)).join("")}</select></div></div>
+      ${saved ? `<div class="warn">This replaces your solo game in this browser (${saved.solo.checked.length}/220 checks).</div>` : ""}
+      <button type="button" class="wbtn" data-solo-start="1">${saved ? "Replace it and start" : "Start"}</button>
+      <button type="button" class="wbtn" data-solo-cancel="1" style="background:none;border-color:var(--steel-dk)">Cancel</button>`;
+    $("s-goal").onchange = () => $("s-master-f").hidden = $("s-goal").value === "ragnaros";
+  }
+}
+$("solo").addEventListener("click", ev => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  if (b.dataset.soloNew) showSolo(true);
+  else if (b.dataset.soloCancel) showSolo(false);
+  else if (b.dataset.soloStart) startSolo({ goal: $("s-goal").value, professions_to_master: clamp(+$("s-master").value || 6, 1, 11),
+    game_speed: $("s-speed").value, starting_pair: $("s-pair").value });
+});
 $("connect-form").addEventListener("submit", ev => {
   ev.preventDefault();
   const server = $("c-server").value || "archipelago.gg:38281", slot = $("c-slot").value.trim();
@@ -1053,12 +1245,13 @@ $("connect-form").addEventListener("submit", ev => {
 }
 
 // ---- main loop ------------------------------------------------------------------------------
-let lastTick = 0;
+let lastTick = 0, started = false;
 function startGame() {
+  started = true;
   $("connect").hidden = true;
   ["top", "vtabs", "game", "foot"].forEach(id => $(id).hidden = false);
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || "combat";
-  tab = Math.max(0, (ranks[selected] || 1) - 1);
+  tab = rankTabFor(selected);
   catchUpOffline();
   resendAllChecks(); flushChecks(); checkGoal(true);
   save();

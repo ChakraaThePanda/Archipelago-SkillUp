@@ -4,7 +4,7 @@ An [Archipelago](https://archipelago.gg) idle game of Classic World of Warcraft 
 played in your browser on PC or phone. Gather, craft and fight to level 11 professions from
 Apprentice to Artisan. Every rank is an item somewhere in the multiworld, and every first
 gather, craft and kill (and every rank you reach) sends a check. Craft the Legendary armor and
-defeat Ragnaros, or master your professions.
+defeat Ragnaros, or master your professions. No room? It also plays solo, right in the page.
 
 **[Play SkillUp](https://chakraathepanda.github.io/Archipelago-SkillUp/client/)**
 

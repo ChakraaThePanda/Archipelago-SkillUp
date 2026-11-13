@@ -15,6 +15,14 @@
 You can bookmark `https://chakraathepanda.github.io/Archipelago-SkillUp/client/?server=archipelago.gg:38281&slot=YourName` to
 skip typing on your phone.
 
+## Playing solo
+
+No room? Press **Play solo** on the connect screen. Pick a goal, a game speed and a starting
+pair, and the game makes its own one-player seed: every check gives you one of that game's items
+(ranks included), with the same rules as a real seed. The solo game is saved only in that
+browser, separately from your rooms, and stays in the Recent rooms list. There is one solo game
+per browser: starting a new one replaces it.
+
 ## Saves
 
 Your progress is saved on the Archipelago server for that room and slot, plus a copy in your
@@ -29,5 +37,6 @@ is closed: once a material's storage is full, extra materials are lost (you stil
 Time away beyond 8 hours turns into Rested XP. Before leaving, "Sell all" a material to make room.
 
 The page is served over HTTPS, so it can only reach servers that accept secure websockets
-(`wss://`). archipelago.gg does. For a self-hosted server without TLS, download the HTML
-file and open it locally, then enter `ws://host:port`.
+(`wss://`). archipelago.gg does. For a self-hosted server without TLS, save the game page
+from your browser (Ctrl+S, the page is a single file), open the saved file, then enter
+`ws://host:port`.

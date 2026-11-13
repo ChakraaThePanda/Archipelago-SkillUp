@@ -6,7 +6,16 @@
     "base": 13,
     "per_level": 25,
     "colors": {"orange": [15, 1.0], "yellow": [30, 0.75], "green": [45, 0.25], "grey": [9999, 0.0]},
-    "game_speed": {"Long": 0.5, "Normal": 1.0, "Fast": 2.0}
+    "game_speed": {"Long": 0.8, "Normal": 1.8, "Sync": 10.0},
+    "_game_speed": "Tuned for a realistic player (tools/simulate.py PLAYERS), not a perfect one: Long ~20 h, Normal ~10 h, Sync ~4 h (a sync game played in one sitting)"
+  },
+
+  "trinket": {
+    "_about": "Darkmoon Card, a hidden legendary trinket. Each skill point gained has find_chance to find it (once per game). Once worn, each skill point gained has bonus_chance to give one more, never past the rank's cap.",
+    "name": "Darkmoon Card",
+    "icon": "inv_misc_ticket_tarot_bluedragon_01",
+    "find_chance": 0.00005,
+    "bonus_chance": 0.05
   },
 
   "actions": {
@@ -36,16 +45,16 @@
   "storage": {
     "_about": "Cap per material. Each first-crafted Tailoring bag doubles it. Overflow sells.",
     "start": 50,
+    "start_by_speed": {"Sync": 100},
+    "_start_by_speed": "Sync starts with an extra bag's worth of room: crafting stays stocked between check-ins at that pace",
     "per_bag_mult": 2
   },
 
   "gold": {
     "_about": "Sell value = Wowhead vendor price (copper) * sell_mult, minimum min_sell. Upgrade n of a profession costs cost_base * cost_growth^n copper.",
     "sell_mult": 1,
-    "crafted_sell_mult": 0.25,
-    "crafted_price": "materials",
     "crafted_markup": 1.5,
-    "_crafted_price": "materials = a craft sells for the vendor value of its materials x crafted_markup (smooth); wowhead = Wowhead vendor price x crafted_sell_mult (jumps a lot at Expert/Artisan)",
+    "_crafted_markup": "a crafted item sells for the vendor value of its materials x crafted_markup (Wowhead's own craft prices jump ~7x at Expert and flooded the late game)",
     "min_sell": 2,
     "speed_step": 0.15,
     "xp_step": 0.10,
@@ -116,6 +125,8 @@
     "minutes": 10,
     "rank_scale": 0.25,
     "keep": 5,
+    "healing_hp": [80, 120, 200, 330],
+    "_healing_hp": "HP a Healing Potion of each rank (Minor, Healing, Superior, Major) restores, about a quarter of a full armor set of its rank. Drunk only when a fight would kill you (the best one in stock): the fight is then checked again with that much more HP",
     "effects": {
       "Gathering speed": 0.15,
       "Crafting speed": 0.15,
@@ -140,11 +151,7 @@
     "rested_cap": 120,
     "mode": "repeat",
     "_mode": "repeat = while closed, each slot only repeats what it was doing (chosen: keeps offline weaker than playing). auto = it keeps choosing the next material and recipe (tested, too strong)",
-    "speed": 1.0,
-    "sells": false,
-    "when_full": "discard",
-    "_when_full": "offline, once a material's storage is full: discard = keep gathering for XP, extra materials are lost; stop = gathering stops",
-    "_sells": "false = nothing auto-sells while the page is closed: gathering stops when that material's storage is full, so bags cap offline gold"
+    "_sells": "nothing sells while the page is closed: once a material's storage is full, gathering still gives skill but extras are lost, so bags cap offline gold"
   },
 
   "ragnaros": {

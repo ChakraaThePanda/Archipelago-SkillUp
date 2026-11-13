@@ -36,3 +36,9 @@ You gather (or fight) and craft at the same time. Each profession has 4 ranks: A
   Ragnaros.
 * **Master Professions:** bring a number of professions to 300.
 * **Both.**
+
+## Game speed
+
+Long (about 20 hours for Ragnaros), Normal (about 10) or Sync (about 4, for a sync game played
+in one sitting: watch it closely, and you start with more bag space). These assume you keep the
+page open and check on it every few minutes; leaving it alone longer makes a run slower.
