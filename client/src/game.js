@@ -1,14 +1,17 @@
 "use strict";
-// Skillup: the browser game and its Archipelago client.
+// SkillUp: the browser game and its Archipelago client.
 // Game content comes from data/game_data.json and every number from data/balance.json (both baked
 // in by tools/build_client.py), the same files the balance simulator (tools/simulate.py) uses.
 
-const GAME = "Skillup";
+const GAME = "SkillUp";
 const SAVE_VERSION = 2;
 const ICON = n => `https://wow.zamimg.com/images/wow/icons/large/${n}.jpg`;
 const $ = id => document.getElementById(id);
+$("favicon").href = LOGO;
+document.querySelectorAll("[data-logo]").forEach(img => img.src = LOGO);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+Object.defineProperty(HTMLElement.prototype, "html", { set(v) { if (this._html !== v) { this._html = v; this.innerHTML = v; } } });
 
 // ============================================================================================
 // Static data
@@ -18,13 +21,13 @@ const PROFS = GD.professions, P = Object.fromEntries(PROFS.map(p => [p.key, p]))
 const GATHER = PROFS.filter(p => p.kind === "gathering").map(p => p.key);
 const CRAFT = PROFS.filter(p => p.kind === "crafting").map(p => p.key);
 const GROUPS = [["Fighting", "combat"], ["Gathering", "gathering"], ["Crafting", "crafting"]];
-const byKind = kind => PROFS.filter(p => p.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
+const BY_KIND = Object.fromEntries(GROUPS.map(([, kind]) => [kind, PROFS.filter(p => p.kind === kind).sort((a, b) => a.name.localeCompare(b.name))]));
+const byKind = kind => BY_KIND[kind];
 const GEAR_PROFS = new Set(["blacksmithing", "leatherworking", "tailoring", "engineering"]);
 for (const r of GD.recipes) if (GEAR_PROFS.has(r.profession)) r.quality = r.rank + 1;   // white, green, blue, purple
 for (const f of GD.fire_resistance_set) { f.legendary = true; f.rank = 3; if (GEAR_PROFS.has(f.profession)) f.quality = 5; }
 const BY_NAME = Object.fromEntries([...GD.materials, ...GD.recipes, ...GD.fire_resistance_set].map(e => [e.name, e]));
 const MOB = Object.fromEntries(GD.mobs.map(m => [m.name, m]));
-const CLOTH = GD.materials.filter(m => m.profession === "combat").sort((a, b) => a.rank - b.rank).map(m => m.name);
 const ARMOR_SLOTS = ["Head", "Shoulder", "Back", "Chest", "Hands", "Legs", "Feet"];
 const WEAPONS = ["Sword", "Dagger", "Mace", "Axe"];
 const TOOL_FOR = { "Mining tool": "mining", "Skinning tool": "skinning", "Fishing tool": "fishing", "Herbalism tool": "herbalism" };
@@ -53,7 +56,7 @@ function newSave() {
   return { v: SAVE_VERSION, savedAt: Date.now(), clock: 0, level: per(1), xp: per(0), speedLv: per(0), xpLv: per(0),
     gold: 0, stock: {}, bags: 0, crafted: [], firsts: [], weapons: {}, armor: {}, tools: {}, supplies: {}, buffs: {},
     debuffs: {}, rested: 0, field: null, fieldT: 0, work: null, workT: 0, applied: 0, bagBonus: 0, sellBonus: 0,
-    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ragnarosWon: false, goalSent: false, deaths: 0 };
+    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, goalSent: false, deaths: 0, deathStreak: 0 };
 }
 
 // ============================================================================================
@@ -107,7 +110,7 @@ function weaponDps(trait) {
 const armorHp = rankList => C.base_hp + rankList.reduce((t, r) => t + C.armor_hp * C.rank_growth ** r, 0);
 const wornRanks = () => ARMOR_SLOTS.filter(s => S.armor[s]).map(s => itemRank(S.armor[s]));
 const maxHp = () => armorHp(wornRanks()) * (1 + buffValue("Combat food"));
-const mobBase = (m, boss = true) => baseTime("combat_time", m.rank, m.slot) * (boss && m.boss ? BAL.actions.boss_time_mult : 1);
+const mobBase = m => baseTime("combat_time", m.rank, m.slot) * (m.boss ? BAL.actions.boss_time_mult : 1);
 const needDps = m => C.weapon_dps * C.rank_growth ** m.rank * (1 + C.slot_growth * m.slot) * (m.boss ? C.boss_dps_mult : 1);
 function mobDamage(m) {
   const e = m.rank - 1 + m.slot / 3;
@@ -116,16 +119,32 @@ function mobDamage(m) {
 }
 const deathChance = (m, hp = maxHp()) => clamp((mobDamage(m) / hp - C.death_start) / C.death_span, 0, 1);
 const gearFightTime = m => mobBase(m) * clamp(needDps(m) / (weaponDps(m.trait) * (1 + buffValue("Combat elixir"))), C.ratio_min, C.ratio_max);
-function recommended(m) { // lowest armor Gear Level (all slots alike) where you win 95% of fights
-  if (deathChance(m, C.base_hp) <= .05) return 0;
-  for (let G = 20; G <= 100; G++) if (deathChance(m, armorHp(Array(7).fill(G / 20 - 1))) <= .05) return G;
-  return 100;
+const recCache = {};
+// The lowest armor Gear Level where you win 95% of fights. Counts partial sets: 3 white pieces and
+// 4 empty slots is Gear Level 9. Tiers: empty, white, green, blue, purple, legendary. Never changes.
+const GEAR_TIERS = [[null, 0], [0, 20], [1, 40], [2, 60], [3, 80], [BAL.ragnaros.fr_armor_rank, 100]];
+function recommended(m) {
+  if (m.name in recCache) return recCache[m.name];
+  let G = 100;
+  search: for (let i = 0; i < GEAR_TIERS.length - 1; i++) for (let k = 0; k <= 7; k++) {
+    const [lo, loLv] = GEAR_TIERS[i], [hi, hiLv] = GEAR_TIERS[i + 1];
+    const worn = [...Array(7 - k).fill(lo), ...Array(k).fill(hi)].filter(r => r !== null);
+    if (deathChance(m, armorHp(worn)) <= .05) { G = Math.round(((7 - k) * loLv + k * hiLv) / 7); break search; }
+  }
+  return recCache[m.name] = G;
 }
 const ilvl = n => !n ? 0 : BY_NAME[n].legendary ? 100 : 20 * (BY_NAME[n].rank + 1);
 const gearLevel = () => Math.round(ARMOR_SLOTS.reduce((t, s) => t + ilvl(S.armor[s]), 0) / 7);
 
 // ---- actions --------------------------------------------------------------------------------
-function actionOf(slot) { // {kind, entry, time, k} for the Field ("field") or Workshop ("work")
+function ambushTarget() { // the first creature you don't always beat with your gear (the last one if you beat them all)
+  return GD.mobs.find(m => deathChance(m) > .005) || GD.mobs[GD.mobs.length - 1];
+}
+function actionOf(slot) { // {kind, entry, time, k} for the gathering/fighting slot ("field") or crafting ("work")
+  if (slot === "field" && S.ambushing) {
+    const m = MOB[S.ambushing];
+    return { kind: "mob", entry: m, k: "combat", time: Math.max(gearFightTime(m) / speed("combat"), BAL.actions.min_action_time), ambush: true };
+  }
   const a = S[slot];
   if (!a) return null;
   if (a.kind === "ragnaros") return { kind: "ragnaros", time: BAL.ragnaros.fight_minutes * 60, k: "combat" };
@@ -156,12 +175,13 @@ function addXp(k, amount, field) {
   if (S.level[k] >= cap(k)) S.xp[k] = 0;
 }
 
-function sellValue(name) {
+function baseValue(name) {
   const e = BY_NAME[name];
   if (!e) return 0;
-  if (e.reagents) return e.reagents.reduce((t, n) => t + sellValue(n) * qtyOf(e), 0) * BAL.gold.crafted_markup * (1 + S.sellBonus);
-  return Math.max(BAL.gold.min_sell, e.sell * BAL.gold.sell_mult) * (1 + S.sellBonus);
+  if (e.reagents) return e.reagents.reduce((t, n) => t + baseValue(n) * qtyOf(e), 0) * BAL.gold.crafted_markup;
+  return Math.max(BAL.gold.min_sell, e.sell * BAL.gold.sell_mult);
 }
+const sellValue = name => baseValue(name) * (1 + S.sellBonus);
 function store(name, qty, offline) {
   const kept = Math.min(qty, Math.max(0, bagCap() - (S.stock[name] || 0)));
   S.stock[name] = (S.stock[name] || 0) + kept;
@@ -171,8 +191,8 @@ function store(name, qty, offline) {
 function finishField(offline) {
   const a = actionOf("field");
   if (!a) return;
-  if (a.kind === "ragnaros") return finishRagnaros();
-  if (a.kind === "mob") return finishFight(a.entry, offline);
+  if (a.kind === "ragnaros") return finishRagnaros(offline);
+  if (a.kind === "mob") return finishFight(a.entry, offline, false, takeFate(a.entry));
   const e = a.entry, k = a.k, base = baseTime("gather_time", e.rank, e.slot);
   if (a.color.name === "red" && Math.random() >= a.color.chance) return;      // failed attempt: only time lost
   addXp(k, base * BAL.actions.xp_per_second * a.color.mult, true);
@@ -180,27 +200,56 @@ function finishField(offline) {
   first(k, e.name);
 }
 
-function finishFight(m, offline) {
-  if (Math.random() < deathChanceWithPotion(m)) return die(`was defeated by ${m.name}`);
+// How a fight ends. A Healing Potion is drunk only when a fight goes wrong, and saves you half the time.
+function rollFight(m) {
+  if (Math.random() >= deathChance(m)) return { dies: false, potion: false };
+  const potion = (S.supplies.Healing || []).length > 0;
+  return { dies: !(potion && Math.random() < .5), potion };
+}
+function fateFor(m) { // this fight's outcome, rolled once when it starts
+  if (S.fightFate?.mob !== m.name) S.fightFate = { ...rollFight(m), mob: m.name };
+  return S.fightFate;
+}
+function takeFate(m) { const f = fateFor(m); S.fightFate = null; return f; }
+// What the bars show at time t of a fight lasting `time`: you hit about once a second, it hits back
+// about every 1.5 s. Losing: you reach 0 while it keeps about 40%. Winning: it reaches 0, you keep some.
+function fightBars(m, time, t, dies) {
+  const foeMax = Math.round(needDps(m) * mobBase(m)), youMax = Math.round(maxHp());
+  const mine = Math.max(2, Math.round(time)), his = Math.max(1, Math.round(time / 1.5));
+  const myHits = Math.min(mine, Math.floor(t / (time / mine) + 1e-9)), hisHits = Math.min(his, Math.floor(t / (time / his) + 1e-9));
+  const dmg = dies ? youMax : Math.min(youMax * .9, mobDamage(m));
+  return { foe: Math.round(foeMax * (1 - (dies ? .6 : 1) * myHits / mine)), foeMax,
+    you: Math.max(dies ? 0 : 1, Math.round(youMax - dmg * hisHits / his)), youMax };
+}
+function finishFight(m, offline, forced = false, fate = takeFate(m)) {
+  if (fate.potion) takeSupply("Healing");
+  if (fate.dies) {
+    die(`was defeated by ${m.name}`, offline);
+    if (!forced && ++S.deathStreak >= 3) easierMob(m, offline);
+    return;
+  }
+  if (!forced) S.deathStreak = 0;
   addXp("combat", mobBase(m) * BAL.actions.xp_per_second * colorOf(S.level.combat, m.unlock).mult, true);
   S.clothAcc += C.cloth_per_kill;
   const cloth = Math.floor(S.clothAcc);
-  if (cloth) { S.clothAcc -= cloth; store(CLOTH[m.rank], cloth, offline); }
-  if (!offline) S.gold += C.gold_per_kill * C.rank_growth ** m.rank;
-  first("combat", m.name);
+  if (cloth) { S.clothAcc -= cloth; store(m.cloth, cloth, offline); }
+  S.gold += C.gold_per_kill * C.rank_growth ** m.rank;
+  if (!forced) first("combat", m.name);
 }
-function deathChanceWithPotion(m) { // a Healing Potion is drunk when a fight goes badly
-  const p = deathChance(m);
-  if (p <= 0 || !(S.supplies.Healing || []).length) return p;
-  const potion = takeSupply("Healing");
-  return deathChance(m, maxHp() * (1 + 0.35 * (1 + BAL.buffs.rank_scale * BY_NAME[potion].rank)));
+function easierMob(m, offline) { // after 3 deaths in a row, step down to the next creature you can fight
+  S.deathStreak = 0;
+  const easier = GD.mobs.filter(x => x.unlock < m.unlock && S.level.combat >= x.unlock && ranks.combat > x.rank)
+    .sort((a, b) => b.unlock - a.unlock)[0];
+  S.field = easier ? { kind: "mob", name: easier.name } : null;
+  if (!offline) toast(easier ? `Died 3 times in a row. Switched to ${easier.name}.` : "Died 3 times in a row. Stopped fighting.");
 }
-function die(cause, fromLink = false) {
+// A death: corpse run, then Resurrection Sickness. quiet = not sent to DeathLink (offline, or it came from DeathLink).
+function die(cause, quiet = false) {
   S.deaths++;
-  S.corpseUntil = S.clock + 30;
-  S.debuffs["Resurrection Sickness"] = { until: S.clock + 30 + BAL.traps["Resurrection Sickness"].minutes * 60 };
+  S.corpseUntil = S.clock + C.corpse_run;
+  S.debuffs["Resurrection Sickness"] = { until: S.clock + C.corpse_run + BAL.traps["Resurrection Sickness"].minutes * 60 };
   S.fieldT = 0;
-  if (!fromLink) sendDeathLink(cause);
+  if (!quiet) sendDeathLink(cause);
 }
 
 function finishWork(offline) {
@@ -253,12 +302,12 @@ function ragnarosOdds() {
     * (r.fr_floor + (1 - r.fr_floor) * Math.min(1, fr / r.fr_need) ** 2);
   return { win, fr, dps, hp };
 }
-function finishRagnaros() {
+function finishRagnaros(offline) {
   const { win } = ragnarosOdds();
   takeSupply("Fire protection"); takeSupply("Fire food");
   S.field = null;
   if (Math.random() < win) { S.ragnarosWon = true; toast("Ragnaros is defeated!"); checkGoal(); }
-  else { die("was defeated by Ragnaros"); toast("Ragnaros won this time. Try again when you're ready."); }
+  else { die("was defeated by Ragnaros", offline); toast("Ragnaros won this time. Try again when you're ready."); }
 }
 
 // ---- time ------------------------------------------------------------------------------------
@@ -268,6 +317,7 @@ function advance(dt, offline) {
   let guard = 0;
   while (dt > 1e-6 && guard++ < 2e6) {
     refreshBuffs();
+    if (S.ambush > 0 && !S.ambushing && !S.field && learned("combat")) startAmbush(offline);   // nothing running: it hits now
     const fa = S.clock < S.corpseUntil ? null : actionOf("field"), wa = actionOf("work");
     const workStuck = wa && missing(wa.entry);
     const tf = fa ? Math.max(0, fa.time - S.fieldT) : Infinity;
@@ -277,12 +327,28 @@ function advance(dt, offline) {
     S.clock += step; dt -= step;
     if (fa) { S.fieldT += step; S.rested = Math.max(0, S.rested - step); }
     if (wa && !workStuck) S.workT += step;
-    if (fa && S.fieldT >= fa.time - 1e-9) { S.fieldT = 0; if (S.ambush > 0) { S.ambush--; finishFight(MOB["Murloc Forager"], offline); } else finishField(offline); }
+    if (fa && S.fieldT >= fa.time - 1e-9) {
+      S.fieldT = 0;
+      if (fa.ambush) {
+        S.ambushing = null; S.ambush--;
+        const deaths = S.deaths;
+        finishFight(fa.entry, offline, true, takeFate(fa.entry));
+        if (!offline && ambushView) { ambushView.result = S.deaths > deaths ? "lost" : "won"; ambushView.hp = maxHp(); renderAmbush();
+          setTimeout(() => { if (ambushView?.result) { ambushView = null; renderAmbush(); } }, 6000); }
+      }
+      else finishField(offline);
+      if (S.ambush > 0 && !S.ambushing && learned("combat") && S.clock >= S.corpseUntil) startAmbush(offline);   // after the current action
+    }
     if (wa && !workStuck && S.workT >= wa.time - 1e-9) { S.workT = 0; finishWork(offline); }
   }
 }
-function catchUpOffline() {
-  const away = Math.max(0, (Date.now() - S.savedAt) / 1000);
+function startAmbush(offline) {
+  S.ambushing = ambushTarget().name; S.fieldT = 0;
+  fateFor(MOB[S.ambushing]);   // decided up front, so the fight on screen shows what really happens
+  if (!offline) { ambushView = { name: S.ambushing, result: null, hidden: false }; renderAmbush(); }
+}
+function catchUpOffline() { catchUp(Math.max(0, (Date.now() - S.savedAt) / 1000)); }
+function catchUp(away) { // offline rules: page closed, or the tab slept for a long time
   if (away < 5) return;
   const cap = BAL.offline.cap_hours * 3600;
   advance(Math.min(away, cap), true);
@@ -315,11 +381,11 @@ function goalDone() {
   const rag = S.ragnarosWon, mas = masteredCount() >= need;
   return g === "ragnaros" ? rag : g === "master_professions" ? mas : rag && mas;
 }
-function checkGoal() {
-  if (S.goalSent || !goalDone() || !ws || ws.readyState !== 1) return;
+function checkGoal(resend = false) {
+  if ((S.goalSent && !resend) || !goalDone() || !ws || ws.readyState !== 1) return;
   send([{ cmd: "StatusUpdate", status: 30 }]);
+  if (!S.goalSent) toast("Goal complete!");
   S.goalSent = true;
-  toast("Goal complete!");
 }
 
 // ---- items from the multiworld --------------------------------------------------------------
@@ -354,7 +420,7 @@ function oneShot(name) {
       break;
     }
     case "Rested XP": S.rested = Math.min(S.rested + BAL.pool.filler["Rested XP"].rested_min * 60, BAL.offline.rested_cap * 60); break;
-    case "Tome of Experience": { const k = lowest(open); if (k) addXp(k, xpNeed(S.level[k]) / gameSpeed(), true); break; }
+    case "Tome of Experience": { const k = lowest(open); if (k) for (let i = 0; i < BAL.pool.filler["Tome of experience"].levels; i++) addXp(k, xpNeed(S.level[k]) / gameSpeed(), true); break; }
     case "Resurrection Sickness": case "Broken Tool":
       S.debuffs[name] = { until: S.clock + BAL.traps[name].minutes * 60 }; break;
     case "Repair Bill": S.gold *= 1 - BAL.traps["Repair Bill"].gold_percent / 100; break;
@@ -370,8 +436,9 @@ function buy(k, kind) {
   S.gold -= shopCost(lv[k]); lv[k]++;
   render();
 }
-function sellAll(name) { S.gold += (S.stock[name] || 0) * sellValue(name); S.stock[name] = 0; render(); }
-function sellEverything() { for (const n of Object.keys(S.stock)) sellAll(n); }
+function sell(name) { const n = Math.floor(S.stock[name] || 0); S.gold += n * sellValue(name); S.stock[name] = (S.stock[name] || 0) - n; }
+function sellAll(name) { sell(name); render(); }
+function sellEverything() { Object.keys(S.stock).forEach(sell); render(); }
 
 // ============================================================================================
 // Saving: a copy in this browser + the Archipelago server's data storage (any device can resume)
@@ -381,9 +448,11 @@ const localKey = () => `skillup:${conn.seed}:${conn.team}:${conn.slot}`;
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 let dirty = false;
+const roomId = () => `${conn.seed}:${conn.team}:${conn.slot}`;
 function save(remote = true) {
   if (!S || !conn) return;
   S.savedAt = Date.now();
+  S.room = roomId();
   lsSet(localKey(), JSON.stringify(S));
   if (remote && ws && ws.readyState === 1)
     send([{ cmd: "Set", key: storageKey(), default: null, want_reply: false, operations: [{ operation: "replace", value: S }] }]);
@@ -393,8 +462,10 @@ function save(remote = true) {
 function loadSave(remote) {
   let local = null;
   try { local = JSON.parse(lsGet(localKey()) || "null"); } catch {}
-  const pick = [remote, local].filter(x => x && x.v === SAVE_VERSION).sort((a, b) => b.savedAt - a.savedAt)[0];
+  const pick = [remote, local].filter(x => x && x.v === SAVE_VERSION && (!x.room || x.room === roomId()))
+    .sort((a, b) => b.savedAt - a.savedAt)[0];
   S = Object.assign(newSave(), pick || {});
+  for (const k of ["level", "xp", "speedLv", "xpLv"]) S[k] = { ...newSave()[k], ...S[k] };
 }
 
 // ============================================================================================
@@ -404,51 +475,68 @@ let ws = null, conn = null, nameToLoc = null, itemIdToName = {}, checked = new S
 const gamesPackage = {};
 function send(packets) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(packets)); }
 
+let sock = 0;   // bumps on every new connection; handlers from an older one are ignored
 function connect(server, slotName, password) {
   server = server.trim();
+  if (ws) { ws.onclose = ws.onmessage = null; ws.close(); }
+  const mine = ++sock;
   const urls = /^wss?:\/\//.test(server) ? [server] : location.protocol === "https:" ? [`wss://${server}`] : [`wss://${server}`, `ws://${server}`];
   $("c-err").textContent = "Connecting…";
   let attempt = 0, opened = false, room = null;
   const open = () => {
+    if (mine !== sock) return;
     ws = new WebSocket(urls[attempt]);
     ws.onopen = () => { opened = true; };
-    ws.onmessage = ev => { for (const pkt of JSON.parse(ev.data)) handle(pkt); };
+    ws.onmessage = ev => { if (mine === sock) for (const pkt of JSON.parse(ev.data)) handle(pkt); };
     ws.onclose = () => {
+      if (mine !== sock) return;
       if (!opened && ++attempt < urls.length) return open();
       setOnline(false);
       if (!S) { $("c-err").textContent = "Could not connect. Check the server address and port."; return; }
       log(`<span class="sys">Disconnected. Retrying in 10 seconds; your progress keeps going and is saved in this browser.</span>`);
-      setTimeout(() => { if (!ws || ws.readyState > 1) { attempt = 0; opened = false; open(); } }, 10000);
+      setTimeout(() => { if (mine === sock && (!ws || ws.readyState > 1)) { attempt = 0; opened = false; open(); } }, 10000);
     };
   };
+  function wrongRoom() { // the address now hosts something else: stop without sending anything
+    sock++; ws.onclose = ws.onmessage = null; ws.close(); setOnline(false);
+    log(`<span class="sys">This address now hosts a different room, so nothing was sent. Your progress here is saved. Click your name at the top to connect to another room.</span>`);
+    toast("The server now hosts a different room. Nothing was sent.");
+  }
   function handle(pkt) {
     switch (pkt.cmd) {
       case "RoomInfo":
         room = pkt;
-        send([{ cmd: "GetDataPackage", games: pkt.games }]);
+        if (S && conn && pkt.seed_name !== conn.seed) return wrongRoom();
+        { const need = pkt.games.filter(gm => !gamesPackage[gm]);   // reconnects reuse what we have
+          if (need.length) send([{ cmd: "GetDataPackage", games: need }]); else handle({ cmd: "DataPackage", data: { games: {} } }); }
         break;
       case "DataPackage": {
         Object.assign(gamesPackage, pkt.data.games);
         const pkg = gamesPackage[GAME];
-        if (!pkg) { $("c-err").textContent = "This room has no Skillup game."; ws.onclose = null; ws.close(); return; }
+        if (!pkg) { $("c-err").textContent = "This room has no SkillUp game."; ws.onclose = null; ws.close(); return; }
         nameToLoc = pkg.location_name_to_id;
         itemIdToName = Object.fromEntries(Object.entries(pkg.item_name_to_id).map(([k, v]) => [v, k]));
         send([{ cmd: "Connect", game: GAME, name: slotName, password: password || "", uuid: uuid(),
           version: { major: 0, minor: 6, build: 7, class: "Version" }, items_handling: 0b111, tags: [], slot_data: true }]);
         break;
       }
-      case "ConnectionRefused":
-        $("c-err").textContent = "Refused: " + (pkt.errors || []).join(", ");
-        ws.onclose = null; ws.close();
+      case "ConnectionRefused": {
+        const pw = (pkt.errors || []).includes("InvalidPassword");
+        const msg = pw ? "This room needs a password." : "The server refused the connection: " + (pkt.errors || []).join(", ");
+        if (S) log(`<span class="sys">${esc(msg)} Reload the page to try again.</span>`);
+        else { $("c-err").textContent = msg; if (pw) $("c-pass").focus(); }
+        ws.onclose = null; ws.close(); setOnline(false);
         break;
+      }
       case "Connected":
+        if (S && conn && (room.seed_name !== conn.seed || pkt.team !== conn.team || pkt.slot !== conn.slot)) return wrongRoom();
         slotData = pkt.slot_data || {};
         conn = { seed: room.seed_name, team: pkt.team, slot: pkt.slot, slotName, server, players: Object.fromEntries(pkt.players.map(p => [p.slot, p.alias || p.name])) };
         checked = new Set(pkt.checked_locations);
         playerGames = Object.fromEntries(Object.entries(pkt.slot_info || {}).map(([k, v]) => [k, v.game]));
         if (slotData.death_link) send([{ cmd: "ConnectUpdate", tags: ["DeathLink"] }]);
         setOnline(true);
-        if (S) { resendAllChecks(); flushChecks(); checkGoal(); break; }   // reconnect: keep playing
+        if (S) { resendAllChecks(); flushChecks(); checkGoal(true); break; }   // reconnect: keep playing
         send([{ cmd: "Get", keys: [storageKey()] }]);
         break;
       case "Retrieved":
@@ -466,6 +554,11 @@ function connect(server, slotName, password) {
         break;
       case "PrintJSON":
         log(renderJson(pkt.data), pkt.type === "Hint" ? "hint" : "");
+        if (pkt.type === "ItemSend" && conn && pkt.item?.player === conn.slot) {
+          const item = renderJson([{ type: "item_id", text: String(pkt.item.item), player: pkt.receiving, flags: pkt.item.flags }]);
+          popup(pkt.receiving === conn.slot ? `You found your ${item}`
+            : `Sent ${item} to ${renderJson([{ type: "player_id", text: String(pkt.receiving) }])}`, "sent");
+        }
         break;
       case "Bounced":
         if ((pkt.tags || []).includes("DeathLink") && pkt.data?.source !== conn?.slotName && S) {
@@ -492,9 +585,14 @@ function lookup(kind, id, player) {
 function renderJson(parts) {
   return parts.map(p => {
     switch (p.type) {
-      case "player_id": return `<span class="pl">${esc(conn?.players[+p.text] || p.text)}</span>`;
-      case "item_id": return `<span class="${p.flags & 1 ? "it" : p.flags & 4 ? "c-red" : "q2"}">${esc(lookup("item", +p.text, p.player))}</span>`;
-      case "location_id": return `<span class="loc">${esc(lookup("location", +p.text, p.player))}</span>`;
+      case "player_id": return `<span class="${+p.text === conn?.slot ? "pl-me" : "pl"}">${esc(conn?.players[+p.text] || p.text)}</span>`;
+      case "player_name": return `<span class="pl">${esc(p.text)}</span>`;
+      case "item_id": case "item_name": {
+        const kind = p.flags & 4 ? "trap" : p.flags & 1 ? "prog" : p.flags & 2 ? "use" : "fill";
+        return `<span class="it-${kind}">${esc(p.type === "item_id" ? lookup("item", +p.text, p.player) : p.text)}</span>`;
+      }
+      case "location_id": case "location_name": return `<span class="loc">${esc(p.type === "location_id" ? lookup("location", +p.text, p.player) : p.text)}</span>`;
+      case "entrance_name": return `<span class="ent">${esc(p.text)}</span>`;
       default: return esc(p.text ?? "");
     }
   }).join("");
@@ -515,9 +613,13 @@ function rememberRoom() {
 // ============================================================================================
 // Interface
 // ============================================================================================
+const DEBUFFS = [   // shown top right in the header while active
+  ["Resurrection Sickness", GD.ui_icons.res_sickness, "fighting at half speed"],
+  ["Broken Tool", "inv_misc_wrench_01", "your gathering tools don't help"],
+];
 const pct = v => `${Math.round(v * 100)}%`;
 const fmtT = s => !isFinite(s) ? "—" : s < 10 ? s.toFixed(1) + "s" : s < 60 ? Math.round(s) + "s" : s < 3600 ? Math.floor(s / 60) + "m" + String(Math.round(s % 60)).padStart(2, "0") : (s / 3600).toFixed(1) + "h";
-const ic = n => ICON(n);
+const ic = ICON;
 function coins(c, compact = false) {
   c = Math.floor(c);
   const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cp = c % 100;
@@ -528,53 +630,80 @@ function coins(c, compact = false) {
 const lvl = (c, u) => `<span class="lvl c-${c.name}" title="Skill ${u}: ${COLOR_TIP[c.name]}">${u}</span>`;
 const pace = hr => hr > 0 ? `<span title="One skill level every ${fmtT(3600 / hr)}">+1 / <b>${fmtT(3600 / hr)}</b></span>` : "";
 const pips = lv => `<span class="pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < lv ? "on" : ""}"></i>`).join("")}</span>`;
-let toastTimer = null;
-function toast(text) {
-  let el = $("toast");
-  if (!el) { el = document.createElement("div"); el.id = "toast"; el.className = "toast"; document.body.append(el); }
-  el.textContent = text; el.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 5000);
+function popup(html, cls = "") {
+  let stack = $("toasts");
+  if (!stack) { stack = document.createElement("div"); stack.id = "toasts"; stack.className = "toasts"; stack.setAttribute("aria-live", "polite"); document.body.append(stack); }
+  const el = document.createElement("div");
+  el.className = `toast ${cls}`; el.innerHTML = html;
+  stack.append(el);
+  while (stack.childElementCount > 4) stack.firstElementChild.remove();
+  setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, 5000);
 }
-const logLines = [];
+const toast = text => popup(esc(text));
+const logLines = [], LOG_MAX = 300;
 function log(html, cls = "") {
   const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  logLines.unshift(`<p class="${cls}"><time>${time}</time>${html}</p>`);
-  logLines.length = Math.min(logLines.length, 300);
-  if (rtab === "log") renderPane();
+  const line = `<p class="${cls}"><time>${time}</time>${html}</p>`;
+  logLines.push(line);
+  if (logLines.length > LOG_MAX) logLines.shift();
+  const box = $("logbox");
+  if (!box) return;
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;   // don't jump if you scrolled up to read
+  box.querySelector(".empty")?.remove();
+  box.insertAdjacentHTML("beforeend", line);
+  while (box.childElementCount > LOG_MAX) box.firstElementChild.remove();
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+const LOG_SKELETON = `<div class="log" id="logbox" role="log" aria-live="polite"></div>
+  <form class="say" id="say" autocomplete="off"><input id="say-text" maxlength="500" placeholder="Message or !command" aria-label="Message to the room"><button class="wbtn" type="submit">Send</button></form>`;
+function renderLog(el) {
+  if (el._html === LOG_SKELETON) return;          // already showing: new lines are added as they arrive
+  el.html = LOG_SKELETON;
+  const box = $("logbox");
+  box.innerHTML = logLines.join("") || `<p class="sys empty">Messages from the Archipelago server show here.</p>`;
+  box.scrollTop = box.scrollHeight;
+  $("say").onsubmit = ev => {
+    ev.preventDefault();
+    const text = $("say-text").value.trim();
+    if (!text) return;
+    if (!ws || ws.readyState !== 1) return log(`<span class="sys">Not connected: message not sent.</span>`);
+    send([{ cmd: "Say", text }]);
+    $("say-text").value = "";
+  };
 }
 function setOnline(on) { $("online").classList.toggle("off", !on); }
 
-function perHourGather(k, e) {
-  const c = colorOf(S.level[k], e.unlock), base = baseTime("gather_time", e.rank, e.slot);
-  let t = Math.max(base / speed(k), BAL.actions.min_action_time), xp = base * c.mult;
+function perHour(k, e, craft) { // time per attempt, color, and skill levels per hour
+  const c = colorOf(S.level[k], e.unlock), base = baseTime(craft ? "craft_time" : "gather_time", e.rank, slotNum(e));
+  let t = Math.max(base / speed(k), BAL.actions.min_action_time);
+  let xp = base * c.mult * (craft ? BAL.actions.craft_xp_mult * (BAL.recipes.role_xp_mult[e.role] || 1) : 1);
   if (c.name === "red") { t *= c.slow; xp *= c.chance; }
   return { c, t, hr: S.level[k] >= cap(k) ? 0 : 3600 * xp * gameSpeed() * (1 + S.xpLv[k] * BAL.gold.xp_step) / t / xpNeed(S.level[k]) };
 }
-function perHourCraft(k, r) {
-  const c = colorOf(S.level[k], r.unlock), base = baseTime("craft_time", r.rank, slotNum(r));
-  let t = Math.max(base / speed(k), BAL.actions.min_action_time), xp = base * BAL.actions.craft_xp_mult * (BAL.recipes.role_xp_mult[r.role] || 1) * c.mult;
-  if (c.name === "red") { t *= c.slow; xp *= c.chance; }
-  return { c, t, hr: S.level[k] >= cap(k) ? 0 : 3600 * xp * gameSpeed() * (1 + S.xpLv[k] * BAL.gold.xp_step) / t / xpNeed(S.level[k]) };
-}
+const perHourGather = (k, e) => perHour(k, e, false), perHourCraft = (k, r) => perHour(k, r, true);
 function perHourFight(m) {
   const c = colorOf(S.level.combat, m.unlock), p = deathChance(m);
   const t = Math.max(gearFightTime(m) / speed("combat"), BAL.actions.min_action_time);
   const xp = mobBase(m) * c.mult * (1 - p) * gameSpeed() * (1 + S.xpLv.combat * BAL.gold.xp_step);
-  return { c, t, win: 1 - p, hr: S.level.combat >= cap("combat") ? 0 : 3600 * xp / (t + p * (30 + t)) / xpNeed(S.level.combat) };
+  return { c, t, win: 1 - p, hr: S.level.combat >= cap("combat") ? 0 : 3600 * xp / (t + p * (C.corpse_run + t)) / xpNeed(S.level.combat) };
 }
 
 function renderHeader() {
-  $("gold").innerHTML = coins(S.gold);
+  $("gold").html = coins(S.gold);
   const bag = [...GD.recipes].filter(r => r.role === "Bag" && S.crafted.includes(r.name)).sort((a, b) => b.rank - a.rank)[0];
-  $("bags").innerHTML = `<span class="hstat">${bag ? `<img class="icon sm" src="${ic(bag.icon)}" alt="">` : ""} ${bagCap()} each</span>`;
+  $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bag ? bag.icon : "inv_misc_bag_09")}" alt=""> ${bagCap()} each</span>`;
   $("rested").textContent = `${Math.round(S.rested / 60)} min`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
+  $("debuffs").html = DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => {
+    const left = S.debuffs[name].until - S.clock;
+    return `<span class="debuff" title="${name}: ${what}"><img class="icon" src="${ic(icon)}" alt="${name}"><span>${fmtT(left)}</span></span>`;
+  }).join("");
   $("who").textContent = conn.slotName; $("where").textContent = "· " + conn.server;
 }
 
 function renderList() {
-  $("proflist").innerHTML = GROUPS.map(([label, kind]) => `<div class="glabel">${label}</div>` + byKind(kind).map(p => {
+  $("proflist").html = GROUPS.map(([label, kind]) => `<div class="glabel">${label}</div>` + byKind(kind).map(p => {
     const k = p.key, r = ranks[k] || 0, full = r && S.level[k] >= cap(k);
     const running = S.field && (S.field.kind === "mob" ? k === "combat" : BY_NAME[S.field.name]?.profession === k) || S.work && BY_NAME[S.work.name]?.profession === k;
     const width = r ? (S.level[k] + (S.xp[k] / xpNeed(S.level[k]))) / cap(k) : 0;
@@ -588,24 +717,156 @@ function slotHtml(slot) {
   const a = actionOf(slot);
   if (!a) return `<div class="slot"><div></div><div><div class="k">${slot === "field" ? "Gathering or fighting" : "Crafting"}</div><div class="sub">Nothing running. Pick something below.</div></div></div>`;
   if (a.kind === "ragnaros") return `<div class="slot"><img class="icon lg" src="${ic(GD.ui_icons.ragnaros)}" alt=""><div><div class="k">Fighting · Molten Core</div><div class="what q5">Ragnaros</div><div class="sub">Win chance ${pct(ragnarosOdds().win)}</div></div>
-    <div class="cast"><i style="width:${pct(S.fieldT / a.time)}"></i><span>${fmtT(S.fieldT)} / ${fmtT(a.time)}</span></div></div>`;
+    <div class="cast" data-cast="field"><i></i><span></span></div></div>`;
   const e = a.entry, k = a.k;
-  const label = slot === "work" ? "Crafting" : a.kind === "mob" ? "Fighting" : "Gathering";
+  const label = slot === "work" ? "Crafting" : a.ambush ? "Ambushed" : a.kind === "mob" ? "Fighting" : "Gathering";
   const hr = a.kind === "mob" ? perHourFight(e) : a.kind === "gather" ? perHourGather(k, e) : perHourCraft(k, e);
-  const t = slot === "field" ? S.fieldT : S.workT;
   const waiting = slot === "work" && missing(e), dead = slot === "field" && S.clock < S.corpseUntil;
   const status = dead ? `<span class="wait">Running back from the graveyard…</span>` : waiting ? `<span class="wait">Waiting for ${esc(missing(e))}</span>`
     : `${lvl(hr.c, e.unlock)} ${hr.hr > 0 ? pace(hr.hr) : "no skill"}`;
   const img = a.kind === "mob" ? ic(P.combat.icon) : ic(e.icon);
-  return `<div class="slot"><img class="icon lg" src="${img}" alt=""><div><div class="k">${label} · ${P[k].name}</div>
-    <div class="what q${e.quality || 1}">${esc(e.name)}</div><div class="sub">${status}</div></div>
-    <div class="cast ${slot === "work" ? "green" : ""}"><i style="width:${pct(Math.min(1, t / a.time))}"></i><span>${t.toFixed(1)}s / ${a.time.toFixed(1)}s</span></div></div>`;
+  const bars = a.kind === "mob" && !dead
+    ? `<div class="fight" data-fight="1"><div class="sbar foe"><i></i><span><span>${esc(e.name)}</span><span></span></span></div>
+       <div class="sbar you"><i></i><span><span>You</span><span></span></span></div></div>`
+    : `<div class="cast ${slot === "work" ? "green" : ""}" data-cast="${slot}"><i></i><span></span></div>`;
+  return `<div class="slot ${a.ambush ? "ambushed" : ""}"><img class="icon lg" src="${img}" alt=""><div><div class="k">${label} · ${P[k].name}</div>
+    <div class="what q${e.quality || 1}">${esc(e.name)}</div><div class="sub">${status}</div></div>${bars}</div>`;
 }
-function renderSlots() { $("slots").innerHTML = slotHtml("field") + slotHtml("work"); }
+// ---- tooltips, styled like the game's ------------------------------------------------------------
+function itemTip(name, note) {
+  const e = BY_NAME[name];
+  if (!e) return `<div class="tt-name">${esc(name)}</div>`;
+  const q = e.legendary ? 5 : e.quality || 1, role = e.role || e.slot, L = [];
+  const row = (a, b = "") => L.push(`<div class="tt-row"><span>${a}</span><span>${b}</span></div>`);
+  const line = (t, cls = "") => L.push(`<div class="${cls}">${t}</div>`);
+  if (ARMOR_SLOTS.includes(role)) { row(role, e.legendary ? "Legendary" : ""); line(`Gear Level ${ilvl(name)}`, "tt-gold"); }
+  else if (WEAPONS.includes(role)) { row("Main Hand", role); line(STRONG[role], "tt-green"); }
+  else if (TOOL_FOR[role]) line(`Equip: ${P[TOOL_FOR[role]].name} ${Math.round((e.rank + 1) * BAL.tools.step * 100)}% faster.`, "tt-green");
+  else if (role === "Bag") line("Crafting your first one doubles how much of each material you can hold.", "tt-green");
+  else if (role === "Healing") line("Use: drunk when a fight would kill you, saves you half the time.", "tt-green");
+  else if (BAL.buffs.effects[role]) line(`Use: ${role} +${Math.round(BAL.buffs.effects[role] * (1 + BAL.buffs.rank_scale * e.rank) * 100)}% for ${BAL.buffs.minutes} min.`, "tt-green");
+  else if (e.legendary && e.slot === "Potion") line("Use: fire protection for the Ragnaros fight.", "tt-green");
+  else if (e.legendary && e.slot === "Food") line("Use: fire protection food for the Ragnaros fight.", "tt-green");
+  if (e.reagents) {
+    const k = e.profession, ok = S.level[k] >= e.unlock;
+    line(`Requires ${P[k].name} (${e.unlock})`, ok ? "" : "tt-red");
+    line(`Reagents: ${e.reagents.map(n => `${qtyOf(e)}× ${esc(n)}`).join(", ")}`, "tt-mute");
+  } else if (e.profession === "combat") line("Dropped by creatures", "tt-mute");
+  else if (e.profession) line(`${P[e.profession].name} (${e.unlock})`, S.level[e.profession] >= e.unlock ? "tt-mute" : "tt-red");
+  if (note) line(esc(note), "tt-gold");
+  if (!e.legendary) L.push(`<div class="tt-sell">Sell Price: <span class="coins">${coins(sellValue(name), true)}</span></div>`);
+  return `<div class="tt-name q${q}">${esc(name)}</div>${L.join("")}`;
+}
+function textTip(text) { // "Title: details" shows the title in gold on its own line
+  const i = text.indexOf(": ");
+  const rest = text.slice(i + 2);
+  return i > 0 && i < 40 ? `<div class="tt-name tt-gold">${esc(text.slice(0, i))}</div><div>${esc(rest[0].toUpperCase() + rest.slice(1))}</div>` : `<div>${esc(text)}</div>`;
+}
+let tipFor = null;
+function showTip(el, x, y) {
+  let tt = $("tt");
+  if (!tt) { tt = document.createElement("div"); tt.id = "tt"; tt.className = "tt"; tt.setAttribute("role", "tooltip"); document.body.append(tt); }
+  if (el.title) { el.dataset.tip = el.title; el.removeAttribute("title"); }   // no browser tooltip on top of ours
+  if (tipFor !== el) {
+    tipFor?.classList.remove("hot");
+    tipFor = el; el.classList.add("hot");
+    tt.innerHTML = el.dataset.item ? itemTip(el.dataset.item, el.dataset.note) : textTip(el.dataset.tip || "");
+    tt.hidden = false;
+  }
+  const pad = 14, w = tt.offsetWidth, h = tt.offsetHeight;
+  tt.style.left = Math.min(x + pad, innerWidth - w - 6) + "px";
+  tt.style.top = (y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
+}
+function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; const tt = $("tt"); if (tt) tt.hidden = true; }
+let mouse = null;
+function tipAt(x, y, target = document.elementFromPoint(x, y)) {
+  const el = target?.closest?.("[title], [data-tip], [data-item]");
+  if (el) showTip(el, x, y); else if (tipFor) hideTip();
+}
+document.addEventListener("pointermove", ev => {
+  if (ev.pointerType !== "mouse") return;
+  mouse = { x: ev.clientX, y: ev.clientY };
+  tipAt(mouse.x, mouse.y, ev.target);
+});
+document.addEventListener("pointerleave", () => { mouse = null; hideTip(); });
+// after a refresh replaced what you're pointing at, put the tooltip back on the new one
+function refreshTip() { if (tipFor && !tipFor.isConnected) { tipFor = null; if (mouse) tipAt(mouse.x, mouse.y); else hideTip(); } }
+document.addEventListener("pointerdown", ev => { if (ev.pointerType !== "mouse") hideTip(); });
+document.addEventListener("scroll", hideTip, true);
+
+// ---- the ambush: a full-screen fight ------------------------------------------------------------
+let ambushView = null;   // { name, result: null | "won" | "lost", hidden }
+function renderAmbush() {
+  let ov = $("ambush");
+  if (!ambushView || ambushView.hidden) { if (ov) ov.hidden = true; return; }
+  const m = MOB[ambushView.name], a = S.ambushing === m.name ? actionOf("field") : null;
+  const progress = ambushView.result ? 1 : a ? Math.min(1, S.fieldT / a.time) : 0;
+  const foeMax = Math.round(needDps(m) * mobBase(m)), you = maxHp();
+  const dies = ambushView.result ? ambushView.result === "lost" : !!(S.fightFate?.mob === m.name && S.fightFate.dies);
+  const time = a ? a.time : 1, fb = fightBars(m, time, progress * time, dies), foe = fb.foe, yours = fb.you;
+  if (!ov) {
+    ov = document.createElement("div"); ov.id = "ambush"; ov.className = "ambush-ov";
+    ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Ambush");
+    document.body.append(ov);
+    ov.addEventListener("click", ev => { if (ev.target === ov || ev.target.closest("[data-hide]")) { ambushView.hidden = true; renderAmbush(); } });
+  }
+  ov.hidden = false;
+  const head = ambushView.result === "won" ? `<div class="amb-title won">Victory</div><div class="amb-sub">You fought off ${esc(m.name)}.</div>`
+    : ambushView.result === "lost" ? `<div class="amb-title">You died</div><div class="amb-sub">${esc(m.name)} killed you. Running back from the graveyard.</div>`
+    : `<div class="amb-title">Ambush!</div><div class="amb-sub">${esc(m.name)} attacks you. You go back to what you were doing after the fight.</div>`;
+  ov.html = `<div class="amb-card frame">${head}
+    <img class="amb-mob" src="${m.image}" alt="">
+    <div class="plate"><span class="nm">${esc(m.name)}</span><span class="lv">Level ${m.level}${m.classification !== "Normal" ? " · " + m.classification : ""}</span></div>
+    <div class="amb-bars">
+      <div><div class="amb-k">${esc(m.name)}</div><div class="sbar foe"><i data-amb="foe"></i><span><span></span><span data-amb="foe-t"></span></span></div></div>
+      <div><div class="amb-k">You</div><div class="sbar you"><i data-amb="you"></i><span><span></span><span data-amb="you-t"></span></span></div></div>
+    </div>
+    ${ambushView.result ? "" : `<div class="amb-sub">Win chance ${pct(1 - deathChance(m))}</div>`}
+    <button class="wbtn" data-hide="1">${ambushView.result ? "Back to work" : "Hide"}</button></div>`;
+  ov.querySelector('[data-amb="foe"]').style.width = pct(foe / foeMax);
+  ov.querySelector('[data-amb="foe-t"]').textContent = `${foe.toLocaleString("en-US")} / ${foeMax.toLocaleString("en-US")}`;
+  ov.querySelector('[data-amb="you"]').style.width = pct(yours / you);
+  ov.querySelector('[data-amb="you-t"]').textContent = `${yours.toLocaleString("en-US")} / ${Math.round(you).toLocaleString("en-US")}`;
+}
+function renderSlots() {
+  if (ambushView) renderAmbush();
+
+  $("slots").html = slotHtml("field") + slotHtml("work");
+  paintBars();
+  refreshTip();
+}
+// The game moves 4 times a second; the bars are drawn every frame from the time since then, so they glide.
+function paintBars() {
+  if (!S) return;
+  const since = Math.min((performance.now() - lastTick) / 1000, .5);
+  for (const bar of $("slots").querySelectorAll("[data-cast]")) {
+    const slot = bar.dataset.cast, a = actionOf(slot);
+    if (!a) continue;
+    const back = slot === "field" ? S.corpseUntil - S.clock - since : 0;
+    if (S.corpseUntil > S.clock && slot === "field") {   // corpse run: the bar counts down to when you're back
+      bar.firstElementChild.style.width = (clamp(1 - back / C.corpse_run, 0, 1) * 100).toFixed(2) + "%";
+      bar.lastElementChild.textContent = `Back in ${Math.max(0, Math.ceil(back))}s`;
+      continue;
+    }
+    const moving = slot === "field" || !missing(a.entry);
+    const t = Math.min(a.time, (slot === "field" ? S.fieldT : S.workT) + (moving ? since : 0));
+    bar.firstElementChild.style.width = (t / a.time * 100).toFixed(2) + "%";
+    bar.lastElementChild.textContent = a.kind === "ragnaros" ? `${fmtT(t)} / ${fmtT(a.time)}` : `${t.toFixed(1)}s / ${a.time.toFixed(1)}s`;
+  }
+  const fight = $("slots").querySelector("[data-fight]"), a = actionOf("field");
+  if (!fight || !a || a.kind !== "mob") return;
+  const m = a.entry, fb = fightBars(m, a.time, Math.min(a.time, S.fieldT + since), fateFor(m).dies);
+  const [foeBar, youBar] = fight.querySelectorAll(".sbar");
+  foeBar.firstElementChild.style.width = pct(fb.foe / fb.foeMax);
+  foeBar.querySelector("span > span:last-child").textContent = `${fb.foe.toLocaleString("en-US")} / ${fb.foeMax.toLocaleString("en-US")}`;
+  youBar.firstElementChild.style.width = pct(fb.you / fb.youMax);
+  youBar.querySelector("span > span:last-child").textContent = `${fb.you.toLocaleString("en-US")} / ${fb.youMax.toLocaleString("en-US")}`;
+}
+function frame() { paintBars(); requestAnimationFrame(frame); }
 
 function renderDetail() {
   const k = selected, p = P[k], L = S.level[k], owned = ranks[k] || 0;
-  if (!owned) { $("detail").innerHTML = `<div class="locked">🔒 ${p.name} isn't learned yet</div>`; return; }
+  if (!owned) { $("detail").html = `<div class="locked">🔒 ${p.name} isn't learned yet</div>`; return; }
   tab = Math.min(tab, 3);
   const head = `<div class="dhead"><img class="icon lg" src="${ic(p.icon)}" alt="">
       <div><h3 class="title">${p.name}</h3><div class="rk">${RANKS[owned - 1].name} · ${L} / ${cap(k)}</div></div>
@@ -617,7 +878,7 @@ function renderDetail() {
   if (tab >= owned) body = `<div class="locked">🔒 Locked</div>`;
   else if (p.kind === "combat") body = combatHtml();
   else body = rowsHtml(k);
-  $("detail").innerHTML = head + tabs + body;
+  $("detail").html = head + tabs + body;
 }
 function checkLabel(done) { return `<span class="chk ${done ? "done" : "todo"}" title="${done ? "Check already sent" : "Doing this the first time sends a check"}">${done ? "✓ Sent" : "◆ Check"}</span>`; }
 function rowsHtml(k) {
@@ -630,13 +891,13 @@ function rowsHtml(k) {
     const done = e.legendary ? S.crafted.includes(e.name) : S.firsts.includes(e.name);
     const mats = kind === "craft"
       ? `<ul class="mats">${e.reagents.map(n => { const have = Math.floor(S.stock[n] || 0), need = qtyOf(e);
-          return `<li class="${have < need ? "short" : ""}"><img src="${ic(BY_NAME[n].icon)}" alt=""><span>${need}× ${esc(n)}</span><span class="have">${have}</span></li>`; }).join("")}</ul>`
+          return `<li class="${have < need ? "short" : ""}" data-item="${esc(n)}"><img src="${ic(BY_NAME[n].icon)}" alt=""><span>${need}× ${esc(n)}</span><span class="have">${have}</span></li>`; }).join("")}</ul>`
       : `<ul class="mats"><li><img src="${bagIcon}" alt=""><span>In bags</span><span class="have">${Math.floor(S.stock[e.name] || 0)} / ${bagCap()}</span></li></ul>`;
     const rate = hr.c.name === "red" ? `<b class="c-red">${pct(hr.c.chance)}</b> per try<br><span title="Average time per success">~${fmtT(hr.t / hr.c.chance)} per success</span>`
-      : hr.hr > 0 ? `${pace(hr.hr)}<br>${fmtT(hr.t)} each` : `${S.level[k] >= 300 ? "Maxed" : e.legendary ? "Legendary" : "no skill"}<br>${fmtT(hr.t)} each`;
+      : hr.hr > 0 ? `${pace(hr.hr)}<br><span>${fmtT(hr.t)} each</span>` : `${S.level[k] >= 300 ? "Maxed" : e.legendary ? "Legendary" : "no skill"}<br><span>${fmtT(hr.t)} each</span>`;
     const legendLbl = e.legendary && !list[i - 1]?.legendary ? `<div class="legendary-lbl" style="grid-column:1/-1">Legendary · for Ragnaros</div>` : "";
-    return `${legendLbl}<div class="row"><img class="icon" src="${ic(e.icon)}" alt="">
-      <div class="info"><div class="nmline"><span class="nm q${e.quality}" title="${esc(e.name)}">${esc(e.name)}</span></div>
+    return `${legendLbl}<div class="row"><img class="icon" src="${ic(e.icon)}" alt="" data-item="${esc(e.name)}">
+      <div class="info"><div class="nmline"><span class="nm q${e.quality}" data-item="${esc(e.name)}">${esc(e.name)}</span></div>
         <div class="meta">${lvl(hr.c, e.unlock)}${kind === "craft" ? `<span class="cat">${esc(e.role || e.slot)}</span>` : ""}</div>${mats}</div>
       ${e.legendary ? `<span></span>` : checkLabel(done)}
       <div class="rate">${rate}</div>
@@ -652,12 +913,11 @@ function combatHtml() {
       const rec = recommended(m), running = S.field?.kind === "mob" && S.field.name === m.name;
       const verdict = r.win >= .995 ? `<span class="verdict v-safe" title="You always win with your gear">Safe</span>`
         : `<span class="verdict ${r.win >= .5 ? "v-risky" : "v-deadly"}" title="You win ${pct(r.win)} of fights with your gear">${r.win >= .5 ? "Risky" : "Deadly"} · ${pct(r.win)}</span>`;
-      const gear = `<span class="gear" style="color:${glColor(rec)}" title="Armor Gear Level to always win: ${rec}. Yours: ${yours}. Your weapon only changes how fast you kill."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>Gear Level ${rec}</span>`;
-      const hp = Math.round(needDps(m) * mobBase(m));
+      const gear = `<span class="gear" style="color:${glColor(rec)}" title="Gear Level ${rec}: the armor you need to always win this fight. Yours is ${yours}. Your weapon only changes how fast you kill."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>Gear Level ${rec}</span>`;
       return `<div class="mob ${m.boss ? "boss" : ""}"><img src="${m.image}" alt="">
         ${m.trait ? `<span class="trait" title="${GD.traits[m.trait].text}">${m.trait}</span>` : ""}
-        <div class="plate"><span class="nm">${m.name}</span><span class="hpb"><span>100%</span><span>${hp.toLocaleString("en-US")}</span></span>
-        <span class="lv">${lvl(r.c, m.unlock)} Level ${m.level}${m.classification !== "Normal" ? " · " + m.classification : ""}</span></div>
+        <div class="plate"><span class="nm">${m.name}</span>
+        <span class="lv">${lvl(r.c, m.unlock)} Level ${m.level}${m.classification !== "Normal" ? " · " + m.classification : ""} · <span class="mhp">${Math.round(needDps(m) * mobBase(m)).toLocaleString("en-US")} HP</span></span></div>
         <div class="gearrow">${gear}${locked ? "" : verdict}</div>
         <div class="rate">${locked ? `<span class="mute">Not enough Combat skill yet</span>` : `${r.hr > 0 ? pace(r.hr) : "no skill"} · ${fmtT(r.t)} per kill`}</div>
         ${checkLabel(seen)}
@@ -677,7 +937,7 @@ function glColor(v) {
 function eqBox(name, slot, extra = "", tip = "") {
   if (!name) return `<div class="eq empty" title="${slot}: empty"><img src="${ic(GD.ui_icons["slot_" + slot] || GD.ui_icons.slot_Bag)}" alt="${slot} empty"></div>`;
   const e = BY_NAME[name];
-  return `<div class="eq q${e.quality || 1}" title="${esc(name)}${tip ? ": " + tip : ""}"><img src="${ic(e.icon)}" alt="${esc(name)}">${extra}</div>`;
+  return `<div class="eq q${e.quality || 1}" data-item="${esc(name)}"${tip ? ` data-note="${esc(tip)}"` : ""}><img src="${ic(e.icon)}" alt="${esc(name)}">${extra}</div>`;
 }
 function renderPane() {
   document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === rtab));
@@ -687,13 +947,14 @@ function renderPane() {
     const now = fighting ? (WEAPONS.find(w => S.weapons[w] && GD.traits[fighting.trait]?.weapon === w) || (S.weapons.Sword ? "Sword" : null)) : null;
     const buffs = BUFF_ROLES.filter(r => active(S.buffs, r)).map(r => eqBox(S.buffs[r].name, "", `<span class="timer">${fmtT(S.buffs[r].until - S.clock)}</span>`, r));
     const supplies = Object.entries(S.supplies).flatMap(([kind, list]) => list.length ? [eqBox(list[0], "", `<span class="count">${list.length}</span>`, kind)] : []);
-    el.innerHTML = `<div class="doll">
+    el.html = `<div class="doll">
         <div class="col">${["Head", "Shoulder", "Back", "Chest"].map(s => eqBox(S.armor[s], s)).join("")}</div>
-        <div class="stats"><div><div class="v" title="Damage per second with your best weapon, Shop speed included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat"))}</div><div class="k">DPS</div></div>
-          <div><div class="v hp" title="Refills after every fight. Armor and combat food raise it.">${Math.round(maxHp()).toLocaleString("en-US")}</div><div class="k">HP</div></div>
-          <div title="Average of your 7 armor slots (white 20, green 40, blue 60, purple 80, legendary 100). Empty slots count as 0."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
+        <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat"))}</div><div class="k">DPS</div></div>
+          <div><div class="v hp" title="HP: refills after every fight. Armor and combat food raise it.">${Math.round(maxHp()).toLocaleString("en-US")}</div><div class="k">HP</div></div>
+          <div title="Gear Level: the average of your 7 armor slots (white 20, green 40, blue 60, purple 80, legendary 100). Empty slots count as 0."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
         <div class="col">${["Hands", "Legs", "Feet"].map(s => eqBox(S.armor[s], s)).join("")}</div></div>
-      <div class="weapons" style="margin-top:14px">${WEAPONS.map(w => `<div class="${w === now ? "now" : ""}" title="${STRONG[w]}">${eqBox(S.weapons[w], "MainHand", "", STRONG[w])}${w}</div>`).join("")}</div>
+      <div class="weapons" style="margin-top:14px">${WEAPONS.map(w => `<div class="${w === now ? "now" : ""}">${S.weapons[w] ? eqBox(S.weapons[w], "MainHand")
+        : `<div class="eq empty" title="${w}: ${STRONG[w]} Craft one with Blacksmithing."><img src="${ic(GD.ui_icons.slot_MainHand)}" alt="${w} empty"></div>`}${w}</div>`).join("")}</div>
       <div class="subh">Tools</div>
       <div class="irow">${GATHER.slice().sort().map(k => S.tools[k] ? eqBox(S.tools[k], "MainHand") : `<div class="eq empty" title="${P[k].name} tool: craft one with Engineering"><img src="${ic(P[k].icon)}" alt="" style="filter:grayscale(1)"></div>`).join("")}</div>
       <div class="subh">Buffs <span>· one of each kind</span></div><div class="irow">${buffs.join("") || `<span class="mute small">None running. Craft potions and food.</span>`}</div>
@@ -704,21 +965,21 @@ function renderPane() {
       return `<div class="trk"><span class="tl">${label}</span>${pips(lv)}<span class="bonus">+${Math.round(lv * step * 100)}%</span>
         ${max ? `<span class="maxed">Max</span>` : `<button class="wbtn ${can ? "" : "dim"}" data-buy="${k}:${kind}" title="${can ? "Buy level " + (lv + 1) : "Not enough gold"}"><span class="coins">${coins(cost, true)}</span></button>`}</div>`;
     };
-    el.innerHTML = `<div class="shophead"><span>Permanent upgrades. Each level costs double the last.</span><span class="coins">${coins(S.gold)}</span></div>` +
+    el.html = `<div class="shophead"><span>Permanent upgrades. Each level costs double the last.</span><span class="coins">${coins(S.gold)}</span></div>` +
       GROUPS.map(([label, kind]) => `<div class="glabel" style="padding:12px 0 2px">${label}</div>` + byKind(kind).map(p =>
         `<div class="trainer"><img class="icon" src="${ic(p.icon)}" alt=""><div class="tn">${p.name}</div>
         ${track(p.key, "Speed", S.speedLv[p.key], BAL.gold.speed_step, "speed")}${track(p.key, "XP", S.xpLv[p.key], BAL.gold.xp_step, "xp")}</div>`).join("")).join("");
   } else if (rtab === "bags") {
     const mats = GD.materials.filter(m => (S.stock[m.name] || 0) >= 1);
     const total = mats.reduce((t, m) => t + Math.floor(S.stock[m.name]) * sellValue(m.name), 0);
-    el.innerHTML = `<div class="shophead"><span>Up to ${bagCap()} of each. Extras sell while you play; nothing sells while the page is closed.</span>
+    el.html = `<div class="shophead"><span>Up to ${bagCap()} of each. Extras sell while you play; nothing sells while the page is closed.</span>
         ${mats.length ? `<button class="wbtn" data-sellall="1">Sell everything · <span class="coins">${coins(total, true)}</span></button>` : ""}</div>` +
-      (mats.map(m => { const n = Math.floor(S.stock[m.name]); return `<div class="li"><img class="icon sm" src="${ic(m.icon)}" alt="">
-        <span class="q${m.quality}">${esc(m.name)}</span><button class="wbtn" style="padding:1px 8px;font-size:12.5px" data-sell="${esc(m.name)}">Sell all</button>
+      (mats.map(m => { const n = Math.floor(S.stock[m.name]); return `<div class="li"><img class="icon sm" src="${ic(m.icon)}" alt="" data-item="${esc(m.name)}">
+        <span class="q${m.quality}" data-item="${esc(m.name)}">${esc(m.name)}</span><button class="wbtn" style="padding:1px 8px;font-size:12.5px" data-sell="${esc(m.name)}">Sell all</button>
         <div class="sbar ${n >= bagCap() ? "full" : ""}"><i style="width:${pct(n / bagCap())}"></i><span><span></span><span>${n} / ${bagCap()}</span></span></div></div>`; }).join("")
       || `<p class="mute">Your bags are empty.</p>`);
   } else {
-    el.innerHTML = `<div class="log">${logLines.join("") || `<p class="sys">Messages from the Archipelago server show here.</p>`}</div>`;
+    renderLog(el);
   }
 }
 function renderGoal() {
@@ -735,18 +996,19 @@ function renderGoal() {
   if (showMaster) html += `<div class="title" style="font-size:15px;margin-top:6px">Master Professions</div><ul>
       <li><b>Professions at 300: ${masteredCount()} / ${need}</b></li></ul>`;
   if (showRag && !showMaster) html += `<ul><li class="mute">Ready when these are at 300: ${reqs.map(k => `<span class="${S.level[k] >= 300 ? "ok" : ""}">${P[k].name}</span>`).join(", ")}</li></ul>`;
-  $("goal").innerHTML = html + `</div>`;
+  $("goal").html = html + `</div>`;
 }
 function render() {
   if (!S) return;
-  renderHeader(); renderList(); renderSlots(); renderDetail(); renderPane(); renderGoal();
+  renderHeader(); renderList(); $("vt-main").textContent = P[selected].name; renderSlots(); renderDetail(); renderPane(); renderGoal();
+  refreshTip();
 }
 
 // ---- input -------------------------------------------------------------------------------
 document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t || !S) return;
-  if (t.matches(".prof")) { selected = t.dataset.k; tab = Math.max(0, (ranks[selected] || 1) - 1); closeDrawer(); render(); return; }
+  if (t.matches(".prof")) { selected = t.dataset.k; tab = Math.max(0, (ranks[selected] || 1) - 1); showView("main"); render(); return; }
   if (t.dataset.t !== undefined) { tab = +t.dataset.t; renderDetail(); return; }
   if (t.dataset.tab) { rtab = t.dataset.tab; renderPane(); return; }
   if (t.dataset.do) {
@@ -761,21 +1023,19 @@ document.addEventListener("click", ev => {
   if (t.dataset.sellall) { sellEverything(); dirty = true; return; }
   if (t.dataset.rag) { S.field = { kind: "ragnaros", name: "Ragnaros" }; S.fieldT = 0; dirty = true; render(); return; }
 });
-$("burger").onclick = () => document.body.classList.contains("drawer-open") ? closeDrawer() : openDrawer();
-$("shade").onclick = closeDrawer;
-function openDrawer() { document.body.classList.add("drawer-open"); $("shade").hidden = false; $("burger").setAttribute("aria-expanded", "true"); }
-function closeDrawer() { document.body.classList.remove("drawer-open"); $("shade").hidden = true; $("burger").setAttribute("aria-expanded", "false"); }
-$("to-connect").onclick = () => { if (confirmLeave()) location.reload(); };
-const confirmLeave = () => { save(); return true; };
+// Phone: the tab bar shows one view at a time (Professions, the open profession, Character).
+function showView(v) { document.body.dataset.view = v; window.scrollTo(0, 0); }
+$("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) showView(b.dataset.view); };
+$("to-connect").onclick = () => { save(); location.href = location.pathname; };
 
 // ---- connect screen ------------------------------------------------------------------------
 function showRecent() {
   let rooms = [];
   try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
-  $("recent").innerHTML = rooms.length ? `<div class="glabel" style="padding:0">Recent rooms</div>` + rooms.map(r =>
+  $("recent").html = rooms.length ? `<div class="glabel" style="padding:0">Recent rooms</div>` + rooms.map(r =>
     `<button type="button" data-server="${esc(r.server)}" data-slot="${esc(r.slot)}"><b>${esc(r.slot)}</b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
      <span class="mute" style="font-size:13px">${esc(r.server)} · ${r.done ? "Goal complete" : `${r.checks}/220 checks`}</span></button>`).join("") : "";
-  $("recent").querySelectorAll("button").forEach(b => b.onclick = () => { $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("c-pass").focus(); });
+  $("recent").querySelectorAll("button").forEach(b => b.onclick = () => { $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit(); });
 }
 $("connect-form").addEventListener("submit", ev => {
   ev.preventDefault();
@@ -788,31 +1048,35 @@ $("connect-form").addEventListener("submit", ev => {
   if (q.get("server")) $("c-server").value = q.get("server");
   if (q.get("slot")) $("c-slot").value = q.get("slot");
   showRecent();
+  // A bookmarked link with both server and slot goes straight into the game.
+  if (q.get("server") && q.get("slot")) $("connect-form").requestSubmit();
 }
 
 // ---- main loop ------------------------------------------------------------------------------
 let lastTick = 0;
 function startGame() {
-  ["connect"].forEach(id => $(id).hidden = true);
-  ["top", "game", "foot"].forEach(id => $(id).hidden = false);
+  $("connect").hidden = true;
+  ["top", "vtabs", "game", "foot"].forEach(id => $(id).hidden = false);
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || "combat";
   tab = Math.max(0, (ranks[selected] || 1) - 1);
   catchUpOffline();
-  resendAllChecks(); flushChecks(); checkGoal();
+  resendAllChecks(); flushChecks(); checkGoal(true);
   save();
   render();
   lastTick = performance.now();
   setInterval(tick, 250);
+  requestAnimationFrame(frame);
   setInterval(() => { if (dirty) save(); }, 20000);
   document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
   window.addEventListener("pagehide", () => save());
 }
 let renderAcc = 0;
 function tick() {
-  const now = performance.now(), dt = Math.min((now - lastTick) / 1000, 3600);
+  const now = performance.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
+  if (dt > 300) { catchUp(dt); render(); return; }
   advance(dt, false);
-  dirty = true;
+  if (S.field || S.work) dirty = true;
   flushChecks(); checkGoal();
   renderAcc += dt;
   renderSlots();

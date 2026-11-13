@@ -1,4 +1,4 @@
-# Skillup Setup Guide
+# SkillUp Setup Guide
 
 ## Generating
 
@@ -9,10 +9,10 @@
 ## Playing
 
 1. Open the game page:
-   <https://chakraathepanda.github.io/Archipelago-Skillup/client/>
+   <https://chakraathepanda.github.io/Archipelago-SkillUp/client/>
 2. Enter the server (e.g. `archipelago.gg:38281`) and your slot name, then Connect.
 
-You can bookmark `https://chakraathepanda.github.io/Archipelago-Skillup/client/?server=archipelago.gg:38281&slot=YourName` to
+You can bookmark `https://chakraathepanda.github.io/Archipelago-SkillUp/client/?server=archipelago.gg:38281&slot=YourName` to
 skip typing on your phone.
 
 ## Saves

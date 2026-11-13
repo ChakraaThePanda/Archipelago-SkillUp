@@ -13,7 +13,7 @@ from BaseClasses import CollectionState
 from .data import ARMOR_PROFS, MOLTEN_CORE, PROF, RAGNAROS_CRAFTS, Thing
 
 
-class SkillupLogic:
+class SkillUpLogic:
     def __init__(self, player: int):
         self.player = player
 

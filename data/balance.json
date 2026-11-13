@@ -1,5 +1,5 @@
 {
-  "_about": "Every tunable number in Skillup. tools/simulate.py reads this with data/game_data.json and reports how long things take. Change numbers here, re-run, compare.",
+  "_about": "Every tunable number in SkillUp. tools/simulate.py reads this with data/game_data.json and reports how long things take. Change numbers here, re-run, compare.",
 
   "xp": {
     "_about": "Skill point L -> L+1 costs base * (1 + L / per_level) XP. Colors multiply XP per action.",
@@ -80,6 +80,7 @@
     "ratio_min": 0.4,
     "ratio_max": 4.0,
     "death_time": 120,
+    "corpse_run": 30,
     "_death_time": "seconds lost per death: 30 s corpse run + 3 min of Resurrection Sickness at half combat speed (about 90 s)",
     "cloth_per_kill": 1.5,
     "gold_per_kill": 40,

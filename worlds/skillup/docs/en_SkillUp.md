@@ -1,4 +1,4 @@
-# Skillup
+# SkillUp
 
 ## What is this game?
 

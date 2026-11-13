@@ -9,22 +9,22 @@ from .data import (
     FILLER, GAME, GATHERING, ITEM_NAME_TO_ID, LOCATION_NAME_TO_ID, MOLTEN_CORE, PROF, PROFESSIONS, RANKS,
     STARTING_PAIRS, THINGS, TRAPS, USEFUL, VICTORY_MASTERY, VICTORY_RAGNAROS, milestone,
 )
-from .Options import CombatAccess, Goal, SkillupOptions, StartingPair
-from .Rules import SkillupLogic
+from .Options import CombatAccess, Goal, SkillUpOptions, StartingPair
+from .Rules import SkillUpLogic
 
 
-class SkillupItem(Item):
+class SkillUpItem(Item):
     game = GAME
 
 
-class SkillupLocation(Location):
+class SkillUpLocation(Location):
     game = GAME
 
 
-class SkillupWeb(WebWorld):
+class SkillUpWeb(WebWorld):
     tutorials = [Tutorial(
         "Multiworld Setup Guide",
-        "How to play Skillup in your browser with Archipelago.",
+        "How to play SkillUp in your browser with Archipelago.",
         "English",
         "setup_en.md",
         "setup/en",
@@ -33,16 +33,16 @@ class SkillupWeb(WebWorld):
     theme = "partyTime"
 
 
-class SkillupWorld(World):
+class SkillUpWorld(World):
     """An idle game of Classic World of Warcraft professions, played in your browser. Gather,
     craft and fight to level 11 professions; every profession rank is an item somewhere in the
     multiworld, and every first gather, first craft, first kill and rank reached sends a check."""
 
     game = GAME
     author: str = "Chakraa"
-    web = SkillupWeb()
-    options_dataclass = SkillupOptions
-    options: SkillupOptions
+    web = SkillUpWeb()
+    options_dataclass = SkillUpOptions
+    options: SkillUpOptions
 
     item_name_to_id = ITEM_NAME_TO_ID
     location_name_to_id = LOCATION_NAME_TO_ID
@@ -73,7 +73,7 @@ class SkillupWorld(World):
             self.multiworld.early_items[self.player][PROF["combat"].item] = 1
 
     # ---- items ------------------------------------------------------------------------------
-    def create_item(self, name: str) -> SkillupItem:
+    def create_item(self, name: str) -> SkillUpItem:
         if name.startswith("Progressive ") or name == MOLTEN_CORE:
             cls = ItemClassification.progression
         elif name in USEFUL:
@@ -82,7 +82,7 @@ class SkillupWorld(World):
             cls = ItemClassification.trap
         else:
             cls = ItemClassification.filler
-        return SkillupItem(name, cls, ITEM_NAME_TO_ID[name], self.player)
+        return SkillUpItem(name, cls, ITEM_NAME_TO_ID[name], self.player)
 
     def get_filler_item_name(self) -> str:
         o = self.options
@@ -111,12 +111,12 @@ class SkillupWorld(World):
 
     # ---- locations and rules ----------------------------------------------------------------
     def create_regions(self) -> None:
-        logic = SkillupLogic(self.player)
+        logic = SkillUpLogic(self.player)
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
         def add(name: str, rule) -> None:
-            loc = SkillupLocation(self.player, name, LOCATION_NAME_TO_ID[name], menu)
+            loc = SkillUpLocation(self.player, name, LOCATION_NAME_TO_ID[name], menu)
             loc.access_rule = rule
             menu.locations.append(loc)
 
@@ -134,9 +134,9 @@ class SkillupWorld(World):
             need = self.options.professions_to_master.value
             events.append((VICTORY_MASTERY, lambda state: logic.mastered(state, need)))
         for name, rule in events:
-            loc = SkillupLocation(self.player, name, None, menu)
+            loc = SkillUpLocation(self.player, name, None, menu)
             loc.access_rule = rule
-            loc.place_locked_item(SkillupItem(name, ItemClassification.progression, None, self.player))
+            loc.place_locked_item(SkillUpItem(name, ItemClassification.progression, None, self.player))
             menu.locations.append(loc)
         names = [n for n, _ in events]
         self.multiworld.completion_condition[self.player] = lambda state: all(state.has(n, self.player) for n in names)

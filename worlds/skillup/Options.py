@@ -110,7 +110,7 @@ class MurlocAmbushWeight(Range):
 
 
 @dataclass
-class SkillupOptions(PerGameCommonOptions):
+class SkillUpOptions(PerGameCommonOptions):
     goal: Goal
     professions_to_master: ProfessionsToMaster
     game_speed: GameSpeed

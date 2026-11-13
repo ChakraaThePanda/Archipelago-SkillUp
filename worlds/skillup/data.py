@@ -13,7 +13,7 @@ from dataclasses import dataclass
 _DATA = json.loads(pkgutil.get_data(__name__, "data.json").decode("utf-8"))
 
 BASE_ID = 47_110_000
-GAME = "Skillup"
+GAME = "SkillUp"
 
 RANKS: list[str] = [r["name"] for r in _DATA["ranks"]]          # Apprentice ... Artisan
 RANK_CAPS: list[int] = [r["cap"] for r in _DATA["ranks"]]       # 75, 150, 225, 300
