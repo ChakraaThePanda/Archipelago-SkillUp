@@ -1,0 +1,76 @@
+# Publishes the playable game (GitHub Pages) from the latest release, never from a plain push,
+# so commits to main don't change the live game until a release is published.
+# The page is built from the release's tag, with "Version <tag>" in its footer linking to the release.
+#
+# One-time setup (repository settings):
+#   - Settings > Pages > Build and deployment > Source: "GitHub Actions"
+#   - Settings > Environments > github-pages > Deployment branches and tags: add a tag rule "*"
+#     (release runs come from a tag, which the default "main only" rule blocks)
+#
+# Pre-releases are skipped. Run it by hand to re-publish the latest release, or a given tag.
+name: Publish the game
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (leave empty for the latest release)
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}client/
+    steps:
+      - name: Pick the release
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${RELEASE_TAG:-$INPUT_TAG}"
+          if [ -z "$tag" ]; then
+            tag="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          fi
+          echo "Publishing $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ steps.pick.outputs.tag }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the page
+        run: |
+          python tools/build_client.py --version "${{ steps.pick.outputs.tag }}" --out site/client/index.html
+          touch site/.nojekyll
+          # the site's root just sends people to the game
+          cat > site/index.html <<'EOF'
+          <!doctype html><meta charset="utf-8"><title>SkillUp</title>
+          <meta http-equiv="refresh" content="0; url=client/"><a href="client/">Play SkillUp</a>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

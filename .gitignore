@@ -6,6 +6,11 @@ __pycache__/
 /skillup.apworld
 /SkillUp.yaml
 
+# The game page: built from client/src/ by tools/build_client.py. The live game is built by
+# .github/workflows/pages.yml from each release, so the local build is only for testing.
+/client/index.html
+/site/
+
 # Dev notes (design spec, balance report, data review): kept on this PC, not published.
 # BALANCE.md and DATA.md are rebuilt by tools/simulate.py --write and tools/build_game_data.py.
 # Player-facing docs live under worlds/skillup/docs/ instead, which ships inside the apworld.
