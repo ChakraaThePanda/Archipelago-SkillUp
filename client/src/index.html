@@ -34,10 +34,12 @@
 <header class="top frame" id="top" hidden>
   <span class="logo title"><img class="brand" data-logo alt="">SkillUp</span>
   <button class="who" id="to-connect" title="Change room or slot"><span class="online" id="online" aria-hidden="true"></span><span><b id="who"></b> <span class="mute" id="where"></span></span></button>
-  <span class="hstat"><span class="k">Gold</span><span class="coins" id="gold"></span></span>
+  <span class="hstats">
+  <span class="hstat h-gold"><span class="k">Gold</span><span class="coins" id="gold"></span></span>
   <span class="hstat hide-sm"><span class="k">Bags</span><span id="bags"></span></span>
-  <span class="hstat hide-sm" style="min-width:170px"><span class="k">Rested</span><span style="flex:1"><div class="sbar rested" style="height:14px"><i id="rested-bar"></i></div></span><span id="rested" style="font-size:13px"></span></span>
-  <span class="hstat"><span class="k">Checks</span><b id="checks"></b></span>
+  <span class="hstat h-rested"><span class="k">Rested</span><span class="rbar" style="flex:1"><div class="sbar rested" style="height:14px"><i id="rested-bar"></i></div></span><span id="rested" style="font-size:13px"></span></span>
+  <span class="hstat h-checks"><span class="k">Checks</span><b id="checks"></b></span>
+  </span>
   <span class="debuffs" id="debuffs" aria-label="Debuffs"></span>
 </header>
 

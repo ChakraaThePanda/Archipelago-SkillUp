@@ -414,7 +414,7 @@ function checkGoal(resend = false) {
 }
 
 // ---- items from the multiworld --------------------------------------------------------------
-function applyItems() {
+function applyItems(quiet = false) { // quiet: loading a save, so items that came in while you were away don't pop up
   ranks = Object.fromEntries(PROFS.map(p => [p.key, 0]));
   moltenCore = false;
   for (const it of received) {
@@ -424,33 +424,66 @@ function applyItems() {
     if (name === "Molten Core") moltenCore = true;
   }
   if (!S) return;
-  for (; S.applied < received.length; S.applied++) oneShot(received[S.applied].name ?? itemIdToName[received[S.applied].item]);
+  for (; S.applied < received.length; S.applied++) {
+    const it = received[S.applied], name = it.name ?? itemIdToName[it.item];
+    const effect = oneShot(name);
+    if (started && !quiet) receivedPopup(it, name, effect);
+  }
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || selected;
 }
+// Applies one item and returns what it did, in plain words (HTML), for its popup. "" = nothing to say.
 function oneShot(name) {
   const open = PROFS.map(p => p.key).filter(k => learned(k) && S.level[k] < 300);
   const lowest = list => list.sort((a, b) => S.level[a] - S.level[b])[0];
+  const pctOf = v => `${Math.round(v * 100)}%`;
+  const prof = PROFS.find(p => name === `Progressive ${p.name}`);
+  if (prof) return ranks[prof.key] ? `${esc(prof.name)} can now reach ${cap(prof.key)}` : "";
   switch (name) {
+    case "Molten Core": return "Ragnaros can now be fought";
     case "Speed Upgrade": case "XP Upgrade": {
-      const lv = name === "Speed Upgrade" ? S.speedLv : S.xpLv;
+      const speedUp = name === "Speed Upgrade", lv = speedUp ? S.speedLv : S.xpLv, step = speedUp ? BAL.gold.speed_step : BAL.gold.xp_step;
       const k = open.filter(k => lv[k] < BAL.gold.steps).sort((a, b) => lv[a] - lv[b] || S.level[a] - S.level[b])[0];
-      if (k) lv[k]++;
-      break;
+      if (!k) return "Every profession already has the most";
+      lv[k]++;
+      return `${esc(P[k].name)} ${speedUp ? "speed" : "XP"} +${pctOf(step)} (now +${pctOf(lv[k] * step)})`;
     }
-    case "Bag Upgrade": S.bagBonus += BAL.pool.useful["Bag Upgrade"].storage; break;
-    case "Better Prices": S.sellBonus += BAL.pool.useful["Better Prices"].sell; break;
+    case "Bag Upgrade": S.bagBonus += BAL.pool.useful["Bag Upgrade"].storage; return `Bags now hold ${bagCap()} of each material`;
+    case "Better Prices": S.sellBonus += BAL.pool.useful["Better Prices"].sell;
+      return `Materials sell for +${pctOf(BAL.pool.useful["Better Prices"].sell)} (now +${pctOf(S.sellBonus)})`;
     case "Coin Pouch": {
       const top = Math.max(...PROFS.map(p => Math.floor((S.level[p.key] - 1) / 75)));
-      S.gold += BAL.pool.filler["Coin pouch"].gold * C.rank_growth ** top;
-      break;
+      const amount = BAL.pool.filler["Coin pouch"].gold * C.rank_growth ** top;
+      S.gold += amount;
+      return `+<span class="coins">${coins(amount, true)}</span>`;
     }
-    case "Rested XP": S.rested = Math.min(S.rested + BAL.pool.filler["Rested XP"].rested_min * 60, BAL.offline.rested_cap * 60); break;
-    case "Tome of Experience": { const k = lowest(open); if (k) for (let i = 0; i < BAL.pool.filler["Tome of experience"].levels; i++) addXp(k, xpNeed(S.level[k]) / gameSpeed(), true); break; }
-    case "Resurrection Sickness": case "Broken Tool":
-      S.debuffs[name] = { until: S.clock + BAL.traps[name].minutes * 60 }; break;
-    case "Repair Bill": S.gold *= 1 - BAL.traps["Repair Bill"].gold_percent / 100; break;
-    case "Murloc Ambush": if (learned("combat")) S.ambush += BAL.traps["Murloc Ambush"].fights; break;
+    case "Rested XP": {
+      const before = S.rested;
+      S.rested = Math.min(S.rested + BAL.pool.filler["Rested XP"].rested_min * 60, BAL.offline.rested_cap * 60);
+      const added = Math.round((S.rested - before) / 60);
+      return added ? `+${added} min of double XP (now ${Math.round(S.rested / 60)} min)` : "Rested is already full";
+    }
+    case "Tome of Experience": {
+      const k = lowest(open);
+      if (!k) return "Nothing left to train";
+      const before = S.level[k];
+      for (let i = 0; i < BAL.pool.filler["Tome of experience"].levels; i++) addXp(k, xpNeed(S.level[k]) / gameSpeed(), true);
+      const gained = S.level[k] - before;
+      return gained ? `${esc(P[k].name)} +${gained} (now ${S.level[k]})` : `XP for ${esc(P[k].name)} (at its cap of ${cap(k)})`;
+    }
+    case "Resurrection Sickness": case "Broken Tool": {
+      S.debuffs[name] = { until: S.clock + BAL.traps[name].minutes * 60 };
+      return `${BAL.traps[name].minutes} min: ${esc(DEBUFFS.find(d => d[0] === name)[2])}`;
+    }
+    case "Repair Bill": {
+      const lost = S.gold * BAL.traps["Repair Bill"].gold_percent / 100;
+      S.gold -= lost;
+      return `-<span class="coins">${coins(lost, true)}</span> (${BAL.traps["Repair Bill"].gold_percent}% of your gold)`;
+    }
+    case "Murloc Ambush":
+      if (!learned("combat")) return "No effect: you can't fight yet";
+      S.ambush += BAL.traps["Murloc Ambush"].fights; return "A murloc is coming for you";
   }
+  return "";
 }
 
 // ---- solo play: no server, the game places and hands out its own items ---------------------------
@@ -513,10 +546,9 @@ function soloChecks() { // a check in solo hands out the item placed there
   for (const loc of pendingChecks) {
     if (checked.has(loc) || !(loc in S.solo.placement)) continue;
     const item = S.solo.placement[loc];
-    checked.add(loc); S.solo.checked.push(loc); S.solo.received.push(item); received.push({ name: item });
+    checked.add(loc); S.solo.checked.push(loc); S.solo.received.push(item); received.push({ name: item, loc });
     const html = `<span class="it-${itemKind(item)}">${esc(item)}</span>`;
     log(`<span class="pl-me">You</span> found your ${html} (<span class="loc">${esc(loc)}</span>)`);
-    if (started) popup(`You found your ${html}`, "sent");
     got = dirty = true;
   }
   pendingChecks.clear();
@@ -530,7 +562,7 @@ function startSolo(opts) {
   slotData = S.solo.opts;
   received = S.solo.received.map(name => ({ name }));
   checked = new Set(S.solo.checked);
-  applyItems();
+  applyItems(true);
   log(`<span class="sys">${opts ? "New solo game. Every check you do gives you one of this game's items." : "Solo game resumed."}</span>`);
   startGame();
 }
@@ -651,7 +683,7 @@ function connect(server, slotName, password) {
         send([{ cmd: "Get", keys: [storageKey()] }]);
         break;
       case "Retrieved":
-        if (!S && conn && storageKey() in pkt.keys) { loadSave(pkt.keys[storageKey()]); applyItems(); startGame(); }
+        if (!S && conn && storageKey() in pkt.keys) { loadSave(pkt.keys[storageKey()]); applyItems(true); startGame(); }
         break;
       case "ReceivedItems":
         if (pkt.index === 0) received = [];
@@ -665,10 +697,11 @@ function connect(server, slotName, password) {
         break;
       case "PrintJSON":
         log(renderJson(pkt.data), pkt.type === "Hint" ? "hint" : "");
-        if (pkt.type === "ItemSend" && conn && pkt.item?.player === conn.slot) {
+        // items you send; items you get pop up when they're applied (applyItems), so they can say what they did
+        if (pkt.type === "ItemSend" && conn && pkt.item?.player === conn.slot && pkt.receiving !== conn.slot) {
           const item = renderJson([{ type: "item_id", text: String(pkt.item.item), player: pkt.receiving, flags: pkt.item.flags }]);
-          popup(pkt.receiving === conn.slot ? `You found your ${item}`
-            : `Sent ${item} to ${renderJson([{ type: "player_id", text: String(pkt.receiving) }])}`, "sent");
+          itemPopup({ sent: true, item, who: renderJson([{ type: "player_id", text: String(pkt.receiving) }]),
+            why: checkReason(lookup("location", pkt.item.location, conn.slot)) });
         }
         break;
       case "Bounced":
@@ -741,7 +774,7 @@ function coins(c, compact = false) {
   const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cp = c % 100;
   const parts = [[g, GD.ui_icons.gold, "gold"], [s, GD.ui_icons.silver, "silver"], [cp, GD.ui_icons.copper, "copper"]];
   const shown = compact ? parts.filter(([v]) => v) : parts.filter(([v], i) => v || i === 2 || (i === 1 && g));
-  return (shown.length ? shown : [parts[2]]).map(([v, i, a]) => `${v}<img src="${ic(i)}" alt="${a}">`).join("");
+  return (shown.length ? shown : [parts[2]]).map(([v, i, a]) => `<span class="n">${v}</span><img src="${ic(i)}" alt="${a}">`).join("");
 }
 const lvl = (c, u) => `<span class="lvl c-${c.name}" title="Skill ${u}: ${COLOR_TIP[c.name]}">${u}</span>`;
 const pace = hr => hr > 0 ? `<span title="One skill level every ${fmtT(3600 / hr)}">+1 / <b>${fmtT(3600 / hr)}</b></span>` : "";
@@ -756,6 +789,29 @@ function popup(html, cls = "") {
   setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, 5000);
 }
 const toast = text => popup(esc(text));
+// Item popups: a small header, then what happened. "why" is the check that sent it, in plain words.
+const VERB = { mining: "mined", herbalism: "gathered", skinning: "skinned", fishing: "caught", combat: "defeated", cooking: "cooked" };
+function checkReason(loc) {
+  const m = /^(.+?): (.+)$/.exec(loc), p = m && PROFS.find(q => q.name === m[1]);
+  if (p) return `First ${m[2]} ${VERB[p.key] || "crafted"}`;
+  if (PROFS.some(q => RANKS.some(r => loc === `${r.name} ${q.title}`))) return `Reached ${loc}`;
+  return loc;
+}
+// No "who" = your own item from your own check (every check in solo play): "Item Found".
+function itemPopup({ sent, item, who, why, effect }) {
+  popup(`<div class="toast-h">${sent ? "Item Sent" : who ? "Item Received" : "Item Found"}</div>`
+    + (why ? `<div class="toast-why">${esc(why)}</div>` : "")
+    + `<div>${item}${who ? ` <span class="mute">${sent ? "to" : "from"}</span> ${who}` : ""}</div>`
+    + (effect ? `<div class="toast-fx">${effect}</div>` : ""), sent ? "sent" : "got");
+}
+// An item that just reached you (solo: { name, loc }; online: the server's item, with who found it and where).
+function receivedPopup(it, name, effect) {
+  const item = `<span class="it-${it.flags === undefined ? itemKind(name) : it.flags & 4 ? "trap" : it.flags & 1 ? "prog" : it.flags & 2 ? "use" : "fill"}">${esc(name)}</span>`;
+  if (solo) return itemPopup({ item, why: it.loc && checkReason(it.loc), effect });
+  const own = it.player === conn.slot;
+  itemPopup({ item, effect, who: own ? "" : it.player === 0 ? `<span class="pl">Archipelago</span>` : renderJson([{ type: "player_id", text: String(it.player) }]),
+    why: own ? checkReason(lookup("location", it.location, conn.slot)) : "" });
+}
 const logLines = [], LOG_MAX = 300;
 function log(html, cls = "") {
   const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -812,7 +868,7 @@ const bagIconName = () => GD.recipes.filter(r => r.role === "Bag" && S.crafted.i
 function renderHeader() {
   $("gold").html = coins(S.gold);
   $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bagIconName())}" alt=""> ${bagCap()} each</span>`;
-  $("rested").textContent = `${Math.round(S.rested / 60)} min`;
+  $("rested").html = `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
   $("debuffs").html = DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => {
