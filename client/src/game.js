@@ -589,7 +589,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 let dirty = false;
 const roomId = () => `${conn.seed}:${conn.team}:${conn.slot}`;
 function save(remote = true) {
-  if (!S || !conn) return;
+  if (!S || !conn || replaced) return;
   S.savedAt = Date.now();
   S.room = roomId();
   lsSet(localKey(), JSON.stringify(S));
@@ -619,6 +619,11 @@ const gamesPackage = {};
 function send(packets) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(packets)); }
 
 let sock = 0;   // bumps on every new connection; handlers from an older one are ignored
+// One window per slot: each window claims the slot when it connects, and an older window that sees
+// someone else's claim saves, disconnects and stops, so two windows never overwrite each other's progress.
+const WINDOW_ID = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+const activeKey = () => `skillup_active_${conn.team}_${conn.slot}`;
+let replaced = false, claiming = false;
 function connect(server, slotName, password) {
   server = server.trim();
   if (ws) { ws.onclose = ws.onmessage = null; ws.close(); }
@@ -640,6 +645,28 @@ function connect(server, slotName, password) {
       setTimeout(() => { if (mine === sock && (!ws || ws.readyState > 1)) { attempt = 0; opened = false; open(); } }, 10000);
     };
   };
+  function claim() {
+    claiming = true;
+    send([{ cmd: "Set", key: activeKey(), default: null, want_reply: true, operations: [{ operation: "replace", value: WINDOW_ID }] }]);
+  }
+  function stopHere(flush) { // this slot was opened in another window
+    if (flush && S) { flushChecks(); save(); }
+    replaced = true;
+    sock++; if (ws) { ws.onclose = ws.onmessage = null; ws.close(); ws = null; }
+    setOnline(false);
+    if (!S) { $("c-err").textContent = "This game was just opened in another window."; return; }
+    const ov = document.createElement("div");
+    ov.className = "away-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Playing somewhere else");
+    ov.innerHTML = `<div class="away-card frame"><div class="amb-title won">Playing somewhere else</div>
+      <div class="amb-sub">${esc(conn.slotName)} was opened in another window or device, so this one stopped. Your progress was saved and carries on over there.</div>
+      <button class="wbtn">Play here instead</button></div>`;
+    ov.querySelector("button").onclick = () => {
+      try { sessionStorage.setItem("skillup:pass", password || ""); } catch {}
+      location.href = `${location.pathname}?${new URLSearchParams({ server, slot: slotName })}`;
+    };
+    document.body.append(ov);
+    ov.querySelector("button").focus();
+  }
   function wrongRoom() { // the address now hosts something else: stop without sending anything
     sock++; ws.onclose = ws.onmessage = null; ws.close(); setOnline(false);
     log(`<span class="sys">This address now hosts a different room, so nothing was sent. Your progress here is saved. Click your name at the top to connect to another room.</span>`);
@@ -679,11 +706,28 @@ function connect(server, slotName, password) {
         playerGames = Object.fromEntries(Object.entries(pkt.slot_info || {}).map(([k, v]) => [k, v.game]));
         if (slotData.death_link) send([{ cmd: "ConnectUpdate", tags: ["DeathLink"] }]);
         setOnline(true);
-        if (S) { resendAllChecks(); flushChecks(); checkGoal(true); break; }   // reconnect: keep playing
-        send([{ cmd: "Get", keys: [storageKey()] }]);
+        send([{ cmd: "SetNotify", keys: [activeKey()] }]);
+        if (S) send([{ cmd: "Get", keys: [activeKey()] }]);   // reconnect: keep playing, unless another window took over meanwhile
+        else claim();
         break;
       case "Retrieved":
-        if (!S && conn && storageKey() in pkt.keys) { loadSave(pkt.keys[storageKey()]); applyItems(true); startGame(); }
+        if (S && conn && activeKey() in pkt.keys && !replaced) {
+          const owner = pkt.keys[activeKey()];
+          if (owner && owner !== WINDOW_ID) return stopHere(false);
+          claim(); resendAllChecks(); flushChecks(); checkGoal(true);
+        }
+        if (!S && conn && storageKey() in pkt.keys && !replaced) { loadSave(pkt.keys[storageKey()]); applyItems(true); startGame(); }
+        break;
+      case "SetReply":
+        if (!conn || pkt.key !== activeKey()) break;
+        if (pkt.value !== WINDOW_ID) { if (!replaced) stopHere(true); break; }
+        if (!claiming) break;
+        claiming = false;
+        if (S) break;
+        // Taking over from another window: give it a moment to save before loading.
+        { const other = pkt.original_value && pkt.original_value !== WINDOW_ID;
+          if (other) $("c-err").textContent = "Taking over from your other window…";
+          setTimeout(() => { if (mine === sock) send([{ cmd: "Get", keys: [storageKey()] }]); }, other ? 2000 : 0); }
         break;
       case "ReceivedItems":
         if (pkt.index === 0) received = [];
@@ -1295,6 +1339,7 @@ $("connect-form").addEventListener("submit", ev => {
   const q = new URLSearchParams(location.search);
   if (q.get("server")) $("c-server").value = q.get("server");
   if (q.get("slot")) $("c-slot").value = q.get("slot");
+  try { const pw = sessionStorage.getItem("skillup:pass"); if (pw !== null) { $("c-pass").value = pw; sessionStorage.removeItem("skillup:pass"); } } catch {}
   showRecent();
   // A bookmarked link with both server and slot goes straight into the game.
   if (q.get("server") && q.get("slot")) $("connect-form").requestSubmit();
@@ -1321,6 +1366,7 @@ function startGame() {
 }
 let renderAcc = 0;
 function tick() {
+  if (replaced) return;
   const now = performance.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
   if (dt > 300) { catchUp(dt); render(); return; }
