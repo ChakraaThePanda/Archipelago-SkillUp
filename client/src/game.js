@@ -141,7 +141,20 @@ function recommended(m) {
   return recCache[m.name] = G;
 }
 const ilvl = n => !n ? 0 : BY_NAME[n].legendary ? 100 : 20 * (BY_NAME[n].rank + 1);
-const gearLevel = () => Math.round(ARMOR_SLOTS.reduce((t, s) => t + ilvl(S.armor[s]), 0) / 7);
+// Your Gear Level comes from your HP (Combat food included): the Gear Level of an evenly upgraded set
+// with that much HP, on the same ladder recommended() uses, so the two numbers compare like for like.
+const GEAR_LADDER = GEAR_TIERS.slice(0, -1).flatMap(([lo, loLv], i) => {
+  const [hi, hiLv] = GEAR_TIERS[i + 1];
+  return Array.from({ length: 7 }, (_, k) => ({ gl: ((7 - k) * loLv + k * hiLv) / 7,
+    hp: armorHp([...Array(7 - k).fill(lo), ...Array(k).fill(hi)].filter(r => r !== null)) }));
+}).concat([{ gl: 100, hp: armorHp(Array(7).fill(GEAR_TIERS[GEAR_TIERS.length - 1][0])) }]);
+function gearLevel() {
+  const hp = maxHp(), i = GEAR_LADDER.findIndex(s => s.hp >= hp);
+  if (i < 0) return 100;
+  if (i === 0) return 0;
+  const a = GEAR_LADDER[i - 1], b = GEAR_LADDER[i];
+  return Math.round(a.gl + (b.gl - a.gl) * (hp - a.hp) / (b.hp - a.hp));
+}
 
 // ---- actions --------------------------------------------------------------------------------
 function ambushTarget() { // the first creature you don't always beat with your gear (the last one if you beat them all)
@@ -1202,7 +1215,7 @@ function combatHtml() {
       const rec = recommended(m), running = S.field?.kind === "mob" && S.field.name === m.name;
       const verdict = r.win >= .995 ? `<span class="verdict v-safe" title="You always win with your gear">Safe</span>`
         : `<span class="verdict ${r.win >= .5 ? "v-risky" : "v-deadly"}" title="You win ${pct(r.win)} of fights with your gear">${r.win >= .5 ? "Risky" : "Deadly"} · ${pct(r.win)}</span>`;
-      const gear = `<span class="gear" style="color:${glColor(rec)}" title="Gear Level ${rec}: the armor you need to always win this fight. Yours is ${yours}. Your weapon only changes how fast you kill."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>Gear Level ${rec}</span>`;
+      const gear = `<span class="gear" style="color:${glColor(rec)}" title="Gear Level ${rec}: the armor you need to win 95% of these fights. Yours is ${yours}. Your weapon only changes how fast you kill."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>Gear Level ${rec}</span>`;
       return `<div class="mob ${m.boss ? "boss" : ""}"><img src="${m.image}" alt="">
         ${m.trait ? `<span class="trait" title="${GD.traits[m.trait].text}">${m.trait}</span>` : ""}
         <div class="plate"><span class="nm">${m.name}</span>
@@ -1246,7 +1259,7 @@ function renderPane() {
         <div class="col">${["Head", "Shoulder", "Back", "Chest"].map(s => eqBox(S.armor[s], s)).join("")}</div>
         <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed and Combat elixir included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat") * (1 + buffValue("Combat elixir")))}</div><div class="k">DPS</div></div>
           <div><div class="v hp" title="HP: refills after every fight. Armor and combat food raise it.">${Math.round(maxHp()).toLocaleString("en-US")}</div><div class="k">HP</div></div>
-          <div title="Gear Level: the average of your 7 armor slots (white 20, green 40, blue 60, purple 80, legendary 100). Empty slots count as 0."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
+          <div title="Gear Level: how tough your armor makes you, from your HP (Combat food included). A full white set is 20, green 40, blue 60, purple 80, legendary 100. Compare it with a creature's Gear Level."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
         <div class="col">${["Hands", "Legs", "Feet"].map(s => eqBox(S.armor[s], s)).join("")}${S.trinket ? eqBox(TRINKET.name, "Trinket").replace('class="eq', 'class="eq trinket') : ""}</div></div>
       <div class="weapons" style="margin-top:14px">${WEAPONS.map(w => `<div class="${w === now ? "now" : ""}">${S.weapons[w] ? eqBox(S.weapons[w], "MainHand")
         : `<div class="eq empty" title="${w}: ${STRONG[w]} Craft one with Blacksmithing."><img src="${ic(GD.ui_icons.slot_MainHand)}" alt="${w} empty"></div>`}${w}</div>`).join("")}</div>
