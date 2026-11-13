@@ -7,17 +7,17 @@ class Goal(Choice):
     """What finishes your game.
     Ragnaros: defeat Ragnaros in Molten Core. You need the Molten Core item and the Legendary
     armor set, which uses Artisan materials from almost every profession.
-    Master Professions: bring a number of professions to 300 (see Professions to Master).
-    Both: do both."""
+    Master Professions: bring a number of professions to 300 (see Professions to Master)."""
     display_name = "Goal"
     option_ragnaros = 0
     option_master_professions = 1
-    option_both = 2
     default = 0
+    # "Both" was removed: by the time Ragnaros falls most professions are at 300 anyway
+    alias_both = option_ragnaros
 
 
 class ProfessionsToMaster(Range):
-    """How many professions must reach 300 for the Master Professions goal (and Both).
+    """How many professions must reach 300 for the Master Professions goal.
     Estimated play time on Normal speed: 1 about 4 hours, 4 about 7 hours, 11 about 10 hours."""
     display_name = "Professions to Master"
     range_start = 1

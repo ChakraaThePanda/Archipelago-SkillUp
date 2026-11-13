@@ -35,7 +35,6 @@ You gather (or fight) and craft at the same time. Each profession has 4 ranks: A
 * **Ragnaros** (default): get Molten Core, craft the Legendary armor set and defeat
   Ragnaros.
 * **Master Professions:** bring a number of professions to 300.
-* **Both.**
 
 ## Game speed
 

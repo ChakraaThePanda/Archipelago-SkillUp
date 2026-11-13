@@ -6,8 +6,8 @@
     "base": 13,
     "per_level": 25,
     "colors": {"orange": [15, 1.0], "yellow": [30, 0.75], "green": [45, 0.25], "grey": [9999, 0.0]},
-    "game_speed": {"Long": 0.8, "Normal": 1.8, "Sync": 10.0},
-    "_game_speed": "Tuned for a realistic player (tools/simulate.py PLAYERS), not a perfect one: Long ~20 h, Normal ~10 h, Sync ~4 h (a sync game played in one sitting)"
+    "game_speed": {"Long": 0.4, "Normal": 1.0, "Sync": 5.0},
+    "_game_speed": "XP multiplier per speed (Normal = 1). Tuned for a realistic multiworld player (tools/simulate.py PLAYERS), not a perfect one: Long ~20 h, Normal ~11 h, Sync ~4.5 h. Solo with an attentive player is much faster (Sync ~1 h)."
   },
 
   "thunderfury": {
@@ -34,7 +34,7 @@
     "combat_time": 3.0,
     "rank_growth": 1.7,
     "slot_growth": 0.15,
-    "xp_per_second": 1.0,
+    "xp_per_second": 2.0,
     "craft_xp_mult": 1.4,
     "_craft_xp_mult": "crafting earns more XP per second: one Workshop slot levels 6 professions while the Field levels 5",
     "boss_time_mult": 2.5,

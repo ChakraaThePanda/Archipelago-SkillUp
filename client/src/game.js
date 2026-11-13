@@ -62,7 +62,7 @@ function newSave() {
     gold: 0, stock: {}, bags: 0, crafted: [], firsts: [], weapons: {}, armor: {}, tools: {}, supplies: {}, buffs: {},
     debuffs: {}, rested: 0, field: null, fieldT: 0, work: null, workT: 0, applied: 0, bagBonus: 0, sellBonus: 0,
     clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, goalSent: false, deaths: 0, deathStreak: 0,
-    trinket: false, trinketNew: false, trinketBonus: 0 };
+    trinket: false, trinketNew: false, trinketBonus: 0, played: 0 };
 }
 
 // ============================================================================================
@@ -942,8 +942,8 @@ function renderLog(el) {
 }
 function setOnline(on) { $("online").classList.toggle("off", !on); }
 
-// XP multiplier from Rested and the XP foods, the same ones addXp applies
-const xpBoost = field => (S.rested > 0 ? 2 : 1) * (1 + buffValue(field ? "Gathering XP food" : "Crafting XP food"));
+// XP per second of action time, with Rested and the XP foods (the same ones addXp applies)
+const xpBoost = field => BAL.actions.xp_per_second * (S.rested > 0 ? 2 : 1) * (1 + buffValue(field ? "Gathering XP food" : "Crafting XP food"));
 function perHour(k, e, craft) { // time per attempt, color, and skill levels per hour
   const c = colorOf(S.level[k], e.unlock), base = baseTime(craft ? "craft_time" : "gather_time", e.rank, slotNum(e));
   let t = Math.max(base / speed(k), BAL.actions.min_action_time);
@@ -969,6 +969,8 @@ function renderHeader() {
     : `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
+  const pm = Math.floor((S.played || 0) / 60);
+  $("played").textContent = pm >= 60 ? `${Math.floor(pm / 60)}h${String(pm % 60).padStart(2, "0")}` : `${pm}m`;
   $("debuffs").html = DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => {
     const left = S.debuffs[name].until - S.clock;
     return `<span class="debuff" title="${name}: ${what}"><img class="icon" src="${ic(icon)}" alt="${name}"><span>${fmtT(left)}</span></span>`;
@@ -1296,7 +1298,6 @@ function renderGoal() {
   const showRag = g !== "master_professions", showMaster = g !== "ragnaros";
   const legendary = ARMOR_SLOTS.filter(s => S.armor[s] && BY_NAME[S.armor[s]].legendary).length;
   const odds = ragnarosOdds();
-  const reqs = ["combat", "blacksmithing", "leatherworking", "tailoring", "alchemy", "cooking"];
   let html = `<img src="https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/113/11121.png" alt="Ragnaros"><div>`;
   if (showRag) html += `<div class="title" style="font-size:15px">Defeat Ragnaros</div><ul>
       ${moltenCore ? `<li class="ok">✓ Molten Core</li>` : `<li class="no">✗ Molten Core (from ${solo ? "one of your checks" : "the multiworld"})</li>`}
@@ -1307,7 +1308,7 @@ function renderGoal() {
       ${S.ragnarosWon ? `<li class="ok">✓ Ragnaros defeated</li>` : moltenCore ? `<li><button class="wbtn ragbtn" data-rag="1" ${S.field?.kind === "ragnaros" ? "disabled" : ""}>Fight Ragnaros · win ${pct(odds.win)}</button></li>` : ""}</ul>`;
   if (showMaster) html += `<div class="title" style="font-size:15px;margin-top:6px">Master Professions</div><ul>
       <li><b>Professions at 300: ${masteredCount()} / ${need}</b></li></ul>`;
-  if (showRag && !showMaster) html += `<ul><li class="mute">Ready when these are at 300: ${reqs.map(k => `<span class="${S.level[k] >= 300 ? "ok" : ""}">${P[k].name}</span>`).join(", ")}</li></ul>`;
+  if (showRag && !S.ragnarosWon) html += `<ul><li class="mute">Your win chance comes from your Weapon DPS, Health and Fire Resistance.</li></ul>`;
   $("goal").html = html + `</div>`;
 }
 function render() {
@@ -1378,7 +1379,7 @@ function showSolo(open) {
   } else {
     const opt = (v, t, on) => `<option value="${v}" ${on ? "selected" : ""}>${t}</option>`;
     $("solo").html = `<div class="glabel" style="padding:0">New solo game</div>
-      <div class="fld"><label for="s-goal">Goal</label><select id="s-goal">${opt("ragnaros", "Defeat Ragnaros", 1)}${opt("master_professions", "Master professions")}${opt("both", "Both")}</select></div>
+      <div class="fld"><label for="s-goal">Goal</label><select id="s-goal">${opt("ragnaros", "Defeat Ragnaros", 1)}${opt("master_professions", "Master professions")}</select></div>
       <div class="fld" id="s-master-f" hidden><label for="s-master">Professions to master</label><input id="s-master" type="number" min="1" max="11" value="6"></div>
       <div class="row2"><div class="fld"><label for="s-speed">Game speed</label><select id="s-speed">${opt("long", "Long (~20 h)")}${opt("normal", "Normal (~10 h)", 1)}${opt("sync", "Sync (~4 h)")}</select></div>
       <div class="fld"><label for="s-pair">Starting pair</label><select id="s-pair">${opt("random", "Random", 1)}${Object.entries(PAIRS).map(([g, c]) => opt(g, `${P[g].name} + ${P[c].name}`)).join("")}</select></div></div>
@@ -1437,6 +1438,7 @@ function tick() {
   const now = performance.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
   if (dt > 300) { catchUp(dt); render(); return; }
+  if (!S.goalSent && !goalDone()) S.played = (S.played || 0) + dt;   // time played with the page open, up to the goal
   advance(dt, false);
   if (S.field || S.work) dirty = true;
   flushChecks(); checkGoal();

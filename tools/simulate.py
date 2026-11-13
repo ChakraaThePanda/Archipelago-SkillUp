@@ -20,9 +20,13 @@ How the simulated player plays (Field and Workshop run at the same time):
   keeps a few of each and sells everything else. Never gambles on red.
 - Default start: Mining + Blacksmithing and Combat at Apprentice. Every other rank is an
   item from other players: it arrives `delay` minutes after it's needed (0 = on time).
+- Solo (solo=<seed>): the game places its own items like the real solo mode does, each check
+  hands out the item placed there, and the player picks up open checks as they go.
 - Offline (when a play schedule is given): while the page is closed, both slots keep
   repeating what they were doing, up to the offline cap; time past the cap becomes Rested XP.
-Once every requirement for Ragnaros is met, it crafts the Fire Resistance set.
+- Ragnaros: each Fire Resistance piece, the potion and the chili are crafted as soon as they
+  unlock (280), and the best Axe as Blacksmithing allows (Ragnaros is Tough). The player fights
+  once the game's own win chance reaches RAG_FIGHT_AT; the expected tries and deaths are added.
 """
 from __future__ import annotations
 
@@ -30,6 +34,7 @@ import argparse
 import json
 import math
 import pathlib
+import random
 from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -42,7 +47,6 @@ FIELD = [k for k, p in PROFS.items() if p["kind"] in ("gathering", "combat")]
 GATHER = [k for k, p in PROFS.items() if p["kind"] == "gathering"]
 CRAFT = [k for k, p in PROFS.items() if p["kind"] == "crafting"]
 START = ["mining", "blacksmithing", "combat"]
-RAGNAROS_NEEDS = ["combat", "blacksmithing", "leatherworking", "tailoring", "alchemy", "cooking"]
 ARMOR_SLOTS = {"Head", "Shoulder", "Back", "Chest", "Hands", "Legs", "Feet"}
 WEAPONS = {"Dagger", "Sword", "Mace", "Axe"}
 TOOL_FOR = {"Mining tool": "mining", "Skinning tool": "skinning", "Fishing tool": "fishing",
@@ -52,6 +56,10 @@ H = 3600.0
 # The realistic player per game speed: minutes between check-ins at the start of a run and near
 # the end (busy early while bags are small, calmer later). Sync players watch closely.
 PLAYERS = {"Long": (2, 5), "Normal": (2, 5), "Sync": (1, 3)}
+# A player takes on Ragnaros once their gear gives at least this win chance (the game's own formula).
+RAG_FIGHT_AT = 0.5
+PAIRS = {"mining": "blacksmithing", "herbalism": "alchemy", "skinning": "leatherworking", "fishing": "cooking"}
+FR_SET = DATA["fire_resistance_set"]
 
 
 def fmt_t(sec: float | None) -> str:
@@ -64,17 +72,24 @@ def fmt_t(sec: float | None) -> str:
 class Sim:
     def __init__(self, speed="Normal", pool=None, delay=30.0, schedule=None, buffs=True,
                  traps=None, offline_cap_h=None, offline_mode=None, start=None, combat_delay=None,
-                 goal="ragnaros", master_n=4, trinket_at=None, attention=None):
+                 goal="ragnaros", master_n=4, trinket_at=None, attention=None, solo=None):
         """start: professions you start with (default: Mining + Blacksmithing + Combat).
         combat_delay: minutes until Apprentice Combat arrives when it isn't a starting item.
-        goal: "ragnaros", "master" (master_n professions at 300) or "both".
+        goal: "ragnaros" or "master" (master_n professions at 300).
         trinket_at: the skill point (counting every profession) on which the Darkmoon Card is found,
         or None for never. Its extra points are given on average (bonus_chance per point).
         attention: minutes between the player's check-ins (None = a perfect player who reacts
         instantly), or "ramp" for the realistic player of this speed (see PLAYERS): checking in
         often at the start of a run, less often as skills near 300. Between check-ins both slots keep repeating what they were doing (selling
         overflow as usual); at a check-in the player picks the best thing for each slot and
-        spends gold in the Shop."""
+        spends gold in the Shop.
+        solo: a random seed number for a solo game. Items are placed like the game does it (every rank
+        and Molten Core where it can be reached), each check hands out the item placed there, and the
+        player picks up open checks as they go. The starting pair is random, like the game's default."""
+        self.rng = random.Random(solo) if solo is not None else None
+        if solo is not None and start is None:
+            pair = self.rng.choice(list(PAIRS))
+            start = [pair, PAIRS[pair], "combat"]
         start = START if start is None else start
         self.goal, self.master_n, self.goal_time = goal, master_n, None
         # A player going for "master N professions" levels N of them first: the starting ones,
@@ -98,8 +113,14 @@ class Sim:
         self.level = {k: 1 for k in PROFS}
         self.xp = {k: 0.0 for k in PROFS}
         self.ranks = {k: (1 if k in start else 0) for k in PROFS}
-        self.arrivals = [((combat_delay * 60 if k == "combat" and combat_delay is not None else self.delay), k)
-                         for k in PROFS if k not in start]
+        self.solo = solo is not None
+        self.arrivals = [] if self.solo else [((combat_delay * 60 if k == "combat" and combat_delay is not None else self.delay), k)
+                                              for k in PROFS if k not in start]
+        self.checked = set()
+        self.placement = solo_placement(self.rng, start, goal) if self.solo else {}
+        self.molten_core = not self.solo or goal == "master"
+        self.fr_need = self.check_need = None
+        self.rag_won_at = self.at_300_on_kill = self.rag_win = None
         self.requested = {k: 1 for k in PROFS}
         self.speed_up = {k: 0 for k in PROFS}
         self.xp_up = {k: 0 for k in PROFS}
@@ -171,7 +192,7 @@ class Sim:
                     self.level_up(prof)
         if self.level[prof] >= self.cap(prof):
             self.xp[prof] = 0
-            if self.ranks[prof] < 4 and self.requested[prof] == self.ranks[prof]:
+            if not self.solo and self.ranks[prof] < 4 and self.requested[prof] == self.ranks[prof]:
                 self.requested[prof] += 1
                 self.arrivals.append((self.t + self.delay, prof))
 
@@ -179,6 +200,33 @@ class Sim:
         self.level[prof] += 1
         if self.level[prof] in RANK_CAPS:
             self.milestones[prof][self.level[prof]] = self.t
+            self.check(("rank", prof, RANK_CAPS.index(self.level[prof])))
+
+    # ---- solo: checks hand out this game's own items ---------------------------------------
+    def check(self, loc):
+        if not self.solo or loc in self.checked:
+            return
+        self.checked.add(loc)
+        item = self.placement.get(loc)
+        if item is None:
+            return
+        if item == "Molten Core":
+            self.molten_core = True
+        elif item.startswith("Progressive "):
+            k = PROG_KEY[item]
+            self.ranks[k] = min(4, self.ranks[k] + 1)
+        else:
+            self.receive(item, {**BAL["pool"]["useful"], **BAL["pool"]["filler"]}[item])
+
+    def open_check(self, prof):
+        """A Field action for an open check in this profession that can be done right now, if any."""
+        if not self.solo:
+            return None
+        for o in self.field_options(prof, checks=True):
+            e = o[2]
+            if (prof, e["name"]) not in self.checked and (o[1] == "mob" or e.get("slot") is not None):
+                return o
+        return None
 
     def speed(self, prof):
         s = 1 + self.speed_up[prof] * self.gold_cfg["speed_step"] + self.pool_speed[prof]
@@ -305,7 +353,7 @@ class Sim:
         return min(1.0, max(0.0, (taken - c["death_start"]) / c["death_span"]))
 
     # ---- the Field -----------------------------------------------------------------------
-    def field_options(self, prof):
+    def field_options(self, prof, checks=False):
         out = []
         if self.ranks[prof] == 0:
             return out
@@ -314,6 +362,8 @@ class Sim:
                 if self.level["combat"] < m["unlock"] or m["rank"] >= self.ranks["combat"]:
                     continue
                 t, xp, death = self.fight(m)
+                if checks and death > t:      # not worth a check while it keeps killing you
+                    continue
                 out.append((xp * self.color_mult("combat", m["unlock"]) / (t + death), "mob", m))
         else:
             for m in DATA["materials"]:
@@ -351,23 +401,67 @@ class Sim:
             return self.run_field(self.last_field)   # storage full: still gains skill, extras are lost
         # A player who isn't watching every second gathers what levels their skills while crafting
         # still has materials in the bags, and stocks up for crafting once the bags run dry.
+        if self.fr_need:                      # Fire Resistance materials come first
+            dt = self.fetch(self.fr_need)
+            if dt:
+                return dt
         if self.need and (not self.attention or not self.focused([p for p in FIELD if self.open(p)])
                           or self.sustainable_recipe(self.check_interval()) is None):
-            mat = self.mat_by_name[self.need]
-            prof = mat["profession"]
-            if prof == "combat":
-                mobs = [o for o in self.field_options("combat") if o[2]["rank"] == mat["rank"]]
-                if mobs:
-                    return self.feed(max(mobs, key=lambda o: o[0]))
-            elif self.ranks[prof] and self.level[prof] >= mat["unlock"]:
-                return self.feed(next(o for o in self.field_options(prof) if o[2]["name"] == self.need))
+            dt = self.fetch(self.need)
+            if dt:
+                return dt
         todo = self.focused([p for p in FIELD if self.open(p)])
         if not todo:
+            for p in FIELD:                   # solo: nothing to level, so go find checks
+                o = self.open_check(p)
+                if o:
+                    return self.grab_field(o)
+            if self.check_need:               # ...or fetch materials for a crafting check
+                dt = self.fetch(self.check_need)
+                if dt:
+                    return dt
             self.waiting_ranks += 5
             return 5.0
         prof = min(todo, key=lambda p: self.level[p])
+        if self.solo and len(todo) > 1:
+            # solo: ranks only come from checks, so don't grind a profession that has stalled
+            # (e.g. Combat dying without armor) while another one levels several times faster
+            best = {p: max((o[0] for o in self.field_options(p)), default=0) for p in todo}
+            if best[prof] < 0.25 * max(best.values()):
+                prof = min((p for p in todo if best[p] >= 0.25 * max(best.values())), key=lambda p: self.level[p])
+        o = self.open_check(prof)             # solo: grab an open check on the way
+        if o:
+            return self.grab_field(o)
         opts = [o for o in self.field_options(prof) if o[0] > 0] or self.field_options(prof)
         return self.run_field(max(opts, key=lambda o: (o[0], o[2]["slot"])))
+
+    def grab_field(self, opt):
+        """A player who goes for a check switches back right after it (they're watching for it)."""
+        dt = self.run_field(opt)
+        self.decide["field"] = True
+        return dt
+
+    def can_fetch(self, name):
+        """Whether the Field can gather (or fight for) this material right now, skill cap or not."""
+        mat = self.mat_by_name.get(name)
+        if not mat:
+            return False
+        prof = mat["profession"]
+        if prof == "combat":
+            return any(o[2]["rank"] == mat["rank"] for o in self.field_options("combat"))
+        return bool(self.ranks[prof]) and self.level[prof] >= mat["unlock"]
+
+    def fetch(self, name):
+        """Gather (or fight for) one batch of a material, if it can be had right now."""
+        mat = self.mat_by_name[name]
+        prof = mat["profession"]
+        if prof == "combat":
+            mobs = [o for o in self.field_options("combat") if o[2]["rank"] == mat["rank"]]
+            if mobs:
+                return self.feed(max(mobs, key=lambda o: o[0]))
+        elif self.ranks[prof] and self.level[prof] >= mat["unlock"]:
+            return self.feed(next(o for o in self.field_options(prof) if o[2]["name"] == name))
+        return None
 
     def feed(self, opt):
         dt = self.run_field(opt)
@@ -379,6 +473,7 @@ class Sim:
         _, kind, e = opt
         if kind == "mob":
             t, xp, death = self.fight(e)
+            self.check(("combat", e["name"]))
             self.add_xp("combat", xp * self.color_mult("combat", e["unlock"]), True)
             self.store(e["cloth"], self.cmb["cloth_per_kill"])
             self.earn(self.cmb["gold_per_kill"] * self.cmb["rank_growth"] ** e["rank"], "combat loot")
@@ -391,6 +486,7 @@ class Sim:
             return t + death
         prof = e["profession"]
         base = self.base_time("gather_time", e["rank"], e["slot"])
+        self.check((prof, e["name"]))
         self.add_xp(prof, base * self.act["xp_per_second"] * self.color_mult(prof, e["unlock"]), True)
         self.store(e["name"], sum(self.act["gather_yield"]) / 2)   # the average of the random amount
         return max(base / self.speed(prof), self.act["min_action_time"])
@@ -418,10 +514,28 @@ class Sim:
                 return t
             self.idle_workshop += 5
             return 5.0
-        # the Fire Resistance set comes first once Ragnaros is in reach (if the goal needs him);
-        # after it's done, the Workshop goes back to levelling whatever the goal still needs
-        if self.ragnaros_ready is not None and self.goal != "master" and self.fr_finished is None:
-            return self.craft_fr()
+        # each Fire Resistance piece is crafted (and worn) as soon as it unlocks, if the goal needs Ragnaros
+        if self.goal != "master":
+            dt = self.fr_step()
+            if dt:
+                return dt
+        if self.solo:           # grab an open crafting check if the bags allow it
+            self.check_need = None
+            for r in DATA["recipes"]:
+                prof = r["profession"]
+                if (prof, r["name"]) in self.checked or not self.ranks[prof] or r.get("legendary"):
+                    continue
+                if self.level[prof] < r["unlock"] or r["rank"] >= self.ranks[prof]:
+                    continue
+                miss = self.missing(r)
+                if miss is None:
+                    xp, t = self.recipe_xp(r)
+                    self.craft(r)
+                    self.add_xp(prof, xp, False)
+                    self.decide["work"] = True      # one craft for the check, then back to levelling
+                    return t
+                if not self.check_need and self.can_fetch(miss):   # the Field fetches it when it has nothing better to do
+                    self.check_need = miss
         if self.attention:      # checking in: craft what the bags can keep going until the next check-in
             r = self.sustainable_recipe(self.check_interval())
             if r:
@@ -447,11 +561,13 @@ class Sim:
                     self.craft(r)
                     self.add_xp(prof, xp, False)
                     return t
-                if not first_missing:
+                if not first_missing and self.can_fetch(miss):
                     first_missing, waiting_on = miss, r
         self.need = first_missing
         if waiting_on:          # like the game: the recipe stays set and starts once its materials arrive
             self.last_recipe = waiting_on
+        elif self.solo:         # nothing left worth crafting: the player stops the slot instead of
+            self.last_recipe = None   # letting it eat materials the Fire Resistance set still needs
         self.idle_workshop += 5
         return 5.0
 
@@ -460,6 +576,7 @@ class Sim:
             self.stock[name] -= self.qty(r)
         first = r["name"] not in self.crafted
         self.crafted.add(r["name"])
+        self.check((r["profession"], r["name"]))
         role, keep = r["role"], False
         if role in WEAPONS and self.weapons.get(role, -1) < r["rank"]:
             self.weapons[role], keep = r["rank"], True
@@ -486,24 +603,51 @@ class Sim:
         """A crafted item sells for the value of its materials, marked up."""
         return sum(self.sell_value[n] * self.qty(r) for n in r["reagents"]) * self.gold_cfg["crafted_markup"]
 
-    def craft_fr(self):
-        q = self.rec["fr_qty"]
-        for f in DATA["fire_resistance_set"]:
-            if f["name"] in self.fr_done:
+    def fr_step(self):
+        """Craft the next Fire Resistance item that is unlocked and has its materials; remember the
+        first missing material so the Field fetches it. Returns the craft time, or None."""
+        q, self.fr_need = self.rec["fr_qty"], None
+        # Ragnaros is Tough: the best Axe Blacksmithing can make is worth making for him
+        tough = DATA["traits"]["Tough"]["weapon"]
+        axes = [r for r in DATA["recipes"] if r["role"] == tough and not r.get("legendary")
+                and self.ranks[r["profession"]] and self.level[r["profession"]] >= r["unlock"]
+                and r["rank"] > self.weapons.get(tough, -1)]
+        if axes:
+            r = max(axes, key=lambda r: (r["rank"], r["slot"]))
+            miss = self.missing(r)
+            if miss is None:
+                xp, t = self.recipe_xp(r)
+                self.craft(r)
+                self.add_xp(r["profession"], xp, False)
+                return t
+            self.fr_need = miss
+        for f in FR_SET:
+            prof = f["profession"]
+            if f["name"] in self.fr_done or self.level[prof] < f["unlock"]:
                 continue
             miss = next((n for n in f["reagents"] if self.stock[n] < q), None)
             if miss:
-                self.need = miss
-                self.idle_workshop += 5
-                return 5.0
+                self.fr_need = self.fr_need or miss
+                continue
             for n in f["reagents"]:
                 self.stock[n] -= q
             self.fr_done.add(f["name"])
-            self.need = None
-            return self.base_time("craft_time", 3, 3)
-        if self.fr_finished is None:
-            self.fr_finished = self.t
-        return 5.0
+            if f["slot"] in ARMOR_SLOTS:
+                self.armor[f["slot"]] = BAL["ragnaros"]["fr_armor_rank"]
+            if len(self.fr_done) == len(FR_SET):
+                self.fr_finished = self.t
+            return max(self.base_time("craft_time", 3, 3) / self.speed(prof), self.act["min_action_time"])
+        return None
+
+    def ragnaros_win(self):
+        """The game's win chance against Ragnaros with the gear and consumables in hand."""
+        r = BAL["ragnaros"]
+        fr = sum(f.get("fire_resistance") or 0 for f in FR_SET if f["name"] in self.fr_done)
+        fr += r["potion_fr"] if "Greater Fire Protection Potion" in self.fr_done else 0
+        fr += r["food_fr"] if "Dragonbreath Chili" in self.fr_done else 0
+        dps, hp = self.weapon_dps("Tough"), self.max_hp()
+        return (r["max_win"] * min(1, dps / r["dps_need"]) ** 2 * min(1, hp / r["hp_need"])
+                * (r["fr_floor"] + (1 - r["fr_floor"]) * min(1, fr / r["fr_need"]) ** 2))
 
     # ---- items from other players --------------------------------------------------------
     def receive(self, name, spec):
@@ -587,15 +731,21 @@ class Sim:
         return profs
 
     def goal_done(self):
-        ragnaros = self.fr_finished is not None
+        ragnaros = self.rag_won_at is not None and self.t >= self.rag_won_at
         master = sum(self.level[p] >= 300 for p in PROFS) >= self.master_n
-        return {"ragnaros": ragnaros, "master": master, "both": ragnaros and master}[self.goal]
+        return {"ragnaros": ragnaros, "master": master}[self.goal]
 
     def run(self, limit_h=24 * 30):
         nf = nw = 0.0
         while self.t < limit_h * H:
-            if self.ragnaros_ready is None and all(self.level[p] >= 300 for p in RAGNAROS_NEEDS):
-                self.ragnaros_ready = self.t
+            if self.ragnaros_ready is None and self.goal != "master" and self.molten_core:
+                win = self.ragnaros_win()
+                if win >= RAG_FIGHT_AT:     # the player goes for it: expected tries, each loss costs a death too
+                    tries = 1 / win
+                    self.ragnaros_ready, self.rag_win = self.t, win
+                    self.rag_won_at = (self.t + tries * BAL["ragnaros"]["fight_minutes"] * 60
+                                       + (tries - 1) * self.cmb["death_time"])
+                    self.at_300_on_kill = sum(self.level[p] >= 300 for p in PROFS)
             if self.goal_done():
                 self.goal_time = self.t
                 break
@@ -652,6 +802,82 @@ class Sim:
         return self
 
 
+# ---- solo placement (same rules as the game's makeSoloGame / the apworld's Rules.py) ------
+PROG_KEY = {f"Progressive {p['name']}": k for k, p in PROFS.items()}
+
+
+def things_of(k, rank):
+    kind = PROFS[k]["kind"]
+    if kind == "combat":
+        return [m for m in DATA["mobs"] if m["rank"] == rank]
+    if kind == "crafting":
+        return [r for r in DATA["recipes"] if r["profession"] == k and r["rank"] == rank]
+    return [m for m in DATA["materials"] if m["profession"] == k and m["rank"] == rank and m.get("slot") is not None]
+
+
+LOCATIONS = [loc for k in PROFS for r in range(4) for loc in
+             [{"key": (k, e["name"]), "k": k, "rank": r, "boss": bool(e.get("boss"))} for e in things_of(k, r)]
+             + [{"key": ("rank", k, r), "k": k, "rank": r, "milestone": True}]]
+
+
+def solo_can_reach(have, loc):
+    def R(p, n):
+        return n <= 0 or have.get(p, 0) >= n
+
+    def armor(n):
+        return n <= 0 or (R("leatherworking", n) and R("tailoring", n) and R("skinning", n) and fight(n - 1))
+
+    def fight(r):
+        return R("combat", r + 1) and armor(r)
+
+    def reach(k, r):
+        kind = PROFS[k]["kind"]
+        if kind == "gathering":
+            return R(k, r + 1)
+        if kind == "combat":
+            return fight(r)
+        src = PROFS[k]["source"]
+        return R(k, r + 1) and (fight(r) if PROFS[src]["kind"] == "combat" else R(src, r + 1))
+
+    if loc.get("milestone") or PROFS[loc["k"]]["kind"] != "combat":
+        return reach(loc["k"], loc["rank"])
+    return fight(loc["rank"]) and (not loc["boss"] or armor(loc["rank"] + 1))
+
+
+def solo_placement(rng, start, goal):
+    prog = [f"Progressive {PROFS[k]['name']}" for k in PROFS for _ in range(4 - (k in start))]
+    if goal != "master":
+        prog.append("Molten Core")
+    placement = None
+    for _ in range(50):
+        placement, left, open_ = {}, prog[:], {loc["key"] for loc in LOCATIONS}
+        rng.shuffle(left)
+        while left:
+            item, have = left.pop(), {k: 1 for k in start}
+            for n in left:
+                if n in PROG_KEY:
+                    have[PROG_KEY[n]] = have.get(PROG_KEY[n], 0) + 1
+            spots = [loc["key"] for loc in LOCATIONS if loc["key"] in open_ and solo_can_reach(have, loc)]
+            if not spots:
+                placement = None
+                break
+            spot = rng.choice(spots)
+            placement[spot] = item
+            open_.discard(spot)
+        if placement is not None:
+            break
+    rest = [loc["key"] for loc in LOCATIONS if loc["key"] not in placement]
+    rng.shuffle(rest)
+    pool = BAL["pool"]
+    extras = [n for n, v in pool["useful"].items() for _ in range(v["count"])]
+    filler = list(pool["filler"])
+    weights = [pool["filler"][n]["count"] for n in filler]
+    while len(extras) < len(rest):
+        extras.append(rng.choices(filler, weights)[0])
+    placement.update(zip(rest, extras))
+    return placement
+
+
 # ---- scenarios ---------------------------------------------------------------------------
 def build_pool(finish, only=None):
     """Spread the pool's items evenly between 2% and 95% of a seed, interleaving kinds."""
@@ -685,8 +911,9 @@ def main_report(sim, speed, perfect=None):
         start, end = PLAYERS[speed]
         out.append(f"- **Goal done: {fmt_t(sim.goal_time)}** for a player checking in every {start} min early, every "
                    f"{end} min late; a perfect player (reacts instantly) {fmt_t(perfect.goal_time)}")
-    out.append(f"- **Ragnaros ready** (300 in {', '.join(PROFS[p]['name'] for p in RAGNAROS_NEEDS)}): "
-               f"**{fmt_t(sim.ragnaros_ready)}**; Fire Resistance set done {fmt_t(sim.fr_finished)}")
+    out.append(f"- **Ragnaros beaten {fmt_t(sim.rag_won_at)}**: gear gives a {sim.rag_win or 0:.0%} win chance at "
+               f"{fmt_t(sim.ragnaros_ready)} (fights once it's {RAG_FIGHT_AT:.0%}+), with {sim.at_300_on_kill} of "
+               f"{len(PROFS)} professions at 300; full Fire Resistance set {fmt_t(sim.fr_finished)}")
     if getattr(sim, "no_pool", None):
         out.append(f"- Same seed without the item pool: {fmt_t(sim.no_pool)}")
     out.append(f"- Workshop idle waiting for materials: {fmt_t(sim.idle_workshop)}; Field time fetching "
@@ -702,6 +929,21 @@ def main_report(sim, speed, perfect=None):
     return "\n".join(out)
 
 
+def solo_report(speed, seeds=8):
+    """Solo games: the game places its own items and each check hands one out (ranks included)."""
+    import statistics
+    out = [f"### {speed} speed, solo ({seeds} random seeds)", ""]
+    for label, att in (("Checking in (see PLAYERS)", "ramp"), ("Perfect player (reacts instantly)", None)):
+        runs = [Sim(speed, solo=i, delay=0, attention=att).run() for i in range(seeds)]
+        won = sorted(r.rag_won_at for r in runs if r.rag_won_at is not None)
+        stuck = seeds - len(won)
+        at300 = statistics.median(r.at_300_on_kill for r in runs if r.at_300_on_kill is not None) if won else 0
+        out.append(f"- {label}: Ragnaros beaten in **{fmt_t(statistics.median(won)) if won else 'never'}** (median; "
+                   f"{fmt_t(won[0]) if won else '-'} to {fmt_t(won[-1]) if won else '-'}), "
+                   f"{at300:.0f} of {len(PROFS)} professions at 300 by then" + (f"; {stuck} seeds got stuck" if stuck else ""))
+    return "\n".join(out)
+
+
 def options_report():
     """Time to finish a seed for every YAML option that changes play (Normal speed unless noted).
     Rank items arrive 30 min after they're needed; full item pool; page always open."""
@@ -710,12 +952,12 @@ def options_report():
     def run(label, speed="Normal", **kw):
         s = seed(speed, **kw)
         return f"| {label} | **{fmt_t(s.goal_time)}** | {s.deaths:.0f} |"
-    out = ["## Every option", "", "Time until the goal is done (Ragnaros: Fire Resistance set crafted).", "",
+    out = ["## Every option", "", "Time until the goal is done (Ragnaros: beaten, see the game speeds above).", "",
            "| Setting | Goal done | Deaths |", "| --- | --- | --- |"]
     for speed in BAL["xp"]["game_speed"]:
         out.append(run(f"Game speed: {speed}", speed))
-    for goal, n in (("master", 1), ("master", 4), ("master", 11), ("both", 4)):
-        out.append(run(f"Goal: {'Master Professions' if goal == 'master' else 'Both'}, {n} to master", goal=goal, master_n=n))
+    for n in (1, 4, 11):
+        out.append(run(f"Goal: Master Professions, {n} to master", goal="master", master_n=n))
     for name, prof in pairs.items():
         out.append(run(f"Starting pair: {name}", start=prof + ["combat"]))
     out.append(run("Starting pairs: 4 (everything gathering + its craft)", start=[p for v in pairs.values() for p in v] + ["combat"]))
@@ -904,17 +1146,20 @@ if __name__ == "__main__":
     if a.trinket:
         print(trinket_report())
     elif not a.write:
-        print(main_report(seed(a.speed), a.speed))
+        print(main_report(seed(a.speed), a.speed, seed(a.speed, perfect=True)))
+        print()
+        print(solo_report(a.speed))
     else:
         parts = ["# SkillUp: balance simulation", "",
                  "Generated by `tools/simulate.py` from `data/balance.json` and `data/game_data.json`.",
+                 "Ragnaros counts as beaten once the gear gives a 50%+ win chance (the game's own formula), plus the expected fights.",
                  "Unless a section says otherwise: page always open, each rank item arrives 30 min after it's needed, full item pool,",
                  "potions and food used automatically, no traps, no red gambles, and a realistic player: between check-ins both",
                  "slots keep repeating what they were doing (see PLAYERS in the script for how often each speed's player looks).",
                  "Sections built on `Sim(...)` directly (item pool, traps, offline schedules) use the perfect player to compare options.", "",
                  "## Game speeds", ""]
         for s in BAL["xp"]["game_speed"]:
-            parts += [main_report(seed(s), s, seed(s, perfect=True)), ""]
+            parts += [main_report(seed(s), s, seed(s, perfect=True)), "", solo_report(s), ""]
         for fn in (options_report, trinket_report, pool_report, buffs_report, delay_report, schedule_report, traps_report, red_report, ragnaros_report):
             parts += [fn(), ""]
         text = "\n".join(parts)
