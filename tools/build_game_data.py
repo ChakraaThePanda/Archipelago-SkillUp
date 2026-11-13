@@ -24,6 +24,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = ROOT / "tools" / ".wowhead_cache"
 OUT_JSON = ROOT / "data" / "game_data.json"
 OUT_MD = ROOT / "docs" / "DATA.md"
+OUT_WORLD = ROOT / "worlds" / "skillup" / "data.json"  # trimmed copy shipped inside the apworld
 ICON_URL = "https://wow.zamimg.com/images/wow/icons/large/{}.jpg"
 NPC_IMG_URL = "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/{}/{}.png"
 
@@ -107,10 +108,10 @@ ZONES = [
         ("King Mosh", 6584, 5305, "60", "Rare Elite", "Tough"),
     ]),
 ]
-TRAITS = {
-    "Tough": ("Axe", "Huge health. Axes crit harder and chew through it."),
-    "Armored": ("Mace", "Heavy armor. Crushing mace blows ignore it."),
-    "Evasive": ("Dagger", "Hard to hit. Fast dagger strikes land more often."),
+TRAITS = {  # the creature shows only its trait; the weapon's tooltip says what it's strong against
+    "Tough": ("Axe", "Huge health."),
+    "Armored": ("Mace", "Heavy armor."),
+    "Evasive": ("Dagger", "Hard to hit."),
 }
 RAGNAROS = ("Ragnaros", 11502)
 
@@ -120,14 +121,16 @@ RAGNAROS = ("Ragnaros", 11502)
 # Quantities come from the simulator.
 RECIPES = {
     "blacksmithing": {
-        # Axe last: it's the boss weapon, and it unlocks at +55 together with the zone's boss.
-        "roles": ["Dagger", "Sword", "Mace", "Axe"],
+        # Sword first: the cheap default, good against everything. Specialty weapons get
+        # harder to make: Dagger, Mace, then Axe (the boss weapon, needs the gem, unlocks
+        # at +55 together with the zone's boss).
+        "roles": ["Sword", "Dagger", "Mace", "Axe"],
         "reagents": [["m1"], ["m1", "m2"], ["m1", "m3"], ["m1", "m3", "m4"]],
         "items": [
-            ["Copper Dagger", "Copper Shortsword", "Copper Mace", "Copper Axe"],
-            ["Big Bronze Knife", "Hardened Iron Shortsword", "Mighty Iron Hammer", "Bronze Axe"],
-            ["Searing Golden Blade", "Wicked Mithril Blade", "Runed Mithril Hammer", "Heavy Mithril Axe"],
-            ["Heartseeker", "Blazing Rapier", "Masterwork Stormhammer", "Annihilator"],
+            ["Copper Shortsword", "Copper Dagger", "Copper Mace", "Copper Axe"],
+            ["Hardened Iron Shortsword", "Big Bronze Knife", "Mighty Iron Hammer", "Bronze Axe"],
+            ["Wicked Mithril Blade", "Searing Golden Blade", "Runed Mithril Hammer", "Heavy Mithril Axe"],
+            ["Blazing Rapier", "Heartseeker", "Masterwork Stormhammer", "Annihilator"],
         ],
     },
     "engineering": {
@@ -173,7 +176,7 @@ RECIPES = {
         ],
     },
     "cooking": {
-        "roles": ["XP food (Field)", "Combat food", "XP food (Workshop)", "Combat food"],
+        "roles": ["Gathering XP food", "Combat food", "Crafting XP food", "Combat food"],
         "reagents": [["m1"], ["m2"], ["m3"], ["m4"]],
         "items": [
             ["Brilliant Smallfish", "Slitherskin Mackerel", "Longjaw Mud Snapper", "Loch Frenzy Delight"],
@@ -383,10 +386,24 @@ def write_md(data: dict) -> str:
     return "\n".join(out)
 
 
+def world_data(d: dict) -> dict:
+    """Only what the apworld needs: names, ranks, slots, reagents. No icons or prices."""
+    keep = lambda rows, *keys: [{k: r[k] for k in keys if k in r} for r in rows]
+    return {
+        "ranks": d["ranks"],
+        "professions": keep(d["professions"], "key", "name", "kind", "title", "source"),
+        "materials": keep(d["materials"], "name", "profession", "rank", "slot"),
+        "mobs": keep(d["mobs"], "name", "rank", "slot", "boss"),
+        "recipes": keep(d["recipes"], "name", "profession", "rank", "slot", "reagents"),
+        "fire_resistance_set": keep(d["fire_resistance_set"], "name", "profession", "reagents"),
+    }
+
+
 if __name__ == "__main__":
     d = build()
     OUT_JSON.parent.mkdir(exist_ok=True)
     OUT_JSON.write_text(json.dumps(d, indent=1, ensure_ascii=False), encoding="utf-8")
+    OUT_WORLD.write_text(json.dumps(world_data(d), separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     OUT_MD.write_text(write_md(d), encoding="utf-8")
     print(f"{len(d['materials'])} materials, {len(d['mobs'])} mobs, {len(d['recipes'])} recipes, "
           f"{len(d['fire_resistance_set'])} fire resistance pieces")

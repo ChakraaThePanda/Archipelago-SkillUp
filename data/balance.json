@@ -28,8 +28,8 @@
   "recipes": {
     "_about": "Units of each reagent per craft, by role. XP multiplier by role (Sword = 1).",
     "reagent_qty": 2,
-    "role_qty_mult": {"Dagger": 0.5, "Mace": 1.5, "Axe": 1.5},
-    "role_xp_mult": {"Dagger": 0.7, "Mace": 1.3, "Axe": 1.3},
+    "role_qty_mult": {"Sword": 1.0, "Dagger": 1.25, "Mace": 1.5, "Axe": 2.0},
+    "role_xp_mult": {"Sword": 1.0, "Dagger": 1.15, "Mace": 1.3, "Axe": 1.5},
     "fr_qty": 5
   },
 
@@ -60,35 +60,39 @@
   },
 
   "combat": {
-    "_about": "Power needed by the k-th mob of rank r: need_base * rank_growth^r * (1 + slot_growth * k); bosses x boss_mult. Your power = fists + weapon + armor. Kill time scales with need / power (clamped). Deaths add death_time.",
-    "need_base": 10,
+    "_about": "Weapon -> DPS (how fast you kill), armor -> HP (whether you survive). A creature of rank r, slot k needs need_dps = weapon_dps * rank_growth^r * (1 + slot_growth * k) (bosses x boss_dps_mult); fight time = its base time * clamp(need_dps / your DPS). Damage taken = creature DPS * fight time; creature DPS is set so that, with gear of its rank, a normal fight costs about `danger` of your HP. Damage taken uses the fight length from gear only: Shop speed makes fights faster in real time but doesn't reduce damage. Above death_start of your HP you start dying (fully at death_start + death_span); a death costs death_time plus the fight.",
+    "weapon_dps": 10,
+    "fists_dps": 4,
     "rank_growth": 1.8,
     "slot_growth": 0.2,
-    "boss_mult": 2.0,
-    "fists": 5,
-    "weapon_power": 10,
-    "armor_power": 2,
-    "_power": "weapon/armor power of rank r = value * rank_growth^r",
-    "trait_match": 1.5,
-    "trait_miss": 0.8,
+    "boss_dps_mult": 2.0,
+    "trait_match": 2.2,
     "sword_bonus": 1.1,
-    "dagger_speed": 1.0,
+    "_trait": "a weapon matching the creature's trait deals x trait_match: one rank lower beats a Sword one rank higher (1.8 x 1.1 = 1.98). No penalty otherwise; the best weapon is always picked automatically.",
+    "base_hp": 100,
+    "armor_hp": 30,
+    "_hp": "HP = base_hp + armor_hp * rank_growth^r for each of the 7 armor pieces",
+    "danger": 0.75,
+    "_survival": "each creature deals a fixed amount per fight (danger x the HP of gear of its rank, more for later creatures and bosses); only armor decides survival, the weapon only decides speed",
+    "boss_damage_mult": 1.0,
+    "death_start": 0.8,
+    "death_span": 0.4,
     "ratio_min": 0.4,
     "ratio_max": 4.0,
-    "death_ratio": 1.25,
-    "death_time": 30,
+    "death_time": 120,
+    "_death_time": "seconds lost per death: 30 s corpse run + 3 min of Resurrection Sickness at half combat speed (about 90 s)",
     "cloth_per_kill": 1.5,
     "gold_per_kill": 40,
     "_gold_per_kill": "copper, times rank_growth^r"
   },
 
   "pool": {
-    "_about": "Non-progression items in the pool, for the default start (220 checks - 42 progression = 178). Useful items are each weaker than one trainer upgrade. The simulator spreads them evenly over a seed and applies each to the lowest-level profession that isn't maxed (Rested XP and storage are global).",
+    "_about": "Non-progression items in the pool, for the default start (220 checks - 42 progression = 178). Speed and XP Upgrades are free Shop levels for the profession that has the fewest. The simulator spreads the items evenly over a seed.",
     "useful": {
-      "Speed boost": {"count": 22, "speed": 0.07, "_": "+7% speed to one profession"},
-      "XP boost": {"count": 22, "xp": 0.07, "_": "+7% XP to one profession"},
-      "Bigger storage": {"count": 8, "storage": 0.15, "_": "+15% storage cap each"},
-      "Better prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"}
+      "Speed Upgrade": {"count": 22, "shop": "speed", "_": "a free Shop Speed level for the profession with the fewest (ties: lowest skill)"},
+      "XP Upgrade": {"count": 22, "shop": "xp", "_": "a free Shop XP level for the profession with the fewest (ties: lowest skill)"},
+      "Bag Upgrade": {"count": 8, "storage": 0.15, "_": "+15% bag space (per material) each"},
+      "Better Prices": {"count": 3, "sell": 0.10, "_": "+10% sell prices each"}
     },
     "filler": {
       "Coin pouch": {"count": 60, "gold": 5000, "_": "copper, times combat rank_growth^(highest rank)"},
@@ -116,8 +120,8 @@
       "Crafting speed": 0.15,
       "Combat elixir": 0.15,
       "Combat food": 0.10,
-      "XP food (Field)": 0.15,
-      "XP food (Workshop)": 0.15
+      "Gathering XP food": 0.15,
+      "Crafting XP food": 0.15
     }
   },
 
@@ -129,9 +133,8 @@
   },
 
   "offline": {
-    "_about": "Progress keeps going while the page is closed, up to cap_hours (base) + 4 h per offline item. Each hour past the cap gives rested_per_hour minutes of Rested XP, pool capped at rested_cap minutes.",
+    "_about": "Progress keeps going while the page is closed, up to cap_hours. Each hour past the cap gives rested_per_hour minutes of Rested XP, pool capped at rested_cap minutes.",
     "cap_hours": 8,
-    "per_item_hours": 4,
     "rested_per_hour": 10,
     "rested_cap": 120,
     "mode": "repeat",
@@ -145,12 +148,14 @@
 
   "ragnaros": {
     "_about": "Ragnaros fight: power needed and Fire Resistance needed for a good win chance.",
-    "_formula": "win chance = max_win * min(1, power/power_need)^3 * (fr_floor + (1 - fr_floor) * min(1, FR/fr_need)^2). FR = Classic FR of the set pieces worn + potion + food. A fight lasts fight_minutes; a loss also costs the death time.",
-    "power_need": 140,
+    "_formula": "win chance = max_win * min(1, DPS/dps_need)^2 * min(1, HP/hp_need) * (fr_floor + (1 - fr_floor) * min(1, FR/fr_need)^2). FR = Classic FR of the set pieces worn + potion + food. A fight lasts fight_minutes; a loss also costs the death time.",
+    "dps_need": 120,
+    "hp_need": 1100,
     "fr_need": 160,
     "potion_fr": 25,
     "food_fr": 10,
-    "fr_armor_rank": 2.5,
+    "fr_armor_rank": 3.5,
+    "_fr_armor_rank": "the Fire Resistance set is the best armor in the game (legendary): its pieces count as rank 3.5, above Artisan, and replace Artisan pieces as they are crafted",
     "fr_floor": 0.05,
     "max_win": 0.95,
     "fight_minutes": 5

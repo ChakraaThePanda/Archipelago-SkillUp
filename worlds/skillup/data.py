@@ -1,90 +1,112 @@
 """
-Static game data shared by every part of the world.
+Static game data for the world, loaded from data.json (built by tools/build_game_data.py from
+the same source the browser game uses), plus every item and location name and ID.
 
-The browser game (Skillup.html) has its own copy of the profession list, tier count
-and level math. It never hardcodes item or location IDs though: it looks them up by name
-from the server's data package, so only the *names* below have to stay in sync with the JS.
+IDs never depend on options, so the data package is the same for every seed.
 """
 from __future__ import annotations
 
-import math
+import json
+import pkgutil
 from dataclasses import dataclass
 
-BASE_ID = 47_110_000
+_DATA = json.loads(pkgutil.get_data(__name__, "data.json").decode("utf-8"))
 
-TIERS = 6
-LEVELS_PER_TIER = 50
-MAX_LEVEL = TIERS * LEVELS_PER_TIER  # 300
+BASE_ID = 47_110_000
+GAME = "Skillup"
+
+RANKS: list[str] = [r["name"] for r in _DATA["ranks"]]          # Apprentice ... Artisan
+RANK_CAPS: list[int] = [r["cap"] for r in _DATA["ranks"]]       # 75, 150, 225, 300
 
 
 @dataclass(frozen=True)
 class Profession:
+    key: str
     name: str
+    kind: str            # gathering | combat | crafting
+    title: str           # "Miner", for the "<Rank> <Title>" milestone checks
+    source: str | None   # profession whose materials a crafting profession uses
     index: int
-    source: str | None = None  # crafting professions need this gathering profession's materials
-
-    @property
-    def gathering(self) -> bool:
-        return self.source is None
 
     @property
     def item(self) -> str:
         return f"Progressive {self.name}"
 
 
-_P = Profession
 PROFESSIONS: list[Profession] = [
-    _P("Mining", 0),
-    _P("Herbalism", 1),
-    _P("Skinning", 2),
-    _P("Fishing", 3),
-    _P("Blacksmithing", 4, "Mining"),
-    _P("Jewelcrafting", 5, "Mining"),
-    _P("Alchemy", 6, "Herbalism"),
-    _P("Inscription", 7, "Herbalism"),
-    _P("Leatherworking", 8, "Skinning"),
-    _P("Cooking", 9, "Fishing"),
+    Profession(p["key"], p["name"], p["kind"], p["title"], p["source"], i) for i, p in enumerate(_DATA["professions"])
 ]
-PROFESSION_BY_NAME = {p.name: p for p in PROFESSIONS}
-GATHERING = [p for p in PROFESSIONS if p.gathering]
-CRAFTING = [p for p in PROFESSIONS if not p.gathering]
+PROF = {p.key: p for p in PROFESSIONS}
+GATHERING = [p for p in PROFESSIONS if p.kind == "gathering"]
+CRAFTING = [p for p in PROFESSIONS if p.kind == "crafting"]
 
+# Combat gear: Leatherworking and Tailoring make the 7 armor pieces; Ragnaros also needs these.
+ARMOR_PROFS = ("leatherworking", "tailoring")
+RAGNAROS_CRAFTS = ("blacksmithing", "leatherworking", "tailoring", "alchemy", "cooking")
 
-def tier_for_level(level: int) -> int:
-    """Tier you need unlocked to be able to *reach* this level.
-
-    In game, tier-t content only gives XP while your level is below t * 50, so reaching
-    level 50 needs tier 1, level 51 needs tier 2, ... level 300 needs tier 6."""
-    return max(1, math.ceil(level / LEVELS_PER_TIER))
-
-
-def location_name(prof: str, level: int) -> str:
-    return f"{prof} Level {level}"
-
-
-# Every level of every profession has a fixed ID, whatever check_interval a slot picked, so
-# the data package is the same for every seed.
-LOCATION_NAME_TO_ID: dict[str, int] = {
-    location_name(p.name, lvl): BASE_ID + 1000 + p.index * 1000 + lvl
-    for p in PROFESSIONS
-    for lvl in range(1, MAX_LEVEL + 1)
+STARTING_PAIRS = {
+    "mining": "blacksmithing",
+    "herbalism": "alchemy",
+    "skinning": "leatherworking",
+    "fishing": "cooking",
 }
 
-# name -> (id offset, copies placed in the pool or None for "fills the rest")
-USEFUL_ITEMS = {
-    "Bag Upgrade": 100,
-}
-FILLER_ITEMS = {
-    "Pouch of Gold": 110,
-    "Elixir of Insight": 111,
-    "Swiftness Potion": 112,
-    "Crate of Materials": 113,
-}
-BAG_UPGRADES_IN_POOL = 10
 
-ITEM_NAME_TO_ID: dict[str, int] = {p.item: BASE_ID + p.index for p in PROFESSIONS}
-ITEM_NAME_TO_ID.update({name: BASE_ID + off for name, off in USEFUL_ITEMS.items()})
-ITEM_NAME_TO_ID.update({name: BASE_ID + off for name, off in FILLER_ITEMS.items()})
+@dataclass(frozen=True)
+class Thing:
+    """Something that sends a check the first time: a material gathered, a creature killed,
+    or a recipe crafted. Four per rank per profession."""
+    profession: str
+    name: str
+    rank: int          # 0..3
+    slot: int          # 0..3, unlock order inside the rank
+    boss: bool = False
 
-VICTORY_LOCATION = "Grand Master of Tradeskills"
-VICTORY_ITEM = "Victory"
+    @property
+    def location(self) -> str:
+        return f"{PROF[self.profession].name}: {self.name}"
+
+
+THINGS: list[Thing] = (
+    [Thing(m["profession"], m["name"], m["rank"], m["slot"]) for m in _DATA["materials"] if m["slot"] is not None]
+    + [Thing("combat", m["name"], m["rank"], m["slot"], m["boss"]) for m in _DATA["mobs"]]
+    + [Thing(r["profession"], r["name"], r["rank"], r["slot"]) for r in _DATA["recipes"]]
+)
+
+
+def milestone(prof: Profession, rank: int) -> str:
+    """Reaching a rank's cap, named like WoW's achievements: "Journeyman Alchemist" at 150."""
+    return f"{RANKS[rank]} {prof.title}"
+
+
+# ---- names and IDs ------------------------------------------------------------------------
+LOCATION_NAME_TO_ID: dict[str, int] = {}
+for t in THINGS:
+    LOCATION_NAME_TO_ID[t.location] = BASE_ID + 1000 + PROF[t.profession].index * 100 + t.rank * 10 + t.slot
+for p in PROFESSIONS:
+    for r in range(len(RANKS)):
+        LOCATION_NAME_TO_ID[milestone(p, r)] = BASE_ID + 1000 + p.index * 100 + r * 10 + 9
+assert len(LOCATION_NAME_TO_ID) == len(THINGS) + len(PROFESSIONS) * len(RANKS) == 220
+
+MOLTEN_CORE = "Molten Core"
+USEFUL = {  # name -> copies in the pool
+    "Speed Upgrade": 22,     # a free Shop Speed level for the profession with the fewest
+    "XP Upgrade": 22,        # a free Shop XP level for the profession with the fewest
+    "Bag Upgrade": 8,        # +15% bag space per material
+    "Better Prices": 3,      # +10% sell prices
+}
+FILLER = {  # name -> weight
+    "Coin Pouch": 60,
+    "Rested XP": 25,
+    "Tome of Experience": 35,
+}
+TRAPS = ["Resurrection Sickness", "Repair Bill", "Broken Tool", "Murloc Ambush"]
+
+ITEM_NAME_TO_ID: dict[str, int] = {p.item: BASE_ID + 1 + p.index for p in PROFESSIONS}
+ITEM_NAME_TO_ID[MOLTEN_CORE] = BASE_ID + 20
+ITEM_NAME_TO_ID.update({n: BASE_ID + 30 + i for i, n in enumerate(USEFUL)})
+ITEM_NAME_TO_ID.update({n: BASE_ID + 40 + i for i, n in enumerate(FILLER)})
+ITEM_NAME_TO_ID.update({n: BASE_ID + 50 + i for i, n in enumerate(TRAPS)})
+
+VICTORY_RAGNAROS = "Defeat Ragnaros"
+VICTORY_MASTERY = "Master Your Professions"

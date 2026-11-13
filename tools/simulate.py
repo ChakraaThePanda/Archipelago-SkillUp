@@ -57,25 +57,32 @@ def fmt_t(sec: float | None) -> str:
     return f"{h}h{m:02d}" if h else f"{m}m"
 
 
-def fmt_days(sec: float | None) -> str:
-    return "not reached" if sec is None else f"{sec / 86400:.1f} days"
-
-
 class Sim:
     def __init__(self, speed="Normal", pool=None, delay=30.0, schedule=None, buffs=True,
-                 traps=None, offline_items=0, offline_mode=None):
+                 traps=None, offline_cap_h=None, offline_mode=None, start=None, combat_delay=None,
+                 goal="ragnaros", master_n=4):
+        """start: professions you start with (default: Mining + Blacksmithing + Combat).
+        combat_delay: minutes until Apprentice Combat arrives when it isn't a starting item.
+        goal: "ragnaros", "master" (master_n professions at 300) or "both"."""
+        start = START if start is None else start
+        self.goal, self.master_n, self.goal_time = goal, master_n, None
+        # A player going for "master N professions" levels N of them first: the starting ones,
+        # then gathering (fastest), then crafting, then Combat (it needs armor from crafting).
+        order = list(dict.fromkeys([p for p in start if p != "combat"] + GATHER + CRAFT + ["combat"]))
+        self.focus = set(order[:master_n]) if goal == "master" else None
         self.xpb, self.act, self.rec = BAL["xp"], BAL["actions"], BAL["recipes"]
         self.gold_cfg, self.cmb, self.buff_cfg = BAL["gold"], BAL["combat"], BAL["buffs"]
         self.game_speed = BAL["xp"]["game_speed"][speed]
         self.delay = delay * 60
         self.schedule = schedule            # {"active_hours": A} or None (page always open)
         self.use_buffs = buffs
-        self.offline_cap = (BAL["offline"]["cap_hours"] + BAL["offline"]["per_item_hours"] * offline_items) * H
+        self.offline_cap = (BAL["offline"]["cap_hours"] if offline_cap_h is None else offline_cap_h) * H
         self.t = 0.0
         self.level = {k: 1 for k in PROFS}
         self.xp = {k: 0.0 for k in PROFS}
-        self.ranks = {k: (1 if k in START else 0) for k in PROFS}
-        self.arrivals = [(self.delay, k) for k in PROFS if k not in START]
+        self.ranks = {k: (1 if k in start else 0) for k in PROFS}
+        self.arrivals = [((combat_delay * 60 if k == "combat" and combat_delay is not None else self.delay), k)
+                         for k in PROFS if k not in start]
         self.requested = {k: 1 for k in PROFS}
         self.speed_up = {k: 0 for k in PROFS}
         self.xp_up = {k: 0 for k in PROFS}
@@ -132,7 +139,7 @@ class Sim:
         if not self.open(prof):
             return
         amount *= self.game_speed * (1 + self.xp_up[prof] * self.gold_cfg["xp_step"] + self.pool_xp[prof])
-        amount *= 1 + self.buff_value("XP food (Field)" if field else "XP food (Workshop)")
+        amount *= 1 + self.buff_value("Gathering XP food" if field else "Crafting XP food")
         if self.rested > 0:
             amount *= 2
         self.xp[prof] += amount
@@ -215,40 +222,62 @@ class Sim:
             (self.speed_up if kind == "speed" else self.xp_up)[k] += 1
 
     # ---- combat --------------------------------------------------------------------------
-    def weapon_power(self, trait):
+    def weapon_dps(self, trait):
+        """Best weapon for this trait (always picked automatically), before buffs."""
         c = self.cmb
-        best = c["fists"]
+        best = c["fists_dps"]
         for wtype, r in self.weapons.items():
-            p = c["weapon_power"] * c["rank_growth"] ** r
+            d = c["weapon_dps"] * c["rank_growth"] ** r
             if trait and DATA["traits"][trait]["weapon"] == wtype:
-                p *= c["trait_match"]
-            elif trait:
-                p *= c["trait_miss"]
-            elif wtype == "Sword":
-                p *= c["sword_bonus"]
-            best = max(best, p)
+                d *= c["trait_match"]
+            elif not trait and wtype == "Sword":
+                d *= c["sword_bonus"]
+            best = max(best, d)
         return best
 
-    def armor_power(self, ranks):
+    def armor_hp(self, ranks):
         c = self.cmb
-        return sum(c["armor_power"] * c["rank_growth"] ** r for r in ranks)
+        return c["base_hp"] + sum(c["armor_hp"] * c["rank_growth"] ** r for r in ranks)
 
-    def power_vs(self, mob):
-        p = self.weapon_power(mob["trait"]) + self.armor_power(self.armor.values())
-        return p * (1 + self.buff_value("Combat elixir")) * (1 + self.buff_value("Combat food"))
+    def max_hp(self):
+        return self.armor_hp(self.armor.values()) * (1 + self.buff_value("Combat food"))
 
-    def mob_need(self, mob):
+    def mob_base_time(self, mob, boss=True):
+        return self.base_time("combat_time", mob["rank"], mob["slot"]) * (self.act["boss_time_mult"] if boss and mob["boss"] else 1)
+
+    def need_dps(self, mob):
         c = self.cmb
-        need = c["need_base"] * c["rank_growth"] ** mob["rank"] * (1 + c["slot_growth"] * mob["slot"])
-        return need * (c["boss_mult"] if mob["boss"] else 1)
+        need = c["weapon_dps"] * c["rank_growth"] ** mob["rank"] * (1 + c["slot_growth"] * mob["slot"])
+        return need * (c["boss_dps_mult"] if mob["boss"] else 1)
+
+    def gear_fight_time(self, mob):
+        """Fight length from gear alone (weapon + combat elixir). Shop speed shortens the real
+        time but not the damage you take: survival comes from gear, speed from the Shop."""
+        c = self.cmb
+        dps = self.weapon_dps(mob["trait"]) * (1 + self.buff_value("Combat elixir"))
+        return self.mob_base_time(mob) * min(max(self.need_dps(mob) / dps, c["ratio_min"]), c["ratio_max"])
 
     def fight(self, mob):
+        """(real fight time, XP if you win, expected time lost to deaths) for one fight."""
         c = self.cmb
-        base = self.base_time("combat_time", mob["rank"], mob["slot"]) * (self.act["boss_time_mult"] if mob["boss"] else 1)
-        ratio = self.mob_need(mob) / self.power_vs(mob)
-        t = base * min(max(ratio, c["ratio_min"]), c["ratio_max"]) / self.speed("combat")
-        death = c["death_time"] * max(0.0, ratio - c["death_ratio"])
-        return max(t, self.act["min_action_time"]), base * self.act["xp_per_second"], death
+        t = max(self.gear_fight_time(mob) / self.speed("combat"), self.act["min_action_time"])
+        p_death = self.death_chance(mob)
+        return t, self.mob_base_time(mob) * self.act["xp_per_second"] * (1 - p_death), p_death * (c["death_time"] + t)
+
+    def mob_damage(self, mob):
+        """Damage one fight against this creature deals: fixed per creature, so only armor (HP)
+        decides survival. Set so gear of the creature's own rank takes `danger` of its HP."""
+        c = self.cmb
+        # Armor each creature expects: the previous zone's gear for the 1st creature (no armor at
+        # all in Elwynn), rising to the zone's own gear at the boss.
+        e = mob["rank"] - 1 + mob["slot"] / 3
+        expected = c["base_hp"] + 7 * c["armor_hp"] * c["rank_growth"] ** e * (min(1.0, 1 + e) if e < 0 else 1)
+        return c["danger"] * expected * (c["boss_damage_mult"] if mob["boss"] else 1)
+
+    def death_chance(self, mob):
+        c = self.cmb
+        taken = self.mob_damage(mob) / self.max_hp()
+        return min(1.0, max(0.0, (taken - c["death_start"]) / c["death_span"]))
 
     # ---- the Field -----------------------------------------------------------------------
     def field_options(self, prof):
@@ -288,7 +317,7 @@ class Sim:
                     return self.feed(max(mobs, key=lambda o: o[0]))
             elif self.ranks[prof] and self.level[prof] >= mat["unlock"]:
                 return self.feed(next(o for o in self.field_options(prof) if o[2]["name"] == self.need))
-        todo = [p for p in FIELD if self.open(p)]
+        todo = self.focused([p for p in FIELD if self.open(p)])
         if not todo:
             self.waiting_ranks += 5
             return 5.0
@@ -346,7 +375,7 @@ class Sim:
         if self.ragnaros_ready is not None:
             return self.craft_fr()
         first_missing = None
-        for prof in sorted((p for p in CRAFT if self.open(p)), key=lambda p: self.level[p]):
+        for prof in sorted(self.focused([p for p in CRAFT if self.open(p)]), key=lambda p: self.level[p]):
             cands = []
             for r in DATA["recipes"]:
                 if r["profession"] != prof or self.level[prof] < r["unlock"]:
@@ -419,10 +448,11 @@ class Sim:
         open_profs = [k for k in PROFS if self.ranks[k] and self.level[k] < 300] or list(PROFS)
         target = min(open_profs, key=lambda k: self.level[k])
         top_rank = max((self.level[k] - 1) // 75 for k in PROFS)
-        if "speed" in spec:
-            self.pool_speed[target] += spec["speed"]
-        if "xp" in spec:
-            self.pool_xp[target] += spec["xp"]
+        if "shop" in spec:  # a free Shop level for the profession with the fewest of that kind
+            levels = self.speed_up if spec["shop"] == "speed" else self.xp_up
+            open_shop = [k for k in open_profs if levels[k] < self.gold_cfg["steps"]]
+            if open_shop:
+                levels[min(open_shop, key=lambda k: (levels[k], self.level[k]))] += 1
         if "storage" in spec:
             self.storage_bonus += spec["storage"]
         if "sell" in spec:
@@ -433,8 +463,6 @@ class Sim:
             self.rested = min(self.rested + spec["rested_min"] * 60, BAL["offline"]["rested_cap"] * 60)
         if "levels" in spec:
             self.add_xp(target, spec["levels"] * self.xp_needed(self.level[target]) / self.game_speed, True)
-        if spec.get("offline"):
-            self.offline_cap += BAL["offline"]["per_item_hours"] * H
 
     def spring_trap(self, name):
         cfg = BAL["traps"][name]
@@ -447,7 +475,7 @@ class Sim:
         elif name == "Murloc Ambush":
             murloc = next(m for m in DATA["mobs"] if m["name"] == "Murloc Forager")
             t, _, death = self.fight(murloc)
-            return t + death
+            return (t + death) * cfg["fights"]
         return 0.0
 
     def set_up_for_offline(self):
@@ -481,17 +509,24 @@ class Sim:
                 self.stock[name] = 0.0
 
     # ---- main loop -----------------------------------------------------------------------
-    def active_at(self, t):
-        if not self.schedule:
-            return True
-        return (t % 86400) < self.schedule["active_hours"] * H
+    def focused(self, profs):
+        """Professions to work on: the focus set first if there is one and any is open."""
+        if self.focus:
+            return [p for p in profs if p in self.focus] or profs
+        return profs
+
+    def goal_done(self):
+        ragnaros = self.fr_finished is not None
+        master = sum(self.level[p] >= 300 for p in PROFS) >= self.master_n
+        return {"ragnaros": ragnaros, "master": master, "both": ragnaros and master}[self.goal]
 
     def run(self, limit_h=24 * 30):
         nf = nw = 0.0
         while self.t < limit_h * H:
             if self.ragnaros_ready is None and all(self.level[p] >= 300 for p in RAGNAROS_NEEDS):
                 self.ragnaros_ready = self.t
-            if self.fr_finished is not None and all(self.level[p] >= 300 for p in PROFS):
+            if self.goal_done():
+                self.goal_time = self.t
                 break
             for queue, fn in ((self.pool, self.receive), (self.arrivals, None)):
                 queue.sort(key=lambda e: e[0])
@@ -548,9 +583,6 @@ def build_pool(finish, only=None):
     for name, spec in {**cfg["useful"], **cfg["filler"]}.items():
         if only is not None and name not in only:
             continue
-        spec = dict(spec)
-        if name == "Longer offline time":
-            spec["offline"] = True
         for i in range(spec["count"]):
             queue.append(((i + 0.5) / spec["count"], name, spec))
     queue.sort(key=lambda q: q[0])
@@ -563,7 +595,7 @@ def seed(speed="Normal", pool=True, **kw):
     base = Sim(speed, **kw).run()
     if not pool:
         return base
-    sim = Sim(speed, build_pool(base.ragnaros_ready or base.end), **kw).run()
+    sim = Sim(speed, build_pool(base.goal_time or base.end), **kw).run()
     sim.no_pool = base.ragnaros_ready
     return sim
 
@@ -584,6 +616,29 @@ def main_report(sim, speed):
     for k, p in PROFS.items():
         ms = sim.milestones[k]
         out.append(f"| {p['name']} | " + " | ".join(fmt_t(ms.get(c)) if c in ms else "-" for c in RANK_CAPS) + " |")
+    return "\n".join(out)
+
+
+def options_report():
+    """Time to finish a seed for every YAML option that changes play (Normal speed unless noted).
+    Rank items arrive 30 min after they're needed; full item pool; page always open."""
+    pairs = {"Mining + Blacksmithing": ["mining", "blacksmithing"], "Herbalism + Alchemy": ["herbalism", "alchemy"],
+             "Skinning + Leatherworking": ["skinning", "leatherworking"], "Fishing + Cooking": ["fishing", "cooking"]}
+    def run(label, speed="Normal", **kw):
+        s = seed(speed, **kw)
+        return f"| {label} | **{fmt_t(s.goal_time)}** | {s.deaths:.0f} |"
+    out = ["## Every option", "", "Time until the goal is done (Ragnaros: Fire Resistance set crafted).", "",
+           "| Setting | Goal done | Deaths |", "| --- | --- | --- |"]
+    for speed in BAL["xp"]["game_speed"]:
+        out.append(run(f"Game speed: {speed}", speed))
+    for goal, n in (("master", 1), ("master", 4), ("master", 11), ("both", 4)):
+        out.append(run(f"Goal: {'Master Professions' if goal == 'master' else 'Both'}, {n} to master", goal=goal, master_n=n))
+    for name, prof in pairs.items():
+        out.append(run(f"Starting pair: {name}", start=prof + ["combat"]))
+    out.append(run("Starting pairs: 4 (everything gathering + its craft)", start=[p for v in pairs.values() for p in v] + ["combat"]))
+    out.append(run("Combat access: Early (arrives in ~10 min)", start=["mining", "blacksmithing"], combat_delay=10))
+    out.append(run("Combat access: Anywhere (arrives in ~1 h)", start=["mining", "blacksmithing"], combat_delay=60))
+    out.append(run("Combat access: Anywhere, late (arrives in ~3 h)", start=["mining", "blacksmithing"], combat_delay=180))
     return "\n".join(out)
 
 
@@ -624,8 +679,8 @@ def delay_report():
 
 
 def schedule_report():
-    def marks(active, mode, cap_items=0):
-        sim = Sim("Normal", schedule={"active_hours": active}, offline_mode=mode, offline_items=cap_items)
+    def marks(active, mode, cap_h):
+        sim = Sim("Normal", schedule={"active_hours": active}, offline_mode=mode, offline_cap_h=cap_h)
         out, orig = [], sim.set_up_for_offline
 
         def mark():
@@ -636,8 +691,8 @@ def schedule_report():
         out.append(sum(sim.level.values()))
         return out + [3300] * (3 - len(out))
 
-    rows = [("No offline progress (Rested XP only)", "repeat", -2), ("Repeat last action, 8 h cap", "repeat", 0),
-            ("Repeat last action, 24 h cap", "repeat", 4), ("Smart (keeps choosing), 8 h cap", "auto", 0)]
+    rows = [("No offline progress (Rested XP only)", "repeat", 0), ("Repeat last action, 8 h cap (chosen)", "repeat", 8),
+            ("Smart (keeps choosing), 8 h cap (rejected: too strong)", "auto", 8)]
     out = ["## Offline time and play schedules", "",
            "Total skill levels (all 11 professions, 3300 = everything maxed) at the end of each day's play "
            "session, for someone who opens the page this many hours a day. Before closing, the player sets "
@@ -713,16 +768,17 @@ def ragnaros_report():
         worn = fr_items[:fr_pieces]
         fr = sum(f["fire_resistance"] for f in worn) + (r["potion_fr"] + r["food_fr"] if consumables else 0)
         armor = [r["fr_armor_rank"]] * len(worn) + [armor_rank] * (7 - len(worn))
-        power = sim.weapon_power("Tough") + sim.armor_power(armor)
-        chance = r["max_win"] * min(1, power / r["power_need"]) ** 3 * (r["fr_floor"] + (1 - r["fr_floor"]) * min(1, fr / r["fr_need"]) ** 2)
+        dps, hp = sim.weapon_dps("Tough"), sim.armor_hp(armor)
+        chance = (r["max_win"] * min(1, dps / r["dps_need"]) ** 2 * min(1, hp / r["hp_need"])
+                  * (r["fr_floor"] + (1 - r["fr_floor"]) * min(1, fr / r["fr_need"]) ** 2))
         tries = 1 / chance if chance > 0 else float("inf")
         cost = tries * r["fight_minutes"] * 60 + (tries - 1) * c["death_time"]
-        return chance, cost, fr, power
+        return chance, cost, fr, f"{dps:.0f} / {hp:,.0f}"
 
     out = ["## Ragnaros", "",
            f"Win chance per attempt (fights last {r['fight_minutes']} min). Weapon: an Axe of that rank (Ragnaros is Tough). "
            "Fire Resistance pieces replace main-set armor; the rest is main-set armor of the same rank.", "",
-           "| Gear rank | FR pieces | Potion + food | Fire Resistance | Power | Win chance | Expected time to win |",
+           "| Gear rank | FR pieces | Potion + food | Fire Resistance | DPS / HP | Win chance | Expected time to win |",
            "| --- | --- | --- | --- | --- | --- | --- |"]
     for gear in (2, 3):
         for pieces in (0, 3, 5, 7):
@@ -731,7 +787,7 @@ def ragnaros_report():
                     continue
                 ch, cost, fr, power = win(gear, gear, pieces, cons)
                 out.append(f"| {DATA['ranks'][gear]['name']} | {pieces}/7 | {'yes' if cons else 'no'} | {fr} | "
-                           f"{power:.0f} | {ch:.0%} | {fmt_t(cost) if ch > 0.001 else 'never'} |")
+                           f"{power} | {ch:.0%} | {fmt_t(cost) if ch > 0.001 else 'never'} |")
     return "\n".join(out)
 
 
@@ -750,7 +806,7 @@ if __name__ == "__main__":
                  "## Game speeds", ""]
         for s in BAL["xp"]["game_speed"]:
             parts += [main_report(seed(s), s), ""]
-        for fn in (pool_report, buffs_report, delay_report, schedule_report, traps_report, red_report, ragnaros_report):
+        for fn in (options_report, pool_report, buffs_report, delay_report, schedule_report, traps_report, red_report, ragnaros_report):
             parts += [fn(), ""]
         text = "\n".join(parts)
         (ROOT / "docs" / "BALANCE.md").write_text(text, encoding="utf-8")

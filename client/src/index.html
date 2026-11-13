@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skillup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<style>
+/*__STYLE__*/
+</style>
+</head>
+<body>
+
+<section class="connect" id="connect" aria-label="Connect to Archipelago">
+  <form class="card frame" id="connect-form" autocomplete="on">
+    <span class="logo title">Skillup</span>
+    <p class="sub">An Archipelago idle game of Classic professions</p>
+    <div class="fld"><label for="c-server">Server</label><input id="c-server" placeholder="archipelago.gg:38281" autocomplete="url">
+      <span class="hint">The room's address and port, as shown on its page.</span></div>
+    <div class="fld"><label for="c-slot">Slot name</label><input id="c-slot" placeholder="Your name from your YAML"></div>
+    <div class="fld"><label for="c-pass">Password</label><input id="c-pass" type="password" placeholder="Leave empty if the room has none"></div>
+    <p class="err" id="c-err" role="status"></p>
+    <button class="wbtn big" type="submit">Connect</button>
+    <div class="recent" id="recent"></div>
+    /*__LINKS__*/
+  </form>
+</section>
+
+<header class="top frame" id="top" hidden>
+  <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  <span class="logo title">Skillup</span>
+  <button class="who" id="to-connect" title="Change room or slot"><span class="online" id="online" aria-hidden="true"></span><span><b id="who"></b> <span class="mute" id="where"></span></span></button>
+  <span class="hstat"><span class="k">Gold</span><span class="coins" id="gold"></span></span>
+  <span class="hstat hide-sm"><span class="k">Bags</span><span id="bags"></span></span>
+  <span class="hstat hide-sm" style="min-width:170px"><span class="k">Rested</span><span style="flex:1"><div class="sbar rested" style="height:14px"><i id="rested-bar"></i></div></span><span id="rested" style="font-size:13px"></span></span>
+  <span class="hstat"><span class="k">Checks</span><b id="checks"></b></span>
+</header>
+
+<div class="drawer-shade" id="shade" hidden></div>
+<main class="grid" id="game" hidden>
+  <nav class="frame side" id="profs" aria-label="Professions"><h2 class="h2 title">Professions</h2><div id="proflist"></div></nav>
+  <section class="frame" aria-label="Selected profession"><div class="slots" id="slots"></div><div id="detail"></div></section>
+  <aside class="frame right side" id="panel">
+    <div class="tabs" role="tablist">
+      <button class="on" data-tab="char" role="tab">Character</button>
+      <button data-tab="shop" role="tab">Shop</button>
+      <button data-tab="bags" role="tab">Bags</button>
+      <button data-tab="log" role="tab">Log</button>
+    </div>
+    <div class="pane" id="pane"></div>
+    <div class="goal" id="goal"></div>
+  </aside>
+</main>
+<footer class="site-foot" id="foot" hidden>/*__LINKS__*/</footer>
+
+<script>
+const GD = /*__GAME_DATA__*/null;
+const BAL = /*__BALANCE__*/null;
+/*__SCRIPT__*/
+</script>
+</body>
+</html>

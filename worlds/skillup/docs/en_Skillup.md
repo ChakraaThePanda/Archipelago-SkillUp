@@ -2,29 +2,37 @@
 
 ## What is this game?
 
-A small browser idle game about leveling professions. There are 4 gathering professions
-(Mining, Herbalism, Skinning, Fishing) and 6 crafting professions that use their materials
-(Blacksmithing and Jewelcrafting use Mining, Alchemy and Inscription use Herbalism,
-Leatherworking uses Skinning, Cooking uses Fishing). One gathering action and one crafting
-action run at the same time, and keep running while the page is closed (up to 12 hours).
+An idle game of Classic World of Warcraft professions, played in your browser on PC or phone.
+You level 11 professions from 1 to 300:
 
-Each profession has 6 tiers (for Mining: Copper, Tin, Iron, Mithril, Thorium, Fel Iron) and
-goes from level 0 to 300. A tier only gives XP until level 50, 100, 150... so you need the
-next tier to keep leveling.
+* **Gathering:** Mining, Herbalism, Skinning, Fishing.
+* **Fighting:** Combat, across Elwynn Forest, Duskwood, Stranglethorn Vale and Un'Goro Crater.
+* **Crafting:** Blacksmithing (weapons), Leatherworking and Tailoring (armor, bags), Engineering
+  (gathering tools), Alchemy (potions) and Cooking (food).
+
+You gather (or fight) and craft at the same time. Each profession has 4 ranks: Apprentice (up to
+75), Journeyman (150), Expert (225) and Artisan (300).
 
 ## What gets randomized?
 
-* **Items:** `Progressive <Profession>` x6 per profession. The first copy teaches the
-  profession, each next copy unlocks its next tier. You start with one random gathering
-  profession (configurable). Also Bag Upgrades (+4 slots) and filler: Pouch of Gold, Elixir
-  of Insight (double XP for 5 min), Swiftness Potion (+30% speed for 5 min) and Crate of
-  Materials.
-* **Locations:** reaching every `check_interval` levels (10 by default) in each profession,
-  plus level 300.
+* **Ranks:** every rank of every profession is an item (`Progressive Mining` and so on). You start
+  with one gathering profession and the crafting profession that uses its materials, and (by
+  default) Apprentice Combat.
+* **Molten Core:** opens the fight against Ragnaros (only when the goal includes him).
+* **Useful items:** Speed and XP Upgrades (a free Shop level for the profession that has the
+  fewest), Bag Upgrades (more room for every material) and Better Prices.
+* **Filler:** coin pouches, Rested XP, Tomes of Experience, and (if enabled) mild traps.
 
-A crafting tier is in logic once you have that tier of both the crafting profession and the
-gathering profession that feeds it.
+## What are the checks?
+
+220 in total, 20 per profession:
+
+* The first time you gather each material, kill each creature, or craft each recipe (4 per rank).
+* Reaching each rank's cap, named like WoW's achievements: "Journeyman Alchemist" at 150.
 
 ## Goal
 
-Bring `professions_to_max` professions (3 by default) to level 300.
+* **Ragnaros** (default): get Molten Core, craft the Legendary armor set and defeat
+  Ragnaros.
+* **Master Professions:** bring a number of professions to 300.
+* **Both.**

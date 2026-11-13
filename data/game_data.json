@@ -1115,21 +1115,6 @@
  ],
  "recipes": [
   {
-   "name": "Copper Dagger",
-   "id": 7166,
-   "icon": "inv_weapon_shortblade_14",
-   "quality": 1,
-   "sell": 194,
-   "profession": "blacksmithing",
-   "rank": 0,
-   "slot": 0,
-   "unlock": 1,
-   "role": "Dagger",
-   "reagents": [
-    "Copper Ore"
-   ]
-  },
-  {
    "name": "Copper Shortsword",
    "id": 2847,
    "icon": "inv_sword_26",
@@ -1137,9 +1122,24 @@
    "sell": 110,
    "profession": "blacksmithing",
    "rank": 0,
+   "slot": 0,
+   "unlock": 1,
+   "role": "Sword",
+   "reagents": [
+    "Copper Ore"
+   ]
+  },
+  {
+   "name": "Copper Dagger",
+   "id": 7166,
+   "icon": "inv_weapon_shortblade_14",
+   "quality": 1,
+   "sell": 194,
+   "profession": "blacksmithing",
+   "rank": 0,
    "slot": 1,
    "unlock": 21,
-   "role": "Sword",
+   "role": "Dagger",
    "reagents": [
     "Copper Ore",
     "Tin Ore"
@@ -1179,21 +1179,6 @@
    ]
   },
   {
-   "name": "Big Bronze Knife",
-   "id": 3848,
-   "icon": "inv_weapon_shortblade_04",
-   "quality": 2,
-   "sell": 1426,
-   "profession": "blacksmithing",
-   "rank": 1,
-   "slot": 0,
-   "unlock": 75,
-   "role": "Dagger",
-   "reagents": [
-    "Iron Ore"
-   ]
-  },
-  {
    "name": "Hardened Iron Shortsword",
    "id": 3849,
    "icon": "inv_sword_20",
@@ -1201,9 +1186,24 @@
    "sell": 5468,
    "profession": "blacksmithing",
    "rank": 1,
+   "slot": 0,
+   "unlock": 75,
+   "role": "Sword",
+   "reagents": [
+    "Iron Ore"
+   ]
+  },
+  {
+   "name": "Big Bronze Knife",
+   "id": 3848,
+   "icon": "inv_weapon_shortblade_04",
+   "quality": 2,
+   "sell": 1426,
+   "profession": "blacksmithing",
+   "rank": 1,
    "slot": 1,
    "unlock": 95,
-   "role": "Sword",
+   "role": "Dagger",
    "reagents": [
     "Iron Ore",
     "Silver Ore"
@@ -1243,21 +1243,6 @@
    ]
   },
   {
-   "name": "Searing Golden Blade",
-   "id": 12260,
-   "icon": "inv_weapon_shortblade_05",
-   "quality": 2,
-   "sell": 10395,
-   "profession": "blacksmithing",
-   "rank": 2,
-   "slot": 0,
-   "unlock": 150,
-   "role": "Dagger",
-   "reagents": [
-    "Mithril Ore"
-   ]
-  },
-  {
    "name": "Wicked Mithril Blade",
    "id": 7943,
    "icon": "inv_sword_10",
@@ -1265,9 +1250,24 @@
    "sell": 15891,
    "profession": "blacksmithing",
    "rank": 2,
+   "slot": 0,
+   "unlock": 150,
+   "role": "Sword",
+   "reagents": [
+    "Mithril Ore"
+   ]
+  },
+  {
+   "name": "Searing Golden Blade",
+   "id": 12260,
+   "icon": "inv_weapon_shortblade_05",
+   "quality": 2,
+   "sell": 10395,
+   "profession": "blacksmithing",
+   "rank": 2,
    "slot": 1,
    "unlock": 170,
-   "role": "Sword",
+   "role": "Dagger",
    "reagents": [
     "Mithril Ore",
     "Gold Ore"
@@ -1307,21 +1307,6 @@
    ]
   },
   {
-   "name": "Heartseeker",
-   "id": 12783,
-   "icon": "inv_sword_17",
-   "quality": 3,
-   "sell": 58215,
-   "profession": "blacksmithing",
-   "rank": 3,
-   "slot": 0,
-   "unlock": 225,
-   "role": "Dagger",
-   "reagents": [
-    "Thorium Ore"
-   ]
-  },
-  {
    "name": "Blazing Rapier",
    "id": 12777,
    "icon": "inv_sword_30",
@@ -1329,9 +1314,24 @@
    "sell": 38648,
    "profession": "blacksmithing",
    "rank": 3,
+   "slot": 0,
+   "unlock": 225,
+   "role": "Sword",
+   "reagents": [
+    "Thorium Ore"
+   ]
+  },
+  {
+   "name": "Heartseeker",
+   "id": 12783,
+   "icon": "inv_sword_17",
+   "quality": 3,
+   "sell": 58215,
+   "profession": "blacksmithing",
+   "rank": 3,
    "slot": 1,
    "unlock": 245,
-   "role": "Sword",
+   "role": "Dagger",
    "reagents": [
     "Thorium Ore",
     "Truesilver Ore"
@@ -2387,7 +2387,7 @@
    "rank": 0,
    "slot": 0,
    "unlock": 1,
-   "role": "XP food (Field)",
+   "role": "Gathering XP food",
    "reagents": [
     "Raw Brilliant Smallfish"
    ]
@@ -2417,7 +2417,7 @@
    "rank": 0,
    "slot": 2,
    "unlock": 41,
-   "role": "XP food (Workshop)",
+   "role": "Crafting XP food",
    "reagents": [
     "Raw Longjaw Mud Snapper"
    ]
@@ -2447,7 +2447,7 @@
    "rank": 1,
    "slot": 0,
    "unlock": 75,
-   "role": "XP food (Field)",
+   "role": "Gathering XP food",
    "reagents": [
     "Raw Bristle Whisker Catfish"
    ]
@@ -2477,7 +2477,7 @@
    "rank": 1,
    "slot": 2,
    "unlock": 115,
-   "role": "XP food (Workshop)",
+   "role": "Crafting XP food",
    "reagents": [
     "Raw Sagefish"
    ]
@@ -2508,7 +2508,7 @@
    "rank": 2,
    "slot": 0,
    "unlock": 150,
-   "role": "XP food (Field)",
+   "role": "Gathering XP food",
    "reagents": [
     "Raw Rockscale Cod"
    ]
@@ -2538,7 +2538,7 @@
    "rank": 2,
    "slot": 2,
    "unlock": 190,
-   "role": "XP food (Workshop)",
+   "role": "Crafting XP food",
    "reagents": [
     "Raw Spotted Yellowtail"
    ]
@@ -2568,7 +2568,7 @@
    "rank": 3,
    "slot": 0,
    "unlock": 225,
-   "role": "XP food (Field)",
+   "role": "Gathering XP food",
    "reagents": [
     "Raw Nightfin Snapper"
    ]
@@ -2598,7 +2598,7 @@
    "rank": 3,
    "slot": 2,
    "unlock": 265,
-   "role": "XP food (Workshop)",
+   "role": "Crafting XP food",
    "reagents": [
     "Raw Whitescale Salmon"
    ]
@@ -2761,15 +2761,15 @@
  "traits": {
   "Tough": {
    "weapon": "Axe",
-   "text": "Huge health. Axes crit harder and chew through it."
+   "text": "Huge health."
   },
   "Armored": {
    "weapon": "Mace",
-   "text": "Heavy armor. Crushing mace blows ignore it."
+   "text": "Heavy armor."
   },
   "Evasive": {
    "weapon": "Dagger",
-   "text": "Hard to hit. Fast dagger strikes land more often."
+   "text": "Hard to hit."
   }
  },
  "boss": {

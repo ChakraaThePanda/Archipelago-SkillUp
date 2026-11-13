@@ -1,13 +1,15 @@
 # Archipelago-Skillup
 
-An [Archipelago](https://archipelago.gg) idle game you play in your browser, on PC or phone.
-Gather and craft to level up professions; every profession tier (Copper, then Tin, then
-Iron...) is an item somewhere in the multiworld, and leveling up sends checks.
+An [Archipelago](https://archipelago.gg) idle game of Classic World of Warcraft professions,
+played in your browser on PC or phone. Gather, craft and fight to level 11 professions from
+Apprentice to Artisan. Every rank is an item somewhere in the multiworld, and every first
+gather, craft and kill (and every rank you reach) sends a check. Craft the Legendary armor and
+defeat Ragnaros, or master your professions.
 
-**[Play Skillup](https://htmlpreview.github.io/?https://github.com/ChakraaThePanda/Archipelago-Skillup/blob/main/client/Skillup.html)**
+**[Play Skillup](https://chakraathepanda.github.io/Archipelago-Skillup/client/)**
 
 * See [how randomization works](worlds/skillup/docs/en_Skillup.md) (goal, what gets
-  shuffled, how tiers unlock)
+  shuffled, what the checks are)
 * Follow the [setup guide](worlds/skillup/docs/setup_en.md) (apworld install, connecting
   to a room, how saves follow you between devices)
 

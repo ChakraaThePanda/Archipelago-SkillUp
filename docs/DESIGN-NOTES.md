@@ -6,7 +6,7 @@ The original prototype notes and the data storage research are kept at the end.
 
 ## Identity
 
-- **Name:** Skillup. Repo `Archipelago-Skillup`, game page `client/Skillup.html`, apworld
+- **Name:** Skillup. Repo `Archipelago-Skillup`, game page `client/index.html` (built from `client/src/` by `tools/build_client.py`), apworld
   `skillup.apworld`, Archipelago game name `Skillup`.
 - **Theme:** fully World of Warcraft **Classic** (skill 1-300). Real names, Wowhead icons
   (`https://wow.zamimg.com/images/wow/icons/large/<icon>.jpg`, same CDN as aethernal.net),
@@ -133,28 +133,104 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
 
 - **One Combat skill** (weapon skill 1-300). XP goes to Combat whatever weapon you use;
   there are no separate per-weapon skills.
-- **Weapon types have flavour** (they don't need to be perfectly balanced, but must clearly
-  feel different and the UI must explain them): Sword balanced, Axe higher crits, Mace takes
-  less damage, Dagger faster kills *(sim)*. Unarmed (fists) when nothing is crafted yet.
-- **Mob traits give weapons a reason** (confirmed). Only some creatures have a trait, so
-  they feel special and are worth crafting for. The matching weapon gets a clear bonus
-  *(sim)*. Proposed assignment: every boss is **Tough** → Axe (Hogger, Stitches, King
-  Bangalash, King Mosh); **Armored** → Mace: Skeletal Warrior, Thunderstomp Stegodon;
-  **Evasive** → Dagger: Shadowmaw Panther, Frenzied Pterrordax. The other 8 mobs have no
-  trait; Sword has no specialty but a small bonus against everything (the safe pick).
-  Elwynn only has Hogger, to introduce the idea gently.
-- **Auto-swap** toggle on the equipment screen (an on/off switch): uses the best weapon for
-  the current mob among the ones you've crafted.
-- Weapon recipe cost and XP *(sim)*: Sword is the baseline. Axe and Mace cost more
-  materials and give more Blacksmithing XP per craft. Dagger is small: fewer materials and
-  less XP per craft (cheap to make, so it suits leveling when materials are short).
+- **Weapons (decided 2026-11-12, replaces the earlier flavour/auto-swap idea):**
+  - Sword is the default: first recipe of each rank, cheapest (main ore only), good against
+    everything (small bonus). Specialty weapons get harder to make in this order:
+    Dagger, Mace, Axe (the Axe needs the gem and unlocks with the zone's boss). Costs and
+    crafting XP *(sim)*: Sword 1x/1x, Dagger 1.25x/1.15x, Mace 1.5x/1.3x, Axe 2x/1.5x.
+  - Only some creatures have a trait: every boss is **Tough** (Axe), Skeletal Warrior and
+    Thunderstomp Stegodon are **Armored** (Mace), Shadowmaw Panther and Frenzied Pterrordax
+    are **Evasive** (Dagger). The matching weapon is x2.2 power, enough that a specialty
+    weapon one rank lower beats a Sword one rank higher (Journeyman Axe ~40 vs Expert Sword
+    ~36 against Tough). No penalty for not matching.
+  - Always automatic, no switch: every fight uses your best weapon for that creature. You
+    keep your best weapon of each type (4 max); everything else sells.
+  - Creatures show only their trait ("Tough", hover: "Huge health."). The weapon's hover
+    says what it's strong against ("Strong against Tough creatures."), so players connect
+    the two themselves.
+  - Fighting uses the gathering slot (no gathering while fighting); crafting keeps going.
+  - Sim result: Normal still about 11.5 h; deaths per seed rose from about 1 to about 10
+    (more fights with only a Sword), still mild.
+- **Combat stats (decided 2026-11-12, replaces "Power"):** weapon -> **DPS** (how fast you
+  kill, so skill/hr, cloth and gold per hour); armor -> **HP** (whether you survive one
+  fight). HP refills after every fight, so it never needs managing. A creature's HP =
+  the DPS it expects x its base fight time; its damage is set so a normal fight against
+  gear of its own rank costs ~30% of your HP (bosses hit relatively harder over a longer
+  fight). Over 80% of your HP in one fight you start dying (certain at 160%). Shop Speed
+  for Combat raises DPS; combat elixir raises DPS, combat food raises HP. On screen:
+  DPS and HP on the character sheet (no Health/Power), each creature's nameplate shows a
+  red HP bar with "100%" left and its HP right, plus skill/hr, time per kill and win
+  chance when it isn't certain. The character sheet has no weapon slot; the 4 weapons
+  sit below it. Sim: Normal ~11.5 h unchanged; Ragnaros win chances unchanged.
 - **Gear stats:** Power (everywhere) and Fire Resistance (Ragnaros only).
 - **Equipment screen:** WoW character sheet with the real empty-slot icons (check that
   Wowhead hosts `inventoryslot_*` icons). Slots: Head, Shoulders, Back, Chest | Hands, Legs,
   Feet | Main Hand. Stats in the middle (Power, Fire Resistance, HP). Below: the 4 tools,
   active buffs with timers, potion and food stock.
-- **Two sets:** Main set = best piece per slot, automatic. Fire Resistance set = FR piece
-  per slot if owned, otherwise the main piece. Ragnaros uses the FR set automatically.
+- **One set only (decided):** your best piece per slot is always worn, automatically. The
+  Fire Resistance set is the best armor in the game (legendary, counts as above Artisan),
+  so each piece simply replaces its Artisan piece as you craft it. No second set.
+- **Item colors follow rank (decided):** crafted gear, tools and bags are white
+  (Apprentice), green (Journeyman), blue (Expert), purple (Artisan); the Fire Resistance
+  set is legendary orange. Materials, potions and food keep their Wowhead color.
+- **No red roll in combat (decided):** a creature above your Combat skill shows its level
+  in red but has no success chance; it's simply a slow, dangerous fight with a win
+  chance. Red rolls stay for materials and recipes.
+- **Bosses (tuned):** e.g. King Bangalash (Expert): green armor + Axe ~29% win, blue armor
+  + Sword ~63%, blue armor + Axe 100%. Blue gear is what kills Expert bosses.
+- **Gear Level (decided):** a score per rank on a 0-100 scale: white 20, green 40, blue 60,
+  purple 80, legendary (Fire Resistance set) 100. (Real Wowhead item levels were checked and
+  rejected: messy across ranks, and the Fire Resistance set's are below Artisan.) Gear Level = average of the 7 armor slots plus your
+  best weapon (empty slot = 0). Shown on the character sheet instead of a Fire Resistance
+  stat, colored along grey > white > green > blue > purple > orange, with a small gradient
+  bar marking where you are.
+- **Creature cards:** a shield with the recommended Gear Level for the zone (20/40/60/80,
+  same coloring; never names the weapon type) plus a verdict for your current gear:
+  Safe (always win), Risky (win 50-99%, shown), Deadly (under 50%).
+- The Ragnaros goal tracker says "Legendary armor 0 / 7" (not "Fire Resistance set").
+- **Recommended Gear Level per creature (computed, follows your weapons):** the lowest Gear
+  Level where you win 95% of fights with the weapons you own: the right weapon for the
+  creature's trait if you have it, else your Sword (so crafting the right weapon visibly
+  lowers it). Locked creatures show only this, no verdict. Sword-only values: Elwynn 20/20/20, Hogger 37; Duskwood 25/31/37, Stitches 56;
+  Stranglethorn 44/53/57, Bangalash 75; Un'Goro 65/74/79, King Mosh 94. The right weapon
+  beats it earlier (Bangalash with an Axe at 60). Bosses at their zone's gear level: Sword
+  0%, right weapon ~98%.
+- **One job per gear type (decided 2026-11-12, replaces weapon-dependent survival):**
+  armor decides survival (each creature deals a fixed damage per fight; HP from armor
+  decides if you live), the weapon decides speed only (DPS -> kill time -> skill/hr,
+  cloth, gold). The recommended Gear Level is fixed per creature and never moves with
+  weapons. Gear Level = average of the 7 armor slots only. Tuned: base HP 50, armor 30
+  per piece x 1.8 per rank, danger 0.4, boss damage x1.22. Recommendations: Elwynn 20
+  everywhere; Duskwood 20/20/24, Stitches 38; Stranglethorn 32/40/45, Bangalash 58 (blue);
+  Un'Goro 54/60/66, King Mosh 78 (purple). Sim: Normal ~10.2 h, but ~84 deaths per seed
+  (players fight risky creatures for XP): raise the cost of dying later.
+- **Layout (swept 2026-11-12 at the user's real width, ~1233px of page in a 1250px browser):**
+  three columns (232px | flexible | 316px) down to 1180px wide; below that the right panel
+  moves under the rest at a compact width. Item rows: icon (fixed size); the name in full,
+  then colored level and category; then a list with one line per material ("2x Thorium
+  Ore (158)", red when short) or "In storage (44 / 800)" for gathered items. Right side of
+  each row: "✓ Sent" (green) or "◆ Check" (gold) as text, never a bare symbol (hover
+  explains), the pace ("+1 / 22s", hover: one skill level every 22 s; "no skill" when grey,
+  "Maxed" at 300) with time per action, and the button. Shop levels at 10 show "Max".
+  Testing note: test pages at ~1233px wide (browser chrome and scrollbar eat ~17px).
+- **Character sheet layout:** left Head, Shoulder, Back, Chest; right Hands, Legs, Feet,
+  then an empty spot. Idea for later: a Trinket slot there (Engineering made trinkets in
+  Classic: Mechanical Dragonlings, Gnomish Universal Remote; `inventoryslot_trinket` icon
+  exists on Wowhead).
+- **Combat tuning v3 (2026-11-12):** steeper death curve (start 80% of HP, certain at 120%);
+  a death costs ~2 min (30 s corpse run + Resurrection Sickness). Each creature expects
+  armor rising through its zone: the 1st expects the previous zone's gear (none in Elwynn,
+  so Kobolds are safe naked), the boss the zone's own. Base HP 100, danger 0.75.
+  Recommended Gear Level: Elwynn 0/20/20/20, Duskwood 20/23/30/37, Stranglethorn
+  37/43/50/57, Un'Goro 57/64/70/77. Sim: Normal ~11.4 h, ~1-2 deaths per seed (an earlier
+  version had ~60, almost all naked players dying to Kobold Vermin).
+- **Combat skill lock (decided):** a creature can't be fought until your Combat skill
+  reaches its unlock level ("Requires Combat 170"). No red attempts in combat.
+- **Survival comes from gear only:** damage taken depends on fight length from your weapon
+  (and combat elixir) and your HP from armor (and combat food). Shop Combat speed shortens
+  the real fight time but never the damage. Tuned: danger 0.4, boss danger x0.35.
+  Sim: Normal ~10.3 h; deaths ~40 per seed (watch this in playtests).
+- **Combat shares the gathering slot:** you gather OR fight, and craft at the same time.
 - **Death:** fights have an HP bar. Dying = release spirit, short corpse-run timer, then a
   few minutes of Resurrection Sickness (slower Combat). No gold, item or XP loss. After 3
   deaths in a row, the game moves you to an easier mob. **DeathLink** option: your death
@@ -164,7 +240,8 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
 ## Goal: Ragnaros
 
 - **Molten Core** is a single progression item that unlocks the Ragnaros fight (no trash zone).
-- He needs a full **Fire Resistance set**: a sidegrade with Power between Expert and Artisan
+- He needs a full **Fire Resistance set** (also the best armor in the game; it used to be a
+  sidegrade, decided otherwise 2026-11-12). Originally: a sidegrade with Power between Expert and Artisan
   gear plus Fire Resistance, made from normal Artisan materials: Leatherworking Chest, Legs,
   Gloves, Boots; Tailoring Cloak, Hat, Shoulders; Alchemy Greater Fire Protection Potion;
   Cooking fire resistance food. Weapon = your best Blacksmithing weapon. FR recipes are not
@@ -200,6 +277,28 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     Archipelago early items) / Anywhere.
   - `death_link`.
   - Trap chance + one weight per trap.
+
+## Full sweep (2026-11-12)
+
+- **Apworld rewritten to this design** (was still the prototype): `worlds/skillup/` now reads
+  `data.json` (a trimmed copy built by `tools/build_game_data.py`), has 220 locations (16
+  firsts + 4 rank milestones per profession, named "Mining: Copper Ore", "Journeyman
+  Alchemist"), 44 rank items + Molten Core (only when the goal includes Ragnaros), 55 useful
+  items, filler and traps by weight. Logic (`Rules.py`): ranks gate everything; crafting also
+  needs its source rank (Tailoring's is Combat); fighting a zone needs the previous zone's
+  armor (Leatherworking + Tailoring + Skinning ranks), its boss the zone's own armor.
+  Options: goal, professions_to_master, game_speed, starting_pair, starting_pairs_count,
+  combat_access (Early uses Archipelago's early items), trap_chance + 4 trap weights,
+  death_link. IDs never depend on options.
+- **Generation tests** with the installed Archipelago: solo default, hardest combos, traps at
+  100% (a weight of 0 removes that trap), Early combat in a 2-player seed (lands in sphere 1),
+  a 36-player options matrix and an 18-player multiworld with 15 other games. All pass; goals
+  are reached in 15-25 spheres solo, 40-57 in big multiworlds.
+- **Simulator** now takes every option. Normal unchanged (~11h45 Ragnaros). Master
+  Professions (a focused player): 1 ~4 h, 4 ~8.5 h, 11 ~11.5 h. Starting pairs and combat
+  access change the time by under an hour, except Combat arriving very late (~3 h in: +1 h).
+- **Mockup:** dead code removed, layout capped at 1480px on wide screens, phone layout fixed
+  (materials wrap, two-line rows, two-column profession grid). Audited at 1920 / 1233 / 390.
 
 ## Still open
 
@@ -264,7 +363,7 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
     Glossy Mightfish (Artisan), so every rank has cookable fish. Firefin Snapper stays as an
     Alchemy fish (it feeds the Greater Fire Protection Potion, like Fire Oil in Classic).
   - Recipe order inside each rank, so recipe 1 only needs the rank's first material:
-    Blacksmithing Dagger, Sword, Mace, Axe (Axe needs the gem and unlocks with the zone boss); Leatherworking Boots,
+    Blacksmithing Sword, Dagger, Mace, Axe (Axe needs the gem and unlocks with the zone boss); Leatherworking Boots,
     Gloves, Legs, Chest; Tailoring Cloak, Bag, Shoulders, Hat; Engineering Mining, Skinning,
     Fishing, Herbalism tool; Alchemy Healing, combat elixir, gathering speed, crafting speed.
   - Blacksmithing weapons are all one-handers (real Classic recipes).
@@ -288,6 +387,19 @@ Unlock order follows real levels. Format: name, level, (NPC id / display id).
   "Gathering" or "Fighting", and "Crafting". The list shows running professions as a
   green-tinted row (no tag); no extra tag for capped ranks (the full bar shows it). Skill colors
   show as the unlock level colored the WoW way, never as words.
+  Connect screen (in the mockup): Server, Slot name, Password (optional), Connect;
+  "Recent rooms" list to reconnect in one click; Discord and GitHub links at the bottom,
+  styled like aethernal.net's footer (gold icons, diamond separator). The connection status in the header goes back
+  to it. `?server=...&slot=...` in the link still pre-fills it (from the prototype).
+  Look (decided): Classic WoW interface language. Night-blue tooltip-style panels with steel
+  borders on a dark blue/purple background, WoW title gold, Classic's blue Skills-tab bars
+  with text on the bar (gold when a rank is capped), the yellow cast bar for gathering and a
+  green one for crafting, red-and-gold buttons (green "Running" when active), red
+  nameplate health bars on creatures, blue Rested bar. Fonts: Nunito Sans for text, Cinzel
+  for titles, tabs and big numbers. Combat always shows its 4 creatures in one row.
+  The gold shop is called "Shop" on screen (not "Trainer"). Layout: grouped like the
+  profession list; each profession shows Speed and XP as 10 level pips, the total bonus
+  (+90%), and a buy button with the next level's price, dimmed when you can't afford it.
 - Housekeeping: delete the old HTML-Minigames branch, test generation with the installed
   Archipelago (needs `skillup.apworld` in `custom_worlds`, ask first).
 
