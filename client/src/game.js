@@ -25,6 +25,8 @@ const BY_KIND = Object.fromEntries(GROUPS.map(([, kind]) => [kind, PROFS.filter(
 const byKind = kind => BY_KIND[kind];
 const GEAR_PROFS = new Set(["blacksmithing", "leatherworking", "tailoring", "engineering"]);
 for (const r of GD.recipes) if (GEAR_PROFS.has(r.profession)) r.quality = r.rank + 1;   // white, green, blue, purple
+const TF = BAL.thunderfury;   // the legendary sword, crafted next to the Fire Resistance set
+GD.fire_resistance_set.push({ name: TF.name, icon: TF.icon, profession: TF.profession, slot: "Sword", unlock: TF.unlock, reagents: TF.reagents, weapon: true });
 for (const f of GD.fire_resistance_set) { f.legendary = true; f.rank = 3; if (GEAR_PROFS.has(f.profession)) f.quality = 5; }
 const BY_NAME = Object.fromEntries([...GD.materials, ...GD.recipes, ...GD.fire_resistance_set].map(e => [e.name, e]));
 const TRINKET = BAL.trinket;   // the hidden legendary trinket
@@ -32,6 +34,7 @@ BY_NAME[TRINKET.name] = { name: TRINKET.name, icon: TRINKET.icon, quality: 5, le
 const MOB = Object.fromEntries(GD.mobs.map(m => [m.name, m]));
 const ARMOR_SLOTS = ["Head", "Shoulder", "Back", "Chest", "Hands", "Legs", "Feet"];
 const WEAPONS = ["Sword", "Dagger", "Mace", "Axe"];
+const GOLD_CAP = 2147483647;   // copper: 214,748g 36s 47c, the gold cap from Classic WoW
 const TOOL_FOR = { "Mining tool": "mining", "Skinning tool": "skinning", "Fishing tool": "fishing", "Herbalism tool": "herbalism" };
 const BUFF_ROLES = Object.keys(BAL.buffs.effects);
 const STRONG = { Sword: "Good against everything. Cheap to make.",
@@ -106,7 +109,7 @@ function weaponDps(trait) {
   let best = C.fists_dps;
   for (const [w, name] of Object.entries(S.weapons)) {
     let d = C.weapon_dps * C.rank_growth ** itemRank(name);
-    if (trait && GD.traits[trait].weapon === w) d *= C.trait_match; else if (!trait && w === "Sword") d *= C.sword_bonus;
+    if (BY_NAME[name]?.weapon || (trait && GD.traits[trait].weapon === w)) d *= C.trait_match;   // Thunderfury: right against everything else if (!trait && w === "Sword") d *= C.sword_bonus;
     best = Math.max(best, d);
   }
   return best;
@@ -151,7 +154,7 @@ function actionOf(slot) { // {kind, entry, time, k} for the gathering/fighting s
   }
   const a = S[slot];
   if (!a) return null;
-  if (a.kind === "ragnaros") return { kind: "ragnaros", time: BAL.ragnaros.fight_minutes * 60, k: "combat" };
+  if (a.kind === "ragnaros") return { kind: "ragnaros", time: ragFate(a).time, k: "combat" };
   if (a.kind === "mob") {
     const m = MOB[a.name], t = Math.max(gearFightTime(m) / speed("combat"), BAL.actions.min_action_time);
     return { kind: "mob", entry: m, k: "combat", time: t };
@@ -297,10 +300,16 @@ function keepOrSell(r, offline) { // a crafted item is equipped, kept as a suppl
   if (role === "Bag" && firstTime) return void S.bags++;
   const kind = r.legendary ? (r.slot === "Potion" ? "Fire protection" : r.slot === "Food" ? "Fire food" : null) : role;
   if (kind && (BUFF_ROLES.includes(kind) || ["Healing", "Fire protection", "Fire food"].includes(kind))) {
+    // only your best rank of each kind is kept: anything lower is sold
     const list = S.supplies[kind] ||= [];
-    if (list.length < BAL.buffs.keep) return void list.push(r.name);
+    const best = Math.max(-1, ...list.map(n => BY_NAME[n].rank));
+    if (r.rank > best) { list.forEach(n => sellItem(n, offline)); list.length = 0; }
+    if (r.rank >= best && list.length < BAL.buffs.keep) return void list.push(r.name);
   }
-  if (offline) S.unsold += sellValue(r.name); else S.gold += sellValue(r.name);
+  sellItem(r.name, offline);
+}
+function sellItem(name, offline) {
+  if (offline) S.unsold += sellValue(name); else S.gold += sellValue(name);
 }
 function takeSupply(kind) {
   const list = S.supplies[kind] || [];
@@ -325,11 +334,29 @@ function ragnarosOdds() {
     * (r.fr_floor + (1 - r.fr_floor) * Math.min(1, fr / r.fr_need) ** 2);
   return { win, fr, dps, hp };
 }
+// The outcome is rolled when the fight starts, so the bars show what really happens. A win takes the
+// whole fight; a loss comes sooner the weaker you are (a few seconds when you have no chance at all).
+function ragFate(f) {
+  if (f.dies === undefined) {
+    const { win } = ragnarosOdds(), full = BAL.ragnaros.fight_minutes * 60;
+    f.dies = Math.random() >= win;
+    f.time = f.dies ? Math.max(3, full * (win / BAL.ragnaros.max_win) * (0.6 + 0.4 * Math.random())) : full;
+  }
+  return f;
+}
+function ragBars(t) { // Ragnaros's health and yours at time t of the fight
+  const f = ragFate(S.field), o = ragnarosOdds(), full = BAL.ragnaros.fight_minutes * 60;
+  const foeMax = BAL.ragnaros.dps_need * full, youMax = Math.round(o.hp);
+  const hits = Math.max(1, Math.round(f.time / 1.5)), taken = Math.min(hits, Math.floor(t / (f.time / hits) + 1e-9)) / hits;
+  const foe = f.dies ? 1 - Math.min(1, o.dps / BAL.ragnaros.dps_need) * t / full : 1 - t / f.time;
+  const you = f.dies ? 1 - taken : 1 - (0.9 - 0.75 * o.win / BAL.ragnaros.max_win) * taken;
+  return { foe: Math.round(foeMax * clamp(foe, 0, 1)), foeMax, you: Math.max(f.dies ? 0 : 1, Math.round(youMax * you)), youMax };
+}
 function finishRagnaros(offline) {
-  const { win } = ragnarosOdds();
+  const won = !ragFate(S.field).dies;
   takeSupply("Fire protection"); takeSupply("Fire food");
   S.field = null;
-  if (Math.random() < win) { S.ragnarosWon = true; toast("Ragnaros is defeated!"); checkGoal(); }
+  if (won) { S.ragnarosWon = true; toast("Ragnaros is defeated!"); checkGoal(); }
   else { die("was defeated by Ragnaros", offline); toast("Ragnaros won this time. Try again when you're ready."); }
 }
 
@@ -591,6 +618,7 @@ const roomId = () => `${conn.seed}:${conn.team}:${conn.slot}`;
 function save(remote = true) {
   if (!S || !conn || replaced) return;
   S.savedAt = Date.now();
+  if (S.gold > GOLD_CAP) S.gold = GOLD_CAP;
   S.room = roomId();
   lsSet(localKey(), JSON.stringify(S));
   if (remote && ws && ws.readyState === 1)
@@ -608,6 +636,11 @@ function loadSave(remote) {
 function normalize(saved) { // fills in anything an older save doesn't have
   const s = Object.assign(newSave(), saved || {});
   for (const k of ["level", "xp", "speedLv", "xpLv"]) s[k] = { ...newSave()[k], ...s[k] };
+  for (const list of Object.values(s.supplies)) {   // older saves: only the best rank of each supply is kept, the rest sold
+    const best = Math.max(-1, ...list.map(n => BY_NAME[n]?.rank ?? -1));
+    for (const n of list.filter(n => (BY_NAME[n]?.rank ?? -1) < best)) s.gold += baseValue(n) * (1 + s.sellBonus);
+    list.splice(0, list.length, ...list.filter(n => (BY_NAME[n]?.rank ?? -1) === best));
+  }
   return s;
 }
 
@@ -811,12 +844,14 @@ const DEBUFFS = [   // shown top right in the header while active
   ["Broken Tool", "inv_misc_wrench_01", "your gathering tools don't help"],
 ];
 const pct = v => `${Math.round(v * 100)}%`;
-const fmtT = s => !isFinite(s) ? "—" : s < 10 ? s.toFixed(1) + "s" : s < 60 ? Math.round(s) + "s" : s < 3600 ? Math.floor(s / 60) + "m" + String(Math.round(s % 60)).padStart(2, "0") : (s / 3600).toFixed(1) + "h";
+const fmtT = s => !isFinite(s) ? "—" : s < 10 ? s.toFixed(1) + "s" : s < 59.5 ? Math.round(s) + "s"
+  : s < 3599.5 ? Math.floor(Math.round(s) / 60) + "m" + String(Math.round(s) % 60).padStart(2, "0") : (s / 3600).toFixed(1) + "h";
 const ic = ICON;
-function coins(c, compact = false) {
+function coins(c, compact = false, short = false) { // short: from 1000 gold on, leave the copper off
   c = Math.floor(c);
   const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cp = c % 100;
   const parts = [[g, GD.ui_icons.gold, "gold"], [s, GD.ui_icons.silver, "silver"], [cp, GD.ui_icons.copper, "copper"]];
+  if (short && g >= 1000) parts.pop();
   const shown = compact ? parts.filter(([v]) => v) : parts.filter(([v], i) => v || i === 2 || (i === 1 && g));
   return (shown.length ? shown : [parts[2]]).map(([v, i, a]) => `<span class="n">${v}</span><img src="${ic(i)}" alt="${a}">`).join("");
 }
@@ -910,7 +945,7 @@ function perHourFight(m) {
 // Your bag: the Small Brown Pouch you start with, then the best bag you've crafted.
 const bagIconName = () => GD.recipes.filter(r => r.role === "Bag" && S.crafted.includes(r.name)).sort((a, b) => b.rank - a.rank)[0]?.icon || "inv_misc_bag_09";
 function renderHeader() {
-  $("gold").html = coins(S.gold);
+  $("gold").html = coins(S.gold, false, true);
   $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bagIconName())}" alt=""> ${bagCap()} each</span>`;
   $("rested").html = `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
@@ -938,7 +973,8 @@ function slotHtml(slot) {
   const a = actionOf(slot);
   if (!a) return `<div class="slot"><div></div><div><div class="k">${slot === "field" ? "Gathering or fighting" : "Crafting"}</div><div class="sub">Nothing running. Pick something below.</div></div></div>`;
   if (a.kind === "ragnaros") return `<div class="slot"><img class="icon lg" src="${ic(GD.ui_icons.ragnaros)}" alt=""><div><div class="k">Fighting · Molten Core</div><div class="what q5">Ragnaros</div><div class="sub">Win chance ${pct(ragnarosOdds().win)}</div></div>
-    <div class="cast" data-cast="field"><i></i><span></span></div></div>`;
+    <div class="fight" data-fight="1"><div class="sbar foe"><i></i><span><span>Ragnaros</span><span></span></span></div>
+    <div class="sbar you"><i></i><span><span>You</span><span></span></span></div></div></div>`;
   const e = a.entry, k = a.k;
   const label = slot === "work" ? "Crafting" : a.ambush ? "Ambushed" : a.kind === "mob" ? "Fighting" : "Gathering";
   const hr = a.kind === "mob" ? perHourFight(e) : a.kind === "gather" ? perHourGather(k, e) : perHourCraft(k, e);
@@ -968,6 +1004,7 @@ function itemTip(name, note) {
     if (S.trinketBonus) line(`Extra skill points so far: ${S.trinketBonus}`, "tt-mute");
   }
   else if (ARMOR_SLOTS.includes(role)) { row(role, e.legendary ? "Legendary" : ""); line(`Gear Level ${ilvl(name)}`, "tt-gold"); }
+  else if (e.weapon) { row("Main Hand", "Sword · Legendary"); line("Equip: Counts as the right weapon against every creature, Ragnaros included.", "tt-green"); }
   else if (WEAPONS.includes(role)) { row("Main Hand", role); line(STRONG[role], "tt-green"); }
   else if (TOOL_FOR[role]) line(`Equip: Increases your ${P[TOOL_FOR[role]].name} speed by ${Math.round((e.rank + 1) * BAL.tools.step * 100)}%.`, "tt-green");
   else if (role === "Bag") line("Crafting your first one doubles how much of each material you can hold.", "tt-green");
@@ -1099,8 +1136,9 @@ function paintBars() {
     bar.lastElementChild.textContent = a.kind === "ragnaros" ? `${fmtT(t)} / ${fmtT(a.time)}` : `${t.toFixed(1)}s / ${a.time.toFixed(1)}s`;
   }
   const fight = $("slots").querySelector("[data-fight]"), a = actionOf("field");
-  if (!fight || !a || a.kind !== "mob") return;
-  const m = a.entry, fb = fightBars(m, a.time, Math.min(a.time, S.fieldT + since), fateFor(m).dies);
+  if (!fight || !a || (a.kind !== "mob" && a.kind !== "ragnaros")) return;
+  const t = Math.min(a.time, S.fieldT + since);
+  const fb = a.kind === "ragnaros" ? ragBars(t) : fightBars(a.entry, a.time, t, fateFor(a.entry).dies);
   const [foeBar, youBar] = fight.querySelectorAll(".sbar");
   foeBar.firstElementChild.style.width = pct(fb.foe / fb.foeMax);
   foeBar.querySelector("span > span:last-child").textContent = `${fb.foe.toLocaleString("en-US")} / ${fb.foeMax.toLocaleString("en-US")}`;
@@ -1190,11 +1228,17 @@ function renderPane() {
   if (rtab === "char") {
     const gl = gearLevel(), fighting = S.field?.kind === "mob" ? MOB[S.field.name] : null;
     const now = fighting ? (WEAPONS.find(w => S.weapons[w] && GD.traits[fighting.trait]?.weapon === w) || (S.weapons.Sword ? "Sword" : null)) : null;
-    const buffs = BUFF_ROLES.filter(r => active(S.buffs, r)).map(r => eqBox(S.buffs[r].name, "", `<span class="timer">${fmtT(S.buffs[r].until - S.clock)}</span>`, r));
-    const supplies = Object.entries(S.supplies).flatMap(([kind, list]) => list.length ? [eqBox(list[0], "", `<span class="count">${list.length}</span>`, kind)] : []);
+    const title = kind => kind.replace(/\b[a-z]/g, c => c.toUpperCase());   // "Gathering XP food" -> "Gathering XP Food"
+    const buffs = BUFF_ROLES.filter(r => active(S.buffs, r)).map(r => eqBox(S.buffs[r].name, "", `<span class="timer">${fmtT(S.buffs[r].until - S.clock)}</span>`, title(r)));
+    // one box per kind, showing the one used next (the best); its tooltip says how full the kind is
+    const supplies = Object.entries(S.supplies).flatMap(([kind, list]) => {
+      if (!list.length) return [];
+      const best = [...list].sort((a, b) => BY_NAME[b].rank - BY_NAME[a].rank)[0];
+      return [eqBox(best, "", `<span class="count">${list.length}</span>`, `${title(kind)} ${list.length}/${BAL.buffs.keep}`)];
+    });
     el.html = `<div class="doll">
         <div class="col">${["Head", "Shoulder", "Back", "Chest"].map(s => eqBox(S.armor[s], s)).join("")}</div>
-        <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat"))}</div><div class="k">DPS</div></div>
+        <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed and Combat elixir included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat") * (1 + buffValue("Combat elixir")))}</div><div class="k">DPS</div></div>
           <div><div class="v hp" title="HP: refills after every fight. Armor and combat food raise it.">${Math.round(maxHp()).toLocaleString("en-US")}</div><div class="k">HP</div></div>
           <div title="Gear Level: the average of your 7 armor slots (white 20, green 40, blue 60, purple 80, legendary 100). Empty slots count as 0."><div class="v gl" style="color:${glColor(gl)}">${gl}</div><div class="k">Gear Level</div><div class="glbar"><i style="left:${gl}%"></i></div></div></div>
         <div class="col">${["Hands", "Legs", "Feet"].map(s => eqBox(S.armor[s], s)).join("")}${S.trinket ? eqBox(TRINKET.name, "Trinket").replace('class="eq', 'class="eq trinket') : ""}</div></div>
@@ -1203,7 +1247,7 @@ function renderPane() {
       <div class="subh">Tools</div>
       <div class="irow">${GATHER.slice().sort().map(k => S.tools[k] ? eqBox(S.tools[k], "MainHand") : `<div class="eq empty" title="${P[k].name} tool: craft one with Engineering"><img src="${ic(P[k].icon)}" alt="" style="filter:grayscale(1)"></div>`).join("")}</div>
       <div class="subh">Buffs <span>· one of each kind</span></div><div class="irow">${buffs.join("") || `<span class="mute small">None running. Craft potions and food.</span>`}</div>
-      <div class="subh">Supplies <span>· up to ${BAL.buffs.keep} each</span></div><div class="irow">${supplies.join("") || `<span class="mute small">None yet.</span>`}</div>`;
+      <div class="subh">Supplies <span>· up to ${BAL.buffs.keep} of each kind</span></div><div class="irow">${supplies.join("") || `<span class="mute small">None yet.</span>`}</div>`;
   } else if (rtab === "shop") {
     const track = (k, label, lv, step, kind) => {
       const cost = shopCost(lv), can = cost <= S.gold, max = lv >= BAL.gold.steps;
@@ -1227,6 +1271,7 @@ function renderPane() {
     renderLog(el);
   }
 }
+const needLine = (have, want, label, tip) => `<li class="${have >= want ? "ok" : "no"}" title="${tip}">${have >= want ? "✓" : "·"} ${label} ${Math.round(have).toLocaleString("en-US")} / ${want.toLocaleString("en-US")}</li>`;
 function renderGoal() {
   const g = slotData.goal || "ragnaros", need = slotData.professions_to_master || 6;
   const showRag = g !== "master_professions", showMaster = g !== "ragnaros";
@@ -1237,6 +1282,9 @@ function renderGoal() {
   if (showRag) html += `<div class="title" style="font-size:15px">Defeat Ragnaros</div><ul>
       ${moltenCore ? `<li class="ok">✓ Molten Core</li>` : `<li class="no">✗ Molten Core (from ${solo ? "one of your checks" : "the multiworld"})</li>`}
       <li class="${legendary === 7 ? "ok" : "no"}">${legendary === 7 ? "✓" : "·"} Legendary armor ${legendary} / 7</li>
+      ${needLine(odds.dps, BAL.ragnaros.dps_need, "Weapon DPS", "Your best weapon against Ragnaros: an Axe or Thunderfury does the most. Unlike the DPS on your character, Shop speed doesn't count in this fight.")}
+      ${needLine(odds.hp, BAL.ragnaros.hp_need, "Health", "Health comes from your armor.")}
+      ${needLine(odds.fr, BAL.ragnaros.fr_need, "Fire Resistance", "Fire Resistance comes from the legendary armor, Greater Fire Protection Potion and Dragonbreath Chili.")}
       ${S.ragnarosWon ? `<li class="ok">✓ Ragnaros defeated</li>` : moltenCore ? `<li><button class="wbtn ragbtn" data-rag="1" ${S.field?.kind === "ragnaros" ? "disabled" : ""}>Fight Ragnaros · win ${pct(odds.win)}</button></li>` : ""}</ul>`;
   if (showMaster) html += `<div class="title" style="font-size:15px;margin-top:6px">Master Professions</div><ul>
       <li><b>Professions at 300: ${masteredCount()} / ${need}</b></li></ul>`;
@@ -1244,6 +1292,7 @@ function renderGoal() {
   $("goal").html = html + `</div>`;
 }
 function render() {
+  if (S && S.gold > GOLD_CAP) S.gold = GOLD_CAP;
   if (!S) return;
   renderHeader(); renderList(); $("vt-main").textContent = P[selected].name; renderSlots(); renderDetail(); renderPane(); renderGoal(); renderLegend();
   refreshTip();
@@ -1254,7 +1303,7 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t || !S) return;
   if (t.matches(".prof")) { selected = t.dataset.k; tab = rankTabFor(selected); showView("main"); render(); return; }
-  if (t.dataset.t !== undefined) { tab = +t.dataset.t; (S.lastTab ||= {})[selected] = tab; dirty = true; renderDetail(); return; }
+  if (t.dataset.t !== undefined) { tab = +t.dataset.t; renderDetail(); return; }
   if (t.dataset.tab) { rtab = t.dataset.tab; renderPane(); return; }
   if (t.dataset.do) {
     const name = t.dataset.name, slot = t.dataset.do === "craft" ? "work" : "field";
@@ -1270,14 +1319,9 @@ document.addEventListener("click", ev => {
 });
 // Which rank to show when opening a profession: the one you last looked at, else the one running there,
 // else the highest you own.
-function rankTabFor(k) {
-  const owned = ranks[k] || 1, last = S.lastTab?.[k];
-  if (last !== undefined && last < owned) return last;
-  for (const a of [S.field, S.work]) {
-    const e = a && (a.kind === "mob" ? MOB[a.name] : BY_NAME[a.name]);
-    if (e && (a.kind === "mob" ? "combat" : e.profession) === k) return Math.min(e.rank, owned - 1);
-  }
-  return owned - 1;
+function rankTabFor(k) { // the highest rank you own that has something your skill already allows
+  for (let r = (ranks[k] || 1) - 1; r > 0; r--) if (thingsOf(k, r).some(e => e.unlock <= S.level[k])) return r;
+  return 0;
 }
 // Phone: the tab bar shows one view at a time (Professions, the open profession, Character).
 function showView(v) { document.body.dataset.view = v; window.scrollTo(0, 0); }

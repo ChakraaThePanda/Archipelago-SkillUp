@@ -418,7 +418,9 @@ class Sim:
                 return t
             self.idle_workshop += 5
             return 5.0
-        if self.ragnaros_ready is not None:
+        # the Fire Resistance set comes first once Ragnaros is in reach (if the goal needs him);
+        # after it's done, the Workshop goes back to levelling whatever the goal still needs
+        if self.ragnaros_ready is not None and self.goal != "master" and self.fr_finished is None:
             return self.craft_fr()
         if self.attention:      # checking in: craft what the bags can keep going until the next check-in
             r = self.sustainable_recipe(self.check_interval())
@@ -467,9 +469,14 @@ class Sim:
             self.tools[TOOL_FOR[role]], keep = r["rank"], True
         elif role == "Bag" and first:
             self.bags, keep = self.bags + 1, True
-        elif role in BUFF_ROLES and self.use_buffs and len(self.consumables[role]) < self.buff_cfg["keep"]:
-            self.consumables[role].append(r["rank"])
-            keep = True
+        elif role in BUFF_ROLES and self.use_buffs and r["rank"] >= max(self.consumables[role], default=-1):
+            # like the game: only the best rank of each kind is kept (lower ones are sold;
+            # their few coins aren't counted here)
+            if r["rank"] > max(self.consumables[role], default=-1):
+                self.consumables[role].clear()
+            if len(self.consumables[role]) < self.buff_cfg["keep"]:
+                self.consumables[role].append(r["rank"])
+                keep = True
         if not keep and self.offline:
             self.unsold_crafts += self.craft_price(r)
         elif not keep:

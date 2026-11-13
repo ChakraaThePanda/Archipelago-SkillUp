@@ -322,7 +322,7 @@ body { display: flex; flex-direction: column; }
   /* phone header: logo, name and debuffs on top; a stat strip under them: gold, rested, checks */
   .top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "logo who debuffs" "stats stats stats";
     gap: 8px 0; padding: 8px 12px; }
-  .top .hstats { grid-area: stats; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  .top .hstats { grid-area: stats; display: grid; grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); align-items: center; gap: 10px;
     padding-top: 7px; border-top: 1px solid var(--steel-dk); }
   .top .hstats > .hstat:not(.hide-sm) { display: grid; gap: 2px; justify-items: start; white-space: nowrap; }
   .top .h-rested { justify-items: center !important; }

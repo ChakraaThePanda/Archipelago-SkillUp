@@ -10,6 +10,15 @@
     "_game_speed": "Tuned for a realistic player (tools/simulate.py PLAYERS), not a perfect one: Long ~20 h, Normal ~10 h, Sync ~4 h (a sync game played in one sitting)"
   },
 
+  "thunderfury": {
+    "_about": "Thunderfury, Blessed Blade of the Windseeker: an optional legendary sword, crafted with Blacksmithing at 300 once you have Molten Core (listed with the Fire Resistance set). Legendary tier, and its lightning counts as the right weapon against every creature trait. Not a check.",
+    "name": "Thunderfury, Blessed Blade of the Windseeker",
+    "icon": "inv_sword_39",
+    "profession": "blacksmithing",
+    "unlock": 300,
+    "reagents": ["Thorium Ore", "Truesilver Ore", "Star Ruby"]
+  },
+
   "trinket": {
     "_about": "Darkmoon Card, a hidden legendary trinket. Each skill point gained has find_chance to find it (once per game). Once worn, each skill point gained has bonus_chance to give one more, never past the rank's cap.",
     "name": "Darkmoon Card",
