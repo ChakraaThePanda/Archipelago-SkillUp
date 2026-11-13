@@ -392,7 +392,7 @@ class Sim:
         prof = e["profession"]
         base = self.base_time("gather_time", e["rank"], e["slot"])
         self.add_xp(prof, base * self.act["xp_per_second"] * self.color_mult(prof, e["unlock"]), True)
-        self.store(e["name"], self.act["gather_yield"])
+        self.store(e["name"], sum(self.act["gather_yield"]) / 2)   # the average of the random amount
         return max(base / self.speed(prof), self.act["min_action_time"])
 
     # ---- the Workshop --------------------------------------------------------------------

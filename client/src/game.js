@@ -219,7 +219,8 @@ function finishField(offline) {
   const e = a.entry, k = a.k, base = baseTime("gather_time", e.rank, e.slot);
   if (a.color.name === "red" && Math.random() >= a.color.chance) return;      // failed attempt: only time lost
   addXp(k, base * BAL.actions.xp_per_second * a.color.mult, true);
-  store(e.name, BAL.actions.gather_yield, offline);
+  const [lo, hi] = BAL.actions.gather_yield;
+  store(e.name, lo + Math.floor(Math.random() * (hi - lo + 1)), offline);
   first(k, e.name);
 }
 
@@ -1308,7 +1309,7 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("button");
   if (!t || !S) return;
   if (t.matches(".prof")) { selected = t.dataset.k; tab = rankTabFor(selected); showView("main"); render(); return; }
-  if (t.dataset.t !== undefined) { tab = +t.dataset.t; renderDetail(); return; }
+  if (t.dataset.t !== undefined) { tab = +t.dataset.t; (S.lastTab ||= {})[selected] = tab; dirty = true; renderDetail(); return; }
   if (t.dataset.tab) { rtab = t.dataset.tab; renderPane(); return; }
   if (t.dataset.do) {
     const name = t.dataset.name, slot = t.dataset.do === "craft" ? "work" : "field";
@@ -1322,10 +1323,14 @@ document.addEventListener("click", ev => {
   if (t.dataset.sellall) { sellEverything(); dirty = true; return; }
   if (t.dataset.rag) { S.field = { kind: "ragnaros", name: "Ragnaros" }; S.fieldT = 0; dirty = true; render(); return; }
 });
-// Which rank to show when opening a profession: the one you last looked at, else the one running there,
-// else the highest you own.
-function rankTabFor(k) { // the highest rank you own that has something your skill already allows
-  for (let r = (ranks[k] || 1) - 1; r > 0; r--) if (thingsOf(k, r).some(e => e.unlock <= S.level[k])) return r;
+// Which rank to show when opening a profession: always the one you last looked at. The first time,
+// the highest rank you own with something orange or yellow (still worth XP), else anything doable.
+function rankTabFor(k) {
+  const owned = ranks[k] || 1, last = S.lastTab?.[k];
+  if (last !== undefined && last < owned) return last;
+  const good = e => ["orange", "yellow"].includes(colorOf(S.level[k], e.unlock).name);
+  for (let r = owned - 1; r > 0; r--) if (thingsOf(k, r).some(good)) return r;
+  for (let r = owned - 1; r > 0; r--) if (thingsOf(k, r).some(e => e.unlock <= S.level[k])) return r;
   return 0;
 }
 // Phone: the tab bar shows one view at a time (Professions, the open profession, Character).

@@ -39,8 +39,8 @@
     "_craft_xp_mult": "crafting earns more XP per second: one Workshop slot levels 6 professions while the Field levels 5",
     "boss_time_mult": 2.5,
     "min_action_time": 0.5,
-    "gather_yield": 3,
-    "_gather_yield": "materials per gather action (WoW nodes give several ore)"
+    "gather_yield": [1, 3],
+    "_gather_yield": "materials per gather action: a random amount from min to max, like a WoW node or cast"
   },
 
   "recipes": {
