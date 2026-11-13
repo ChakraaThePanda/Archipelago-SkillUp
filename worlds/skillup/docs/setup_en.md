@@ -35,8 +35,3 @@ last one to save overwrites the other.
 For up to 8 hours, each slot keeps repeating what it was doing. Nothing is sold while the page
 is closed: once a material's storage is full, extra materials are lost (you still gain skill).
 Time away beyond 8 hours turns into Rested XP. Before leaving, "Sell all" a material to make room.
-
-The page is served over HTTPS, so it can only reach servers that accept secure websockets
-(`wss://`). archipelago.gg does. For a self-hosted server without TLS, save the game page
-from your browser (Ctrl+S, the page is a single file), open the saved file, then enter
-`ws://host:port`.
