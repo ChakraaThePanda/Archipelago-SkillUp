@@ -629,14 +629,14 @@ class Sim:
                     self.offline = False
                     continue
             self.refresh_buffs()
+            prev = self.t
             if nf <= nw:
                 self.t = nf
-                dt = self.do_field()
-                nf += dt
-                self.rested = max(0.0, self.rested - dt)
+                nf += self.do_field()
             else:
                 self.t = nw
                 nw += self.do_workshop()
+            self.rested = max(0.0, self.rested - (self.t - prev))   # used up while anything is running
             if self.attention and self.t >= self.next_check:      # the player looks at the game
                 while self.next_check <= self.t:
                     self.next_check += self.check_interval()

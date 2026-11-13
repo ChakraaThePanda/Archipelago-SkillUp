@@ -375,8 +375,9 @@ function advance(dt, offline) {
     const corpse = S.clock < S.corpseUntil ? S.corpseUntil - S.clock : Infinity;
     const step = Math.min(dt, tf, tw, corpse, 60);
     S.clock += step; dt -= step;
-    if (fa) { S.fieldT += step; S.rested = Math.max(0, S.rested - step); }
+    if (fa) S.fieldT += step;
     if (wa && !workStuck) S.workT += step;
+    if (fa || (wa && !workStuck)) S.rested = Math.max(0, S.rested - step);   // used up while anything is running
     if (fa && S.fieldT >= fa.time - 1e-9) {
       S.fieldT = 0;
       if (fa.ambush) {
@@ -927,18 +928,20 @@ function renderLog(el) {
 }
 function setOnline(on) { $("online").classList.toggle("off", !on); }
 
+// XP multiplier from Rested and the XP foods, the same ones addXp applies
+const xpBoost = field => (S.rested > 0 ? 2 : 1) * (1 + buffValue(field ? "Gathering XP food" : "Crafting XP food"));
 function perHour(k, e, craft) { // time per attempt, color, and skill levels per hour
   const c = colorOf(S.level[k], e.unlock), base = baseTime(craft ? "craft_time" : "gather_time", e.rank, slotNum(e));
   let t = Math.max(base / speed(k), BAL.actions.min_action_time);
   let xp = base * c.mult * (craft ? BAL.actions.craft_xp_mult * (BAL.recipes.role_xp_mult[e.role] || 1) : 1);
   if (c.name === "red") { t *= c.slow; xp *= c.chance; }
-  return { c, t, hr: S.level[k] >= cap(k) ? 0 : 3600 * xp * gameSpeed() * (1 + S.xpLv[k] * BAL.gold.xp_step) / t / xpNeed(S.level[k]) };
+  return { c, t, hr: S.level[k] >= cap(k) ? 0 : 3600 * xp * gameSpeed() * (1 + S.xpLv[k] * BAL.gold.xp_step) * xpBoost(!craft) / t / xpNeed(S.level[k]) };
 }
 const perHourGather = (k, e) => perHour(k, e, false), perHourCraft = (k, r) => perHour(k, r, true);
 function perHourFight(m) {
   const c = colorOf(S.level.combat, m.unlock), p = deathChance(m);
   const t = Math.max(gearFightTime(m) / speed("combat"), BAL.actions.min_action_time);
-  const xp = mobBase(m) * c.mult * (1 - p) * gameSpeed() * (1 + S.xpLv.combat * BAL.gold.xp_step);
+  const xp = mobBase(m) * c.mult * (1 - p) * gameSpeed() * (1 + S.xpLv.combat * BAL.gold.xp_step) * xpBoost(true);
   return { c, t, win: 1 - p, hr: S.level.combat >= cap("combat") ? 0 : 3600 * xp / (t + p * (C.corpse_run + t)) / xpNeed(S.level.combat) };
 }
 
@@ -947,7 +950,9 @@ const bagIconName = () => GD.recipes.filter(r => r.role === "Bag" && S.crafted.i
 function renderHeader() {
   $("gold").html = coins(S.gold, false, true);
   $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bagIconName())}" alt=""> ${bagCap()} each</span>`;
-  $("rested").html = `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
+  $("rested").html = S.rested > 0 && S.rested < 60
+    ? `${Math.ceil(S.rested)}<span class="u-long"> sec</span><span class="u-short">s</span>`
+    : `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
   $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
   $("debuffs").html = DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => {
