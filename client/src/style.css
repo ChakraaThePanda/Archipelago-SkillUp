@@ -437,7 +437,11 @@ body { display: flex; flex-direction: column; }
 @media (max-width: 780px) { .audio-tg { position: static; justify-content: center; margin-top: 8px; } }
 
 /* hold-to-see tooltips on touch: no text selection or image menu while holding */
-@media (pointer: coarse) { [title], [data-tip], [data-item], .eq img, .icon { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; } }
+@media (pointer: coarse) {
+  body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  img { -webkit-user-drag: none; }
+  input, textarea, .log { -webkit-touch-callout: default; -webkit-user-select: text; user-select: text; }
+}
 
 /* solo play on the connect screen */
 .solo { margin-top: 16px; border-top: 1px solid var(--steel-dk); padding-top: 12px; display: grid; gap: 8px; }

@@ -1096,7 +1096,16 @@ document.addEventListener("pointermove", ev => {
 });
 ["pointerup", "pointercancel"].forEach(t => document.addEventListener(t, ev => { if (ev.pointerType !== "mouse" && press) { clearTimeout(press.timer); press = null; } }));
 document.addEventListener("click", ev => { if (pressShown) { pressShown = false; ev.preventDefault(); ev.stopPropagation(); } }, true);
-document.addEventListener("contextmenu", ev => { if (pressShown || press) ev.preventDefault(); });
+// the phone's own long-press menu (save image, copy...) would cover it: block it in the game, and use
+// that long press to open the tooltip right away (text fields and the console keep their menu)
+document.addEventListener("contextmenu", ev => {
+  if (ev.target.closest?.("input, textarea, .log")) return;
+  const touch = press || matchMedia("(pointer: coarse)").matches;
+  if (!touch) return;
+  ev.preventDefault();
+  const el = ev.target.closest?.("[title], [data-tip], [data-item]");
+  if (el && !pressShown) { clearTimeout(press?.timer); press = null; showTip(el, ev.clientX, ev.clientY, true); pressShown = true; }
+});
 document.addEventListener("scroll", hideTip, true);
 
 // ---- sound and music, streamed from Wowhead like the icons --------------------------------------
