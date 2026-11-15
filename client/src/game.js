@@ -283,13 +283,16 @@ function easierMob(m, offline) { // after 3 deaths in a row, step down to the ne
   S.field = easier ? { kind: "mob", name: easier.name } : null;
   if (!offline) toast(easier ? `Died 3 times in a row. Switched to ${easier.name}.` : "Died 3 times in a row. Stopped fighting.");
 }
-// A death: corpse run, then Resurrection Sickness. quiet = not sent to DeathLink (offline, or it came from DeathLink).
-function die(cause, quiet = false) {
+// A death: corpse run, then Resurrection Sickness. Offline deaths make no sound; neither offline deaths
+// nor ones that came from DeathLink are sent to DeathLink.
+function die(cause, offline = false, fromLink = false) {
   S.deaths++;
   S.corpseUntil = S.clock + C.corpse_run;
   S.debuffs["Resurrection Sickness"] = { until: S.clock + C.corpse_run + BAL.traps["Resurrection Sickness"].minutes * 60 };
   S.fieldT = 0;
-  if (!quiet) sendDeathLink(cause);
+  if (offline) return;
+  if (started) queueSfx("death");
+  if (!fromLink) sendDeathLink(cause);
 }
 
 function finishWork(offline) {
@@ -467,13 +470,18 @@ function applyItems(quiet = false) { // quiet: loading a save, so items that cam
     if (name === "Molten Core") moltenCore = true;
   }
   if (!S) return;
-  let levelUpSnd = false;   // one sound for a whole batch (a release can send dozens at once)
+  let levelUpSnd = false, deathSnd = false;   // one sound of each for a whole batch (a release can send dozens at once)
   for (; S.applied < received.length; S.applied++) {
     const it = received[S.applied], name = it.name ?? itemIdToName[it.item];
     const effect = oneShot(name);
-    if (started && !quiet) { receivedPopup(it, name, effect); if (name && itemKind(name) === "prog") levelUpSnd = true; }
+    if (started && !quiet) {
+      receivedPopup(it, name, effect);
+      if (name && itemKind(name) === "prog") levelUpSnd = true;
+      if (name === "Resurrection Sickness") deathSnd = true;
+    }
   }
   if (levelUpSnd) sfx("levelup");
+  if (deathSnd) levelUpSnd ? queueSfx("death") : sfx("death");
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || selected;
 }
 // Applies one item and returns what it did, in plain words (HTML), for its popup. "" = nothing to say.
@@ -802,8 +810,8 @@ function connect(server, slotName, password) {
         break;
       case "Bounced":
         if ((pkt.tags || []).includes("DeathLink") && pkt.data?.source !== conn?.slotName && S) {
-          if (S.field?.kind === "mob") die(pkt.data?.cause || "", true);
-          else S.debuffs["Resurrection Sickness"] = { until: S.clock + BAL.traps["Resurrection Sickness"].minutes * 60 };
+          if (S.field?.kind === "mob") die(pkt.data?.cause || "", false, true);
+          else { S.debuffs["Resurrection Sickness"] = { until: S.clock + BAL.traps["Resurrection Sickness"].minutes * 60 }; if (started) queueSfx("death"); }
           toast(`${pkt.data?.source || "Someone"} died. ${pkt.data?.cause || ""}`);
         }
         break;
@@ -1123,7 +1131,8 @@ document.addEventListener("scroll", hideTip, true);
 
 // ---- sound and music, streamed from Wowhead like the icons --------------------------------------
 const SND = "https://wow.zamimg.com/sound-ids/classic/enus/";
-const SFX = { levelup: SND + "249/569593/LevelUp.ogg", quest: SND + "143/567439/iQuestComplete.ogg" };
+const SFX = { levelup: SND + "249/569593/LevelUp.ogg", quest: SND + "143/567439/iQuestComplete.ogg",
+  death: SND + "164/542372/HumanMaleMainDeathA.ogg" };
 const MUSIC = [   // Elwynn Forest (Forest Day) and Mulgore (Plains Day)
   "244/53492/DayForest01.mp3", "245/53493/DayForest02.mp3", "246/53494/DayForest03.mp3",
   "176/53680/DayPlains01.mp3", "177/53681/DayPlains02.mp3"].map(f => SND + f);
