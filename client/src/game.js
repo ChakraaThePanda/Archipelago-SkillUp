@@ -1067,12 +1067,13 @@ function showTip(el, x, y, above = false) {
   tt.style.top = (above ? (y - h - 40 < 6 ? y + 40 : y - h - 40) : y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
   if (above) tt.style.left = Math.max(6, Math.min(x - w / 2, innerWidth - w - 6)) + "px";
 }
-function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; const tt = $("tt"); if (tt) tt.hidden = true; }
-let mouse = null;
-function tipAt(x, y, target = document.elementFromPoint(x, y)) {
+let mouse = null, touchAt = null;   // touchAt: where the finger held for the tooltip showing now
+function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; touchAt = null; const tt = $("tt"); if (tt) tt.hidden = true; }
+function tipAt(x, y, target = document.elementFromPoint(x, y), above = false) {
   const el = target?.closest?.("[title], [data-tip], [data-item]");
-  if (el) showTip(el, x, y); else if (tipFor) hideTip();
+  if (el) showTip(el, x, y, above); else if (tipFor) hideTip();
 }
+function touchTip(el, x, y) { showTip(el, x, y, true); touchAt = { x, y }; pressShown = true; navigator.vibrate?.(10); }
 document.addEventListener("pointermove", ev => {
   if (ev.pointerType !== "mouse") return;
   mouse = { x: ev.clientX, y: ev.clientY };
@@ -1080,7 +1081,13 @@ document.addEventListener("pointermove", ev => {
 });
 document.addEventListener("pointerleave", () => { mouse = null; hideTip(); });
 // after a refresh replaced what you're pointing at, put the tooltip back on the new one
-function refreshTip() { if (tipFor && !tipFor.isConnected) { tipFor = null; if (mouse) tipAt(mouse.x, mouse.y); else hideTip(); } }
+function refreshTip() {
+  if (!tipFor || tipFor.isConnected) return;
+  tipFor = null;
+  if (mouse) tipAt(mouse.x, mouse.y);
+  else if (touchAt) { const { x, y } = touchAt; tipAt(x, y, undefined, true); if (tipFor) touchAt = { x, y }; }
+  else hideTip();
+}
 // touch: hold something to see its tooltip; lifting the finger after a hold doesn't click it
 let press = null, pressShown = false;
 document.addEventListener("pointerdown", ev => {
@@ -1089,7 +1096,10 @@ document.addEventListener("pointerdown", ev => {
   const el = ev.target.closest?.("[title], [data-tip], [data-item]");
   if (!el) { press = null; return; }
   const x = ev.clientX, y = ev.clientY;
-  press = { x, y, timer: setTimeout(() => { if (el.isConnected) { showTip(el, x, y, true); pressShown = true; navigator.vibrate?.(10); } }, 400) };
+  press = { x, y, timer: setTimeout(() => {   // the buffs redraw every second: if this one was replaced, use the new one
+    const now = el.isConnected ? el : document.elementFromPoint(x, y)?.closest("[title], [data-tip], [data-item]");
+    if (now) touchTip(now, x, y);
+  }, 400) };
 });
 document.addEventListener("pointermove", ev => {
   if (press && ev.pointerType !== "mouse" && Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > 10) { clearTimeout(press.timer); press = null; }
@@ -1104,7 +1114,7 @@ document.addEventListener("contextmenu", ev => {
   if (!touch) return;
   ev.preventDefault();
   const el = ev.target.closest?.("[title], [data-tip], [data-item]");
-  if (el && !pressShown) { clearTimeout(press?.timer); press = null; showTip(el, ev.clientX, ev.clientY, true); pressShown = true; }
+  if (el && !pressShown) { clearTimeout(press?.timer); press = null; touchTip(el, ev.clientX, ev.clientY); }
 });
 document.addEventListener("scroll", hideTip, true);
 
