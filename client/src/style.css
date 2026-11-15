@@ -88,6 +88,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #rested { min-width: 6.5ch; text-align: right; }
 #checks { min-width: 9ch; }
 .hstats { display: contents; } /* desktop: the stats sit in the header row like everything else */
+/* narrower desktops: drop the server address and tighten the gaps so the header stays on one line */
+@media (max-width: 1400px) { .top { column-gap: 18px; } .top .who #where { display: none; } }
 #rested .u-short { display: none; }
 .who { background: none; border: 0; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left; line-height: 1.2; }
 .who > span:last-child { display: flex; align-items: center; gap: 5px; }
