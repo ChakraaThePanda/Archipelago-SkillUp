@@ -1517,7 +1517,7 @@ function rankTabFor(k) {
 // Phone: the tab bar shows one view at a time (Professions, the open profession, Character).
 function showView(v) { document.body.dataset.view = v; window.scrollTo(0, 0); }
 $("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) showView(b.dataset.view); };
-$("to-connect").onclick = () => { save(); location.href = location.pathname; };
+$("to-connect").onclick = $("to-menu").onclick = () => { save(); location.href = location.pathname; };
 
 // ---- connect screen ------------------------------------------------------------------------
 function showRecent() {
