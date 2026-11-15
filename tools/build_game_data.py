@@ -248,6 +248,26 @@ def item(name: str) -> dict:
             "sell": copper, **({"fire_resistance": int(fr.group(1))} if fr else {})}
 
 
+# combat sounds a creature makes (attacks, aggro, getting hit), as paths under SOUND_URL
+SOUND_URL = "https://wow.zamimg.com/sound-ids/classic/enus/"
+_SOUND_RE = re.compile(r'sound-ids\\?/classic\\?/enus\\?/(\d+)\\?/(\d+)\\?/([A-Za-z0-9_]+\.(?:ogg|mp3))')
+
+
+def npc_sounds(npc: int) -> list[str]:
+    CACHE.mkdir(parents=True, exist_ok=True)
+    key = CACHE / f"npc_sounds_{npc}.json"
+    if key.exists():
+        return json.loads(key.read_text(encoding="utf-8"))
+    req = urllib.request.Request(f"https://www.wowhead.com/classic/npc={npc}", headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        page = r.read().decode("utf-8", "replace")
+    files = sorted({f"{a}/{b}/{f}" for a, b, f in _SOUND_RE.findall(page)
+                    if re.search(r"Attack|Aggro|Wound", f) and not re.search(r"Death|Stand|Loop|Slay", f)})
+    key.write_text(json.dumps(files), encoding="utf-8")
+    time.sleep(0.3)
+    return files
+
+
 # ---------------------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------------------
@@ -263,7 +283,7 @@ def build() -> dict:
         ],
         "materials": [], "mobs": [], "recipes": [], "fire_resistance_set": [],
         "traits": {k: {"weapon": w, "text": txt} for k, (w, txt) in TRAITS.items()},
-        "boss": {"name": RAGNAROS[0], "npc": RAGNAROS[1]},
+        "boss": {"name": RAGNAROS[0], "npc": RAGNAROS[1], "sounds": npc_sounds(RAGNAROS[1])},
         "ui_icons": UI_ICONS,
     }
 
@@ -289,6 +309,7 @@ def build() -> dict:
                 "classification": cls or "Normal", "trait": trait, "boss": s == 3,
                 "zone": zone, "rank": r, "slot": s, "unlock": unlock(r, s),
                 "image": NPC_IMG_URL.format(display % 256, display), "cloth": CLOTH[r],
+                "sounds": npc_sounds(npc),
             })
 
     for prof, spec in RECIPES.items():

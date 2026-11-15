@@ -885,7 +885,18 @@
    "slot": 0,
    "unlock": 1,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/161/10913.png",
-   "cloth": "Linen Cloth"
+   "cloth": "Linen Cloth",
+   "sounds": [
+    "100/553316/mKoboldAttackB.ogg",
+    "101/553317/mKoboldWoundB.ogg",
+    "103/553319/mKoboldAttackA.ogg",
+    "105/553321/mKoboldWoundC.ogg",
+    "106/553322/mKoboldAttackC.ogg",
+    "95/553311/mKoboldAggroA.ogg",
+    "97/553313/mKoboldWoundA.ogg",
+    "98/553314/mKoboldPreAggroA.ogg",
+    "99/553315/mKoboldWoundCriticalA.ogg"
+   ]
   },
   {
    "name": "Murloc Forager",
@@ -900,7 +911,18 @@
    "slot": 1,
    "unlock": 21,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/185/441.png",
-   "cloth": "Linen Cloth"
+   "cloth": "Linen Cloth",
+   "sounds": [
+    "218/555994/mMurlocWoundC.ogg",
+    "220/555996/mMurlocWoundB.ogg",
+    "222/555998/mMurlocPreAggroA.ogg",
+    "223/555999/mMurlocWoundA.ogg",
+    "224/556000/mMurlocAggroOld.ogg",
+    "227/556003/mMurlocAttackA.ogg",
+    "228/556004/mMurlocAttackB.ogg",
+    "229/556005/mMurlocAttackC.ogg",
+    "231/556007/mMurlocWoundCriticalA.ogg"
+   ]
   },
   {
    "name": "Prowler",
@@ -915,7 +937,21 @@
    "slot": 2,
    "unlock": 41,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/151/11415.png",
-   "cloth": "Linen Cloth"
+   "cloth": "Linen Cloth",
+   "sounds": [
+    "1/564225/mWolfWound1.ogg",
+    "241/564209/mWolfAttack4.ogg",
+    "242/564210/mWolfAttack1.ogg",
+    "244/564212/mWolfAttack6.ogg",
+    "245/564213/mWolfAttack2.ogg",
+    "248/564216/mWolfAttack3.ogg",
+    "250/564218/mWolfWound2.ogg",
+    "254/564222/mWolfAggro3.ogg",
+    "3/564227/mWolfWound3.ogg",
+    "6/564230/mWolfAttack5.ogg",
+    "7/564231/mWolfWoundCritical1.ogg",
+    "8/564232/mWolfWound4.ogg"
+   ]
   },
   {
    "name": "Hogger",
@@ -930,7 +966,22 @@
    "slot": 3,
    "unlock": 56,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/128/384.png",
-   "cloth": "Linen Cloth"
+   "cloth": "Linen Cloth",
+   "sounds": [
+    "163/549795/mGhoulWound3.ogg",
+    "168/549800/mGhoulWound1.ogg",
+    "172/549804/mGhoulWound2.ogg",
+    "189/550333/mGnollAttack4.ogg",
+    "191/550335/mGnollAttack5.ogg",
+    "192/550336/mGnollAttack7.ogg",
+    "193/550337/mGnollAttack6.ogg",
+    "195/550339/mGnollAttack3.ogg",
+    "196/550340/mGnollPreAggro1.ogg",
+    "201/550345/mGnollAttack2.ogg",
+    "202/550346/mGnollWoundCritical1.ogg",
+    "206/550350/mGnollAttack1.ogg",
+    "207/550351/mGnollAggro1.ogg"
+   ]
   },
   {
    "name": "Skeletal Warrior",
@@ -945,7 +996,17 @@
    "slot": 0,
    "unlock": 75,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/200/200.png",
-   "cloth": "Silk Cloth"
+   "cloth": "Silk Cloth",
+   "sounds": [
+    "10/560650/mArmoredSkeletonAttackB.ogg",
+    "11/560651/mArmoredSkeletonAttackA.ogg",
+    "12/560652/mArmoredSkeletonWoundCriticalA.ogg",
+    "13/560653/mArmoredSkeletonWoundA.ogg",
+    "14/560654/mArmoredSkeletonWoundB.ogg",
+    "7/560647/mArmoredSkeletonAggroA.ogg",
+    "8/560648/mArmoredSkeletonAttackC.ogg",
+    "9/560649/mArmoredSkeletonWoundC.ogg"
+   ]
   },
   {
    "name": "Rotted One",
@@ -960,7 +1021,19 @@
    "slot": 1,
    "unlock": 95,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/137/137.png",
-   "cloth": "Silk Cloth"
+   "cloth": "Silk Cloth",
+   "sounds": [
+    "161/549793/mGhoulAttack3.ogg",
+    "162/549794/mGhoulAttack5.ogg",
+    "163/549795/mGhoulWound3.ogg",
+    "164/549796/mGhoulWoundCritical1.ogg",
+    "168/549800/mGhoulWound1.ogg",
+    "169/549801/mGhoulAttack2.ogg",
+    "171/549803/mGhoulAggro2.ogg",
+    "172/549804/mGhoulWound2.ogg",
+    "175/549807/mGhoulAttack4.ogg",
+    "178/549810/mGhoulAttack1.ogg"
+   ]
   },
   {
    "name": "Nightbane Dark Runner",
@@ -975,7 +1048,18 @@
    "slot": 2,
    "unlock": 115,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/224/736.png",
-   "cloth": "Silk Cloth"
+   "cloth": "Silk Cloth",
+   "sounds": [
+    "53/564277/mWorgenWoundA.ogg",
+    "54/564278/mWorgenAttackA.ogg",
+    "57/564281/mWorgenAggroA.ogg",
+    "58/564282/mWorgenWoundC.ogg",
+    "59/564283/mWorgenAttackB.ogg",
+    "60/564284/mWorgenWoundB.ogg",
+    "61/564285/mWorgenAttackD.ogg",
+    "63/564287/mWorgenAttackC.ogg",
+    "65/564289/mWorgenWoundCriticalA.ogg"
+   ]
   },
   {
    "name": "Stitches",
@@ -990,7 +1074,20 @@
    "slot": 3,
    "unlock": 130,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/157/1693.png",
-   "cloth": "Silk Cloth"
+   "cloth": "Silk Cloth",
+   "sounds": [
+    "40/549160/FleshGolemAttackA.ogg",
+    "42/549162/FleshGolemWoundD.ogg",
+    "43/549163/FleshGolemAttackC.ogg",
+    "44/549164/FleshGolemAttackB.ogg",
+    "45/549165/FleshGolemAttackD.ogg",
+    "47/549167/FleshGolemWoundCritA.ogg",
+    "48/549168/FleshGolemAggroA.ogg",
+    "49/549169/FleshGolemWoundA.ogg",
+    "50/549170/FleshGolemPreAggroA.ogg",
+    "51/549171/FleshGolemWoundB.ogg",
+    "52/549172/FleshGolemWoundC.ogg"
+   ]
   },
   {
    "name": "Mistvale Gorilla",
@@ -1005,7 +1102,19 @@
    "slot": 0,
    "unlock": 150,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/75/843.png",
-   "cloth": "Mageweave Cloth"
+   "cloth": "Mageweave Cloth",
+   "sounds": [
+    "48/550960/GorillaPreAggroA.ogg",
+    "50/550962/GorillaAttackA.ogg",
+    "51/550963/GorillaWoundB.ogg",
+    "52/550964/GorillaWoundCrit.ogg",
+    "53/550965/GorillaWoundC.ogg",
+    "54/550966/GorillaAttackC.ogg",
+    "55/550967/GorillaAggroA.ogg",
+    "56/550968/GorillaAttackB.ogg",
+    "57/550969/GorillaAttackD.ogg",
+    "58/550970/GorillaWoundA.ogg"
+   ]
   },
   {
    "name": "Shadowmaw Panther",
@@ -1020,7 +1129,17 @@
    "slot": 1,
    "unlock": 170,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/121/633.png",
-   "cloth": "Mageweave Cloth"
+   "cloth": "Mageweave Cloth",
+   "sounds": [
+    "209/562385/mTigerAttackB.ogg",
+    "210/562386/mTigerAttackD.ogg",
+    "213/562389/mTigerWoundC.ogg",
+    "214/562390/mTigerWoundA.ogg",
+    "216/562392/mTigerWoundB.ogg",
+    "217/562393/mTigerAttackC.ogg",
+    "218/562394/mTigerAttackA.ogg",
+    "219/562395/mTigerWoundCriticalA.ogg"
+   ]
   },
   {
    "name": "Bloodsail Swashbuckler",
@@ -1035,7 +1154,17 @@
    "slot": 2,
    "unlock": 190,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/28/796.png",
-   "cloth": "Mageweave Cloth"
+   "cloth": "Mageweave Cloth",
+   "sounds": [
+    "144/540816/HumanMalePirateHeavyWoundA.ogg",
+    "145/540817/HumanMalePirateHeavyAttackC.ogg",
+    "146/540818/HumanMalePirateHeavyAttackA.ogg",
+    "149/540821/HumanMalePirateHeavyAttackB.ogg",
+    "150/540822/HumanMalePirateHeavyWoundB.ogg",
+    "151/540823/HumanMalePirateHeavyWoundC.ogg",
+    "152/540824/HumanMalePirateHeavyAggro.ogg",
+    "153/540825/HumanMalePirateHeavyPreAggro.ogg"
+   ]
   },
   {
    "name": "King Bangalash",
@@ -1050,7 +1179,17 @@
    "slot": 3,
    "unlock": 205,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/104/616.png",
-   "cloth": "Mageweave Cloth"
+   "cloth": "Mageweave Cloth",
+   "sounds": [
+    "209/562385/mTigerAttackB.ogg",
+    "210/562386/mTigerAttackD.ogg",
+    "213/562389/mTigerWoundC.ogg",
+    "214/562390/mTigerWoundA.ogg",
+    "216/562392/mTigerWoundB.ogg",
+    "217/562393/mTigerAttackC.ogg",
+    "218/562394/mTigerAttackA.ogg",
+    "219/562395/mTigerWoundCriticalA.ogg"
+   ]
   },
   {
    "name": "Ravasaur Runner",
@@ -1065,7 +1204,17 @@
    "slot": 0,
    "unlock": 225,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/170/5290.png",
-   "cloth": "Runecloth"
+   "cloth": "Runecloth",
+   "sounds": [
+    "22/558870/mRaptorAttackA.ogg",
+    "23/558871/mRaptorWoundC.ogg",
+    "24/558872/mRaptorAttackC.ogg",
+    "25/558873/mRaptorWoundA.ogg",
+    "26/558874/mRaptorAttackB.ogg",
+    "27/558875/mRaptorWoundCriticalA.ogg",
+    "29/558877/mRaptorAggroA.ogg",
+    "30/558878/mRaptorWoundB.ogg"
+   ]
   },
   {
    "name": "Frenzied Pterrordax",
@@ -1080,7 +1229,17 @@
    "slot": 1,
    "unlock": 245,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/220/8412.png",
-   "cloth": "Runecloth"
+   "cloth": "Runecloth",
+   "sounds": [
+    "187/558523/PterrodaxWoundC.ogg",
+    "188/558524/PterrodaxAttackC.ogg",
+    "189/558525/PterrodaxWoundB.ogg",
+    "190/558526/PterrodaxWoundA.ogg",
+    "191/558527/PterrodaxWoundCrit.ogg",
+    "192/558528/PterrodaxAttackB.ogg",
+    "193/558529/PterrodaxAggro.ogg",
+    "195/558531/PterrodaxAttackA.ogg"
+   ]
   },
   {
    "name": "Thunderstomp Stegodon",
@@ -1095,7 +1254,18 @@
    "slot": 2,
    "unlock": 265,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/169/5289.png",
-   "cloth": "Runecloth"
+   "cloth": "Runecloth",
+   "sounds": [
+    "120/562296/ThreshadonAggroA.ogg",
+    "189/562365/ThunderLizardWoundCrit.ogg",
+    "191/562367/ThunderLizardWoundA.ogg",
+    "192/562368/ThunderLizardWoundC.ogg",
+    "193/562369/ThunderLizardAttackC.ogg",
+    "194/562370/ThunderLizardAttackA.ogg",
+    "195/562371/ThunderLizardWoundB.ogg",
+    "197/562373/ThunderLizardPreAggroA.ogg",
+    "198/562374/ThunderLizardAttackB.ogg"
+   ]
   },
   {
    "name": "King Mosh",
@@ -1110,7 +1280,18 @@
    "slot": 3,
    "unlock": 280,
    "image": "https://wow.zamimg.com/modelviewer/classic/webthumbs/npc/185/5305.png",
-   "cloth": "Runecloth"
+   "cloth": "Runecloth",
+   "sounds": [
+    "64/562752/TrexWoundCrit.ogg",
+    "65/562753/TrexAttackC.ogg",
+    "66/562754/TrexAttackB.ogg",
+    "67/562755/TrexWoundB.ogg",
+    "69/562757/TrexAttackA.ogg",
+    "70/562758/TrexPreAggro.ogg",
+    "71/562759/TrexWoundC.ogg",
+    "72/562760/TrexAggro.ogg",
+    "73/562761/TrexWoundA.ogg"
+   ]
   }
  ],
  "recipes": [
@@ -2774,7 +2955,18 @@
  },
  "boss": {
   "name": "Ragnaros",
-  "npc": 11502
+  "npc": 11502,
+  "sounds": [
+   "182/558774/RagnarosAttackB.ogg",
+   "184/558776/RagnarosAttackA.ogg",
+   "190/558782/RagnarosSpecialAttack01.ogg",
+   "194/558786/RagnarosAttackC.ogg",
+   "197/558789/RagnarosAttackD.ogg",
+   "207/558799/RagnarosAttackE.ogg",
+   "212/558804/RagnarosSpecialAttack03.ogg",
+   "219/558811/RagnarosSpecialAttack02.ogg",
+   "223/558815/RagnarosAttackF.ogg"
+  ]
  },
  "ui_icons": {
   "slot_Head": "inventoryslot_head",

@@ -433,7 +433,7 @@ function flushChecks() {
   if (!ws || ws.readyState !== 1 || !nameToLoc) return;
   const ids = [...pendingChecks].map(n => nameToLoc[n]).filter(id => id !== undefined && !checked.has(id));
   pendingChecks.clear();
-  if (ids.length) { send([{ cmd: "LocationChecks", locations: ids }]); ids.forEach(i => checked.add(i)); }
+  if (ids.length) { send([{ cmd: "LocationChecks", locations: ids }]); ids.forEach(i => checked.add(i)); if (started) sfx("quest"); }
 }
 function resendAllChecks() {
   for (const k of Object.keys(P)) {
@@ -469,7 +469,7 @@ function applyItems(quiet = false) { // quiet: loading a save, so items that cam
   for (; S.applied < received.length; S.applied++) {
     const it = received[S.applied], name = it.name ?? itemIdToName[it.item];
     const effect = oneShot(name);
-    if (started && !quiet) receivedPopup(it, name, effect);
+    if (started && !quiet) { receivedPopup(it, name, effect); if (itemKind(name) === "prog") sfx("levelup"); }
   }
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || selected;
 }
@@ -594,6 +594,7 @@ function soloChecks() { // a check in solo hands out the item placed there
     got = dirty = true;
   }
   pendingChecks.clear();
+  if (got && started) sfx("quest");
   if (got) { applyItems(); if (started) render(); }
 }
 const soloSaved = () => { try { const x = JSON.parse(lsGet(SOLO_KEY) || "null"); return x?.v === SAVE_VERSION && x.solo ? x : null; } catch { return null; } };
@@ -1049,7 +1050,7 @@ function textTip(text) { // "Title: details" shows the title in gold on its own 
   return i > 0 && i < 40 ? `<div class="tt-name tt-gold">${esc(text.slice(0, i))}</div><div>${esc(rest[0].toUpperCase() + rest.slice(1))}</div>` : `<div>${esc(text)}</div>`;
 }
 let tipFor = null;
-function showTip(el, x, y) {
+function showTip(el, x, y, above = false) {
   let tt = $("tt");
   if (!tt) { tt = document.createElement("div"); tt.id = "tt"; tt.className = "tt"; tt.setAttribute("role", "tooltip"); document.body.append(tt); }
   if (el.title) { el.dataset.tip = el.title; el.removeAttribute("title"); }   // no browser tooltip on top of ours
@@ -1062,7 +1063,9 @@ function showTip(el, x, y) {
   tt.style.left = "0px";   // measure at full width: near the right edge the browser would squish it
   const pad = 14, w = tt.offsetWidth, h = tt.offsetHeight;
   tt.style.left = Math.min(x + pad, innerWidth - w - 6) + "px";
-  tt.style.top = (y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
+  // touch: above the finger so it isn't hidden under it
+  tt.style.top = (above ? (y - h - 40 < 6 ? y + 40 : y - h - 40) : y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
+  if (above) tt.style.left = Math.max(6, Math.min(x - w / 2, innerWidth - w - 6)) + "px";
 }
 function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; const tt = $("tt"); if (tt) tt.hidden = true; }
 let mouse = null;
@@ -1078,8 +1081,116 @@ document.addEventListener("pointermove", ev => {
 document.addEventListener("pointerleave", () => { mouse = null; hideTip(); });
 // after a refresh replaced what you're pointing at, put the tooltip back on the new one
 function refreshTip() { if (tipFor && !tipFor.isConnected) { tipFor = null; if (mouse) tipAt(mouse.x, mouse.y); else hideTip(); } }
-document.addEventListener("pointerdown", ev => { if (ev.pointerType !== "mouse") hideTip(); });
+// touch: hold something to see its tooltip; lifting the finger after a hold doesn't click it
+let press = null, pressShown = false;
+document.addEventListener("pointerdown", ev => {
+  if (ev.pointerType === "mouse") return;
+  hideTip(); clearTimeout(press?.timer); pressShown = false;
+  const el = ev.target.closest?.("[title], [data-tip], [data-item]");
+  if (!el) { press = null; return; }
+  const x = ev.clientX, y = ev.clientY;
+  press = { x, y, timer: setTimeout(() => { if (el.isConnected) { showTip(el, x, y, true); pressShown = true; navigator.vibrate?.(10); } }, 400) };
+});
+document.addEventListener("pointermove", ev => {
+  if (press && ev.pointerType !== "mouse" && Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > 10) { clearTimeout(press.timer); press = null; }
+});
+["pointerup", "pointercancel"].forEach(t => document.addEventListener(t, ev => { if (ev.pointerType !== "mouse" && press) { clearTimeout(press.timer); press = null; } }));
+document.addEventListener("click", ev => { if (pressShown) { pressShown = false; ev.preventDefault(); ev.stopPropagation(); } }, true);
+document.addEventListener("contextmenu", ev => { if (pressShown || press) ev.preventDefault(); });
 document.addEventListener("scroll", hideTip, true);
+
+// ---- sound and music, streamed from Wowhead like the icons --------------------------------------
+const SND = "https://wow.zamimg.com/sound-ids/classic/enus/";
+const SFX = { levelup: SND + "249/569593/LevelUp.ogg", quest: SND + "143/567439/iQuestComplete.ogg" };
+const MUSIC = [   // Elwynn Forest (Forest Day) and Mulgore (Plains Day)
+  "244/53492/DayForest01.mp3", "245/53493/DayForest02.mp3", "246/53494/DayForest03.mp3",
+  "176/53680/DayPlains01.mp3", "177/53681/DayPlains02.mp3"].map(f => SND + f);
+const RAG_MUSIC = [SND + "233/53225/battle01.mp3"];   // fighting Ragnaros: the battle music of his lair, on repeat
+// volume per kind: 0 muted, 0.5 half, 1 full (the footer buttons cycle mute -> full -> half -> mute)
+const audioLevel = (k, def) => { const v = parseFloat(lsGet("skillup:" + k)); return v === 0 || v === .5 || v === 1 ? v : def; };
+const audioOn = { sfx: audioLevel("sfx", 1), music: audioLevel("music", 0) };
+let sfxNext = 0, questTimer = null, questAt = -1e9;
+function sfx(name) {
+  if (!audioOn.sfx) return;
+  // a check that turns out to be your own item plays one sound, not both: the quest sound waits a moment,
+  // and the item's sound replaces it (or is skipped if the quest sound already played)
+  if (name === "quest") {
+    if (!questTimer) questTimer = setTimeout(() => { questTimer = null; questAt = performance.now(); queueSfx("quest"); }, 700);
+    return;
+  }
+  if (questTimer) { clearTimeout(questTimer); questTimer = null; }
+  else if (performance.now() - questAt < 1500) return;
+  queueSfx(name);
+}
+function queueSfx(name) {   // back to back sounds play one after the other instead of on top of each other
+  const now = performance.now(), wait = Math.max(0, sfxNext - now);
+  sfxNext = now + wait + 900;
+  setTimeout(() => { if (!audioOn.sfx) return; const a = new Audio(SFX[name]); a.volume = .5 * audioOn.sfx; a.play().catch(() => {}); }, wait);
+}
+let musicEl = null, musicTrack = -1, musicLast = -1, musicGap = null, ragMusic = false, musicFade = null;
+function playMusic() {
+  clearTimeout(musicGap); clearInterval(musicFade);
+  if (!audioOn.music) { musicEl?.pause(); return; }
+  if (!musicEl) {
+    musicEl = new Audio();
+    musicEl.addEventListener("ended", () => { musicTrack = -1; musicGap = setTimeout(playMusic, ragMusic ? 0 : 15000); });   // a short quiet between songs, like in game (none mid-fight)
+  }
+  musicEl.volume = .3 * audioOn.music;
+  if (musicTrack < 0) {
+    const list = ragMusic ? RAG_MUSIC : MUSIC;
+    let url; do url = list[Math.floor(Math.random() * list.length)]; while (url === musicLast && list.length > 1);
+    musicTrack = 0; musicLast = musicEl.src = url; musicEl.loop = ragMusic;
+  }
+  musicEl.play().catch(() => document.addEventListener("pointerdown", playMusic, { once: true }));   // browsers wait for a tap before playing
+}
+// the Ragnaros fight gets its own music; the zone music comes back after it (the old song fades out first)
+function musicForFight() {
+  const rag = S?.field?.kind === "ragnaros";
+  if (rag === ragMusic) return;
+  ragMusic = rag; musicTrack = -1;
+  if (!audioOn.music || !musicEl) return;
+  clearTimeout(musicGap); clearInterval(musicFade);
+  if (musicEl.paused) return playMusic();
+  musicFade = setInterval(() => {
+    musicEl.volume = Math.max(0, musicEl.volume - .03 * audioOn.music);
+    if (musicEl.volume <= 0) playMusic();
+  }, 100);
+}
+// while you fight, the creature growls or swings every so often (and once when the fight starts)
+let foeSnd = { who: null, next: 0 };
+function combatSounds() {
+  const a = S && (S.field || S.ambushing) ? actionOf("field") : null;
+  const who = a?.kind === "mob" ? a.entry : a?.kind === "ragnaros" ? GD.boss : null;
+  const now = performance.now();
+  if (!who?.sounds?.length || !audioOn.sfx || document.hidden) { foeSnd.who = null; return; }
+  if (foeSnd.who === who.name && now < foeSnd.next) return;
+  const aggro = foeSnd.who === who.name ? [] : who.sounds.filter(f => /Aggro/.test(f));
+  const list = aggro.length ? aggro : who.sounds;
+  const el = new Audio(SND + list[Math.floor(Math.random() * list.length)]); el.volume = .3 * audioOn.sfx; el.play().catch(() => {});
+  foeSnd = { who: who.name, next: now + 20000 + Math.random() * 15000 };   // every 20 to 35 seconds
+}
+function renderAudio() {
+  for (const k of ["sfx", "music"]) {
+    const b = $("snd-" + k);
+    if (!b) continue;
+    b.classList.toggle("off", !audioOn[k]);
+    b.classList.toggle("half", audioOn[k] === .5);
+    b.setAttribute("aria-pressed", !!audioOn[k]);
+    b.title = `${k === "music" ? "Music" : "Sound effects"}: ${audioOn[k] === 1 ? "full volume" : audioOn[k] ? "half volume" : "off"}`;
+  }
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.("[data-audio]");
+  if (!b) return;
+  const k = b.dataset.audio;
+  const was = audioOn[k];
+  audioOn[k] = audioOn[k] === 0 ? 1 : audioOn[k] === 1 ? .5 : 0; lsSet("skillup:" + k, String(audioOn[k]));
+  if (k === "music") {   // muting pauses; turning it back on picks up where the song was
+    if (!audioOn.music || !was) playMusic();
+    else if (musicEl) musicEl.volume = .3 * audioOn.music;
+  }
+  renderAudio(); hideTip();
+});
 
 // ---- the ambush: a full-screen fight ------------------------------------------------------------
 let ambushView = null;   // { name, result: null | "won" | "lost", hidden }
@@ -1419,6 +1530,7 @@ function startGame() {
   started = true;
   $("connect").hidden = true;
   ["top", "vtabs", "game", "foot"].forEach(id => $(id).hidden = false);
+  renderAudio(); playMusic();
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || "combat";
   tab = rankTabFor(selected);
   catchUpOffline();
@@ -1441,7 +1553,7 @@ function tick() {
   if (!S.goalSent && !goalDone()) S.played = (S.played || 0) + dt;   // time played with the page open, up to the goal
   advance(dt, false);
   if (S.field || S.work) dirty = true;
-  flushChecks(); checkGoal();
+  flushChecks(); checkGoal(); combatSounds(); musicForFight();
   renderAcc += dt;
   renderSlots();
   if (renderAcc >= 1) { renderAcc = 0; render(); }

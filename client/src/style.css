@@ -422,6 +422,23 @@ body { display: flex; flex-direction: column; }
 .site-foot .ver { position: absolute; right: 0; bottom: 0; margin: 0; }
 @media (max-width: 780px) { .site-foot .ver { position: static; margin: 8px auto 0; } }
 
+/* music and sound toggles, bottom left of the footer: full, half (½) or off (struck through) */
+.audio-tg { position: absolute; left: 0; bottom: -4px; display: flex; gap: 4px; }
+.audio-tg button { position: relative; width: 28px; height: 28px; display: grid; place-items: center; background: none; border: 1px solid transparent; border-radius: 4px; color: var(--gold); }
+.audio-tg button:hover, .audio-tg button:focus-visible { border-color: var(--steel-dk); outline: none; }
+.audio-tg svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.audio-tg circle, .audio-tg path:not(.wave) { fill: currentColor; }
+.audio-tg #snd-music path { fill: none; }
+/* half volume: the speaker loses its outer wave, and both get a small ½ */
+.audio-tg button.half .wave { d: path("M16.5 8.5a5 5 0 0 1 0 7"); }
+.audio-tg button.half::after { content: "½"; position: absolute; right: -1px; bottom: -3px; font-size: 10px; font-weight: 800; line-height: 1; color: var(--gold); text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.audio-tg button.off { color: var(--mute); opacity: .7; }
+.audio-tg button.off::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; background: currentColor; transform: rotate(-45deg); }
+@media (max-width: 780px) { .audio-tg { position: static; justify-content: center; margin-top: 8px; } }
+
+/* hold-to-see tooltips on touch: no text selection or image menu while holding */
+@media (pointer: coarse) { [title], [data-tip], [data-item], .eq img, .icon { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; } }
+
 /* solo play on the connect screen */
 .solo { margin-top: 16px; border-top: 1px solid var(--steel-dk); padding-top: 12px; display: grid; gap: 8px; }
 .solo .or { text-align: center; color: var(--mute); font-size: 13px; }

@@ -25,9 +25,9 @@ KEEP = {
     "materials": ("name", "icon", "quality", "sell", "profession", "rank", "slot", "unlock"),
     "recipes": ("name", "icon", "quality", "sell", "profession", "rank", "slot", "unlock", "role", "reagents"),
     "fire_resistance_set": ("name", "icon", "quality", "profession", "slot", "unlock", "reagents", "fire_resistance"),
-    "mobs": ("name", "level", "classification", "trait", "boss", "zone", "rank", "slot", "unlock", "image", "cloth"),
+    "mobs": ("name", "level", "classification", "trait", "boss", "zone", "rank", "slot", "unlock", "image", "cloth", "sounds"),
 }
-SECTIONS = ("ranks", "professions", "traits", "ui_icons", *KEEP)
+SECTIONS = ("ranks", "professions", "traits", "ui_icons", "boss", *KEEP)
 
 
 def game_data() -> dict:
