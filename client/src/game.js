@@ -1148,8 +1148,8 @@ function queueSfx(name) {   // back to back sounds play one after the other inst
   sfxNext = now + wait + 900;
   setTimeout(() => { if (!audioOn.sfx) return; const a = new Audio(SFX[name]); a.volume = .5 * audioOn.sfx; a.play().catch(() => {}); }, wait);
 }
-let musicEl = null, musicTrack = -1, musicLast = -1, musicGap = null, ragMusic = false, musicFade = null, musicWaitTap = false;
-function nextSong(delay) { musicTrack = -1; clearTimeout(musicGap); musicGap = setTimeout(playMusic, delay); }
+let musicEl = null, songLoaded = false, musicLast = "", musicGap = null, ragMusic = false, musicFade = null, musicWaitTap = false;
+function nextSong(delay) { songLoaded = false; clearTimeout(musicGap); musicGap = setTimeout(playMusic, delay); }
 function playMusic() {
   clearTimeout(musicGap); clearInterval(musicFade);
   if (!audioOn.music) { musicEl?.pause(); return; }
@@ -1159,10 +1159,10 @@ function playMusic() {
     musicEl.addEventListener("error", () => { if (audioOn.music) nextSong(5000); });   // a song that won't load: try another
   }
   musicEl.volume = .3 * audioOn.music;
-  if (musicTrack < 0) {
+  if (!songLoaded) {
     const list = ragMusic ? RAG_MUSIC : MUSIC;
     let url; do url = list[Math.floor(Math.random() * list.length)]; while (url === musicLast && list.length > 1);
-    musicTrack = 0; musicLast = musicEl.src = url; musicEl.loop = ragMusic;
+    songLoaded = true; musicLast = musicEl.src = url; musicEl.loop = ragMusic;
   }
   musicEl.play().catch(err => {
     if (err.name !== "NotAllowedError" || musicWaitTap) return;   // other failures are handled by "error"
@@ -1174,7 +1174,7 @@ function playMusic() {
 function musicForFight() {
   const rag = S?.field?.kind === "ragnaros";
   if (rag === ragMusic) return;
-  ragMusic = rag; musicTrack = -1;
+  ragMusic = rag; songLoaded = false;
   if (!audioOn.music || !musicEl) return;
   clearTimeout(musicGap); clearInterval(musicFade);
   if (musicEl.paused) return playMusic();
@@ -1450,6 +1450,14 @@ function renderGoal() {
   if (showRag && !S.ragnarosWon) html += `<ul><li class="mute">Your win chance comes from your Weapon DPS, Health and Fire Resistance.</li></ul>`;
   $("goal").html = html + `</div>`;
 }
+// While a button is pressed, the timed redraws wait: replacing the button under the mouse or finger
+// would lose the click. One entry per finger; 10s at most, in case a release never reaches the page.
+const pressed = new Map();   // pointerId -> when it went down on a button
+const holding = () => [...pressed.values()].some(t => performance.now() - t < 10000);
+document.addEventListener("pointerdown", ev => { if (ev.button === 0 && ev.target.closest?.("button")) pressed.set(ev.pointerId, performance.now()); }, true);
+["pointerup", "pointercancel", "lostpointercapture"].forEach(t => document.addEventListener(t, ev => pressed.delete(ev.pointerId), true));
+document.addEventListener("dragstart", () => pressed.clear(), true);
+window.addEventListener("blur", () => pressed.clear());
 function render() {
   if (S && S.gold > GOLD_CAP) S.gold = GOLD_CAP;
   if (!S) return;
@@ -1583,6 +1591,6 @@ function tick() {
   if (S.field || S.work) dirty = true;
   flushChecks(); checkGoal(); combatSounds(); musicForFight();
   renderAcc += dt;
-  renderSlots();
-  if (renderAcc >= 1) { renderAcc = 0; render(); }
+  if (holding()) return;   // catches up on the next tick after you let go
+  if (renderAcc >= 1) { renderAcc = 0; render(); } else renderSlots();
 }
