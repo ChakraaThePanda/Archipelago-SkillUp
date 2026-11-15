@@ -645,6 +645,8 @@ class Sim:
         fr = sum(f.get("fire_resistance") or 0 for f in FR_SET if f["name"] in self.fr_done)
         fr += r["potion_fr"] if "Greater Fire Protection Potion" in self.fr_done else 0
         fr += r["food_fr"] if "Dragonbreath Chili" in self.fr_done else 0
+        if not any(rank >= 3 for rank in self.armor.values()):   # no chance at all without epic gear
+            return 0.0
         dps, hp = self.weapon_dps("Tough"), self.max_hp()
         return (r["max_win"] * min(1, dps / r["dps_need"]) ** 2 * min(1, hp / r["hp_need"])
                 * (r["fr_floor"] + (1 - r["fr_floor"]) * min(1, fr / r["fr_need"]) ** 2))

@@ -61,7 +61,7 @@ function newSave() {
   return { v: SAVE_VERSION, savedAt: Date.now(), clock: 0, level: per(1), xp: per(0), speedLv: per(0), xpLv: per(0),
     gold: 0, stock: {}, bags: 0, crafted: [], firsts: [], weapons: {}, armor: {}, tools: {}, supplies: {}, buffs: {},
     debuffs: {}, rested: 0, field: null, fieldT: 0, work: null, workT: 0, applied: 0, bagBonus: 0, sellBonus: 0,
-    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, goalSent: false, deaths: 0, deathStreak: 0,
+    clothAcc: 0, unsold: 0, corpseUntil: 0, ambush: 0, ambushing: null, ragnarosWon: false, ragReadyAt: 0, goalSent: false, deaths: 0, deathStreak: 0,
     trinket: false, trinketNew: false, trinketBonus: 0, played: 0 };
 }
 
@@ -344,7 +344,8 @@ function ragnarosOdds() {
   if ((S.supplies["Fire protection"] || []).length) fr += r.potion_fr;
   if ((S.supplies["Fire food"] || []).length) fr += r.food_fr;
   const dps = weaponDps("Tough"), hp = maxHp();
-  const win = r.max_win * Math.min(1, dps / r.dps_need) ** 2 * Math.min(1, hp / r.hp_need)
+  const epic = worn.some(n => BY_NAME[n].legendary || BY_NAME[n].quality >= 4);   // no chance at all without epic gear
+  const win = !epic ? 0 : r.max_win * Math.min(1, dps / r.dps_need) ** 2 * Math.min(1, hp / r.hp_need)
     * (r.fr_floor + (1 - r.fr_floor) * Math.min(1, fr / r.fr_need) ** 2);
   return { win, fr, dps, hp };
 }
@@ -1432,6 +1433,11 @@ function renderPane() {
   }
 }
 const needLine = (have, want, label, tip) => `<li class="${have >= want ? "ok" : "no"}" title="${tip}">${have >= want ? "✓" : "·"} ${label} ${Math.round(have).toLocaleString("en-US")} / ${want.toLocaleString("en-US")}</li>`;
+function ragButton(odds) {
+  const fighting = S.field?.kind === "ragnaros", wait = S.ragReadyAt - S.clock;
+  const label = !fighting && wait > 0 ? `Ready in ${Math.floor(Math.ceil(wait) / 60)}:${String(Math.ceil(wait) % 60).padStart(2, "0")}` : `Fight Ragnaros · Win ${pct(odds.win)}`;
+  return `<li><button class="wbtn ragbtn" data-rag="1" ${fighting || wait > 0 ? "disabled" : ""}>${label}</button></li>`;
+}
 function renderGoal() {
   const g = slotData.goal || "ragnaros", need = slotData.professions_to_master || 6;
   const showRag = g !== "master_professions", showMaster = g !== "ragnaros";
@@ -1444,7 +1450,7 @@ function renderGoal() {
       ${needLine(odds.dps, BAL.ragnaros.dps_need, "Weapon DPS", "Your best weapon against Ragnaros: an Axe or Thunderfury does the most. Unlike the DPS on your character, Shop speed doesn't count in this fight.")}
       ${needLine(odds.hp, BAL.ragnaros.hp_need, "Health", "Health comes from your armor.")}
       ${needLine(odds.fr, BAL.ragnaros.fr_need, "Fire Resistance", "Fire Resistance comes from the legendary armor, Greater Fire Protection Potion and Dragonbreath Chili.")}
-      ${S.ragnarosWon ? `<li class="ok">✓ Ragnaros defeated</li>` : moltenCore ? `<li><button class="wbtn ragbtn" data-rag="1" ${S.field?.kind === "ragnaros" ? "disabled" : ""}>Fight Ragnaros · win ${pct(odds.win)}</button></li>` : ""}</ul>`;
+      ${S.ragnarosWon ? `<li class="ok">✓ Ragnaros defeated</li>` : moltenCore ? ragButton(odds) : ""}</ul>`;
   if (showMaster) html += `<div class="title" style="font-size:15px;margin-top:6px">Master Professions</div><ul>
       <li><b>Professions at 300: ${masteredCount()} / ${need}</b></li></ul>`;
   if (showRag && !S.ragnarosWon) html += `<ul><li class="mute">Your win chance comes from your Weapon DPS, Health and Fire Resistance.</li></ul>`;
@@ -1482,7 +1488,12 @@ document.addEventListener("click", ev => {
   if (t.dataset.buy) { const [k, kind] = t.dataset.buy.split(":"); buy(k, kind); dirty = true; return; }
   if (t.dataset.sell) { sellAll(t.dataset.sell); dirty = true; return; }
   if (t.dataset.sellall) { sellEverything(); dirty = true; return; }
-  if (t.dataset.rag) { S.field = { kind: "ragnaros", name: "Ragnaros" }; S.fieldT = 0; dirty = true; render(); return; }
+  if (t.dataset.rag) {   // every attempt starts the cooldown, even one you leave or lose at once
+    if (S.field?.kind === "ragnaros" || S.clock < S.ragReadyAt) return;
+    S.field = { kind: "ragnaros", name: "Ragnaros" }; S.fieldT = 0; S.ragReadyAt = S.clock + BAL.ragnaros.cooldown_minutes * 60;
+    ragFate(S.field); save();   // rolled and saved right away: a refresh or crash must not reroll it or reset the cooldown
+    dirty = true; render(); return;
+  }
 });
 // Which rank to show when opening a profession: always the one you last looked at. The first time,
 // the highest rank you own with something orange or yellow (still worth XP), else anything doable.

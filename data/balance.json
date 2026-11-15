@@ -165,7 +165,7 @@
 
   "ragnaros": {
     "_about": "Ragnaros fight: power needed and Fire Resistance needed for a good win chance.",
-    "_formula": "win chance = max_win * min(1, DPS/dps_need)^2 * min(1, HP/hp_need) * (fr_floor + (1 - fr_floor) * min(1, FR/fr_need)^2). FR = Classic FR of the set pieces worn + potion + food. A fight lasts fight_minutes; a loss also costs the death time.",
+    "_formula": "win chance = 0 without at least one epic (or legendary) armor piece worn, else max_win * min(1, DPS/dps_need)^2 * min(1, HP/hp_need) * (fr_floor + (1 - fr_floor) * min(1, FR/fr_need)^2). FR = Classic FR of the set pieces worn + potion + food. A fight lasts fight_minutes; a loss also costs the death time.",
     "dps_need": 120,
     "hp_need": 1100,
     "fr_need": 160,
@@ -175,6 +175,8 @@
     "_fr_armor_rank": "the Fire Resistance set is the best armor in the game (legendary): its pieces count as rank 3.5, above Artisan, and replace Artisan pieces as they are crafted",
     "fr_floor": 0.05,
     "max_win": 0.95,
-    "fight_minutes": 5
+    "fight_minutes": 5,
+    "cooldown_minutes": 5,
+    "_cooldown_minutes": "time between attempts, counted from when a fight starts"
   }
 }
