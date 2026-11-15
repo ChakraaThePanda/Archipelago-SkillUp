@@ -466,11 +466,13 @@ function applyItems(quiet = false) { // quiet: loading a save, so items that cam
     if (name === "Molten Core") moltenCore = true;
   }
   if (!S) return;
+  let levelUpSnd = false;   // one sound for a whole batch (a release can send dozens at once)
   for (; S.applied < received.length; S.applied++) {
     const it = received[S.applied], name = it.name ?? itemIdToName[it.item];
     const effect = oneShot(name);
-    if (started && !quiet) { receivedPopup(it, name, effect); if (itemKind(name) === "prog") sfx("levelup"); }
+    if (started && !quiet) { receivedPopup(it, name, effect); if (name && itemKind(name) === "prog") levelUpSnd = true; }
   }
+  if (levelUpSnd) sfx("levelup");
   if (!learned(selected)) selected = PROFS.find(p => learned(p.key))?.key || selected;
 }
 // Applies one item and returns what it did, in plain words (HTML), for its popup. "" = nothing to say.
@@ -1085,13 +1087,14 @@ function refreshTip() {
   if (!tipFor || tipFor.isConnected) return;
   tipFor = null;
   if (mouse) tipAt(mouse.x, mouse.y);
-  else if (touchAt) { const { x, y } = touchAt; tipAt(x, y, undefined, true); if (tipFor) touchAt = { x, y }; }
+  else if (touchAt) { const { x, y } = touchAt; tipAt(x, y, undefined, true); if (tipFor) touchAt = { x, y }; else hideTip(); }
   else hideTip();
 }
 // touch: hold something to see its tooltip; lifting the finger after a hold doesn't click it
-let press = null, pressShown = false;
+let press = null, pressShown = false, lastPointer = "mouse";
 document.addEventListener("pointerdown", ev => {
-  if (ev.pointerType === "mouse") return;
+  lastPointer = ev.pointerType;
+  if (ev.pointerType === "mouse") { pressShown = false; return; }
   hideTip(); clearTimeout(press?.timer); pressShown = false;
   const el = ev.target.closest?.("[title], [data-tip], [data-item]");
   if (!el) { press = null; return; }
@@ -1110,8 +1113,7 @@ document.addEventListener("click", ev => { if (pressShown) { pressShown = false;
 // that long press to open the tooltip right away (text fields and the console keep their menu)
 document.addEventListener("contextmenu", ev => {
   if (ev.target.closest?.("input, textarea, .log")) return;
-  const touch = press || matchMedia("(pointer: coarse)").matches;
-  if (!touch) return;
+  if (lastPointer === "mouse") return;   // a right-click keeps the normal menu
   ev.preventDefault();
   const el = ev.target.closest?.("[title], [data-tip], [data-item]");
   if (el && !pressShown) { clearTimeout(press?.timer); press = null; touchTip(el, ev.clientX, ev.clientY); }
@@ -1146,13 +1148,15 @@ function queueSfx(name) {   // back to back sounds play one after the other inst
   sfxNext = now + wait + 900;
   setTimeout(() => { if (!audioOn.sfx) return; const a = new Audio(SFX[name]); a.volume = .5 * audioOn.sfx; a.play().catch(() => {}); }, wait);
 }
-let musicEl = null, musicTrack = -1, musicLast = -1, musicGap = null, ragMusic = false, musicFade = null;
+let musicEl = null, musicTrack = -1, musicLast = -1, musicGap = null, ragMusic = false, musicFade = null, musicWaitTap = false;
+function nextSong(delay) { musicTrack = -1; clearTimeout(musicGap); musicGap = setTimeout(playMusic, delay); }
 function playMusic() {
   clearTimeout(musicGap); clearInterval(musicFade);
   if (!audioOn.music) { musicEl?.pause(); return; }
   if (!musicEl) {
     musicEl = new Audio();
-    musicEl.addEventListener("ended", () => { musicTrack = -1; musicGap = setTimeout(playMusic, ragMusic ? 0 : 15000); });   // a short quiet between songs, like in game (none mid-fight)
+    musicEl.addEventListener("ended", () => nextSong(ragMusic ? 0 : 15000));   // a short quiet between songs, like in game (none mid-fight)
+    musicEl.addEventListener("error", () => { if (audioOn.music) nextSong(5000); });   // a song that won't load: try another
   }
   musicEl.volume = .3 * audioOn.music;
   if (musicTrack < 0) {
@@ -1160,7 +1164,11 @@ function playMusic() {
     let url; do url = list[Math.floor(Math.random() * list.length)]; while (url === musicLast && list.length > 1);
     musicTrack = 0; musicLast = musicEl.src = url; musicEl.loop = ragMusic;
   }
-  musicEl.play().catch(() => document.addEventListener("pointerdown", playMusic, { once: true }));   // browsers wait for a tap before playing
+  musicEl.play().catch(err => {
+    if (err.name !== "NotAllowedError" || musicWaitTap) return;   // other failures are handled by "error"
+    musicWaitTap = true;   // browsers wait for a tap before playing
+    document.addEventListener("pointerdown", () => { musicWaitTap = false; playMusic(); }, { once: true });
+  });
 }
 // the Ragnaros fight gets its own music; the zone music comes back after it (the old song fades out first)
 function musicForFight() {
@@ -1181,7 +1189,8 @@ function combatSounds() {
   const a = S && (S.field || S.ambushing) ? actionOf("field") : null;
   const who = a?.kind === "mob" ? a.entry : a?.kind === "ragnaros" ? GD.boss : null;
   const now = performance.now();
-  if (!who?.sounds?.length || !audioOn.sfx || document.hidden) { foeSnd.who = null; return; }
+  if (!who?.sounds?.length) { foeSnd.who = null; return; }
+  if (!audioOn.sfx || document.hidden) return;
   if (foeSnd.who === who.name && now < foeSnd.next) return;
   const aggro = foeSnd.who === who.name ? [] : who.sounds.filter(f => /Aggro/.test(f));
   const list = aggro.length ? aggro : who.sounds;

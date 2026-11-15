@@ -263,7 +263,8 @@ def npc_sounds(npc: int) -> list[str]:
         page = r.read().decode("utf-8", "replace")
     files = sorted({f"{a}/{b}/{f}" for a, b, f in _SOUND_RE.findall(page)
                     if re.search(r"Attack|Aggro|Wound", f) and not re.search(r"Death|Stand|Loop|Slay", f)})
-    key.write_text(json.dumps(files), encoding="utf-8")
+    if files:   # an empty list is likely a rate limit or error page: look again next build
+        key.write_text(json.dumps(files), encoding="utf-8")
     time.sleep(0.3)
     return files
 

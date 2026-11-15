@@ -430,7 +430,7 @@ body { display: flex; flex-direction: column; }
 .audio-tg circle, .audio-tg path:not(.wave) { fill: currentColor; }
 .audio-tg #snd-music path { fill: none; }
 /* half volume: the speaker loses its outer wave, and both get a small ½ */
-.audio-tg button.half .wave { d: path("M16.5 8.5a5 5 0 0 1 0 7"); }
+.audio-tg button.half .wave2 { display: none; }
 .audio-tg button.half::after { content: "½"; position: absolute; right: -1px; bottom: -3px; font-size: 10px; font-weight: 800; line-height: 1; color: var(--gold); text-shadow: 0 0 2px #000, 0 0 2px #000; }
 .audio-tg button.off { color: var(--mute); opacity: .7; }
 .audio-tg button.off::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; background: currentColor; transform: rotate(-45deg); }
