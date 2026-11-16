@@ -452,10 +452,10 @@ function goalDone() {
   return g === "ragnaros" ? rag : g === "master_professions" ? mas : rag && mas;
 }
 function checkGoal(resend = false) {
-  if (solo && !S.goalSent && goalDone()) { S.goalSent = true; dirty = true; toast("Goal complete!"); log(`<span class="pl-me">You</span> completed your goal!`); }
+  if (solo && !S.goalSent && goalDone()) { S.goalSent = true; dirty = true; toast("Goal complete!"); queueSfx("victory"); log(`<span class="pl-me">You</span> completed your goal!`); }
   if ((S.goalSent && !resend) || !goalDone() || !ws || ws.readyState !== 1) return;
   send([{ cmd: "StatusUpdate", status: 30 }]);
-  if (!S.goalSent) toast("Goal complete!");
+  if (!S.goalSent) { toast("Goal complete!"); queueSfx("victory"); }
   S.goalSent = true;
 }
 
@@ -1132,7 +1132,7 @@ document.addEventListener("scroll", hideTip, true);
 // ---- sound and music, streamed from Wowhead like the icons --------------------------------------
 const SND = "https://wow.zamimg.com/sound-ids/classic/enus/";
 const SFX = { levelup: SND + "249/569593/LevelUp.ogg", quest: SND + "143/567439/iQuestComplete.ogg",
-  death: SND + "164/542372/HumanMaleMainDeathA.ogg" };
+  death: SND + "164/542372/HumanMaleMainDeathA.ogg", victory: SND + "78/569678/PVPVictoryAlliance.ogg" };
 const MUSIC = [   // Elwynn Forest (Forest Day) and Mulgore (Plains Day)
   "244/53492/DayForest01.mp3", "245/53493/DayForest02.mp3", "246/53494/DayForest03.mp3",
   "176/53680/DayPlains01.mp3", "177/53681/DayPlains02.mp3"].map(f => SND + f);
