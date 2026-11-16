@@ -78,22 +78,22 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; padding: 9px 16px; }
 .logo { font-size: 26px; font-weight: 700; letter-spacing: .05em; line-height: 1; }
 #to-menu { background: none; border: 0; padding: 0; }
-.hstat { display: flex; align-items: center; gap: 8px; }
+.hstat { display: flex; align-items: baseline; gap: 8px; } /* label and value share a baseline */
 .hstat .k { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
 /* fixed-width header values, so a number gaining or losing a digit doesn't shove its neighbours */
 #gold { min-width: calc(9ch + 50px); }
 #gold .n { min-width: 2ch; text-align: right; }
 #gold .n:first-child { min-width: 0; }
-#bags { min-width: 8.5ch; }
-#top .h-rested { width: 190px; flex: none; }
-#rested { min-width: 6.5ch; text-align: right; }
 #checks { min-width: 9ch; }
 .hstats { display: contents; } /* desktop: the stats sit in the header row like everything else */
-/* narrower desktops: drop the server address and tighten the gaps so the header stays on one line */
-@media (max-width: 1400px) { .top { column-gap: 18px; } .top .who #where { display: none; } }
-#rested .u-short { display: none; }
-.who { background: none; border: 0; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left; line-height: 1.2; }
-.who > span:last-child { display: flex; align-items: center; gap: 5px; }
+.hsep { width: 1px; height: 30px; background: var(--steel-dk); } /* between your name and the stats */
+/* narrower desktops: drop the server address so the header stays on one line */
+@media (max-width: 1320px) { .top .who #where { display: none; } }
+.who { background: none; border: 0; padding: 0; display: flex; align-items: center; gap: 8px; text-align: left; line-height: 1.2; white-space: nowrap; }
+.who b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* the game speed, after your name */
+.speed { flex: none; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; padding: 2px 6px 1px; border-radius: 3px;
+  color: var(--gold); border: 1px solid var(--gold-dk); background: rgba(255, 209, 0, .07); }
 .who:hover b { color: var(--gold); }
 .online { width: 9px; height: 9px; border-radius: 50%; background: var(--hp); box-shadow: 0 0 8px var(--hp); flex: none; }
 
@@ -212,14 +212,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .glbar i { position: absolute; top: -3px; width: 3px; height: 12px; background: #fff; box-shadow: 0 0 0 1px #000; transform: translateX(-50%); }
 .stats .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
 .subh { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 16px 0 7px; }
-.subh span { text-transform: none; letter-spacing: 0; }
 .irow { display: flex; flex-wrap: wrap; gap: 9px; }
 .irow .eq { width: 42px; height: 42px; }
+/* potions and food: a slot per kind, pips under it for how many are left */
+.sup { display: grid; gap: 4px; }
+.stock { display: flex; gap: 2px; }
+.stock i { flex: 1; height: 4px; border-radius: 1px; background: var(--gold); box-shadow: 0 0 0 1px #000; }
+.stock i.off { background: #3b4060; }
+.blbl { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin: 2px 0 5px; }
+.blbl ~ .blbl { margin-top: 10px; }
 .weapons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-size: 12.5px; color: var(--mute); }
 .weapons .eq { width: 42px; height: 42px; margin: 0 auto 3px; }
 .weapons .now { color: var(--gold); }
-.timer { position: absolute; left: 0; right: 0; bottom: -1px; text-align: center; font-size: 11.5px; font-weight: 700; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
-.count { position: absolute; right: 3px; bottom: 0; font-size: 13px; font-weight: 700; text-shadow: 0 1px 2px #000; }
+.timer { position: absolute; left: 0; right: 0; bottom: -1px; text-align: center; color: #fff; font-size: 11.5px; font-weight: 700; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
 
 /* shop */
 .shophead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; color: var(--mute); font-size: 13.5px; padding-bottom: 8px; border-bottom: 1px solid var(--steel-dk); }
@@ -272,12 +277,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .footer-icon { width: 15px; height: 15px; fill: var(--gold); }
 .ldot { color: var(--gold); font-size: 9px; align-self: center; }
 
-@media (max-width: 1180px) { .grid { grid-template-columns: 232px minmax(0, 1fr); } .right { grid-column: 1 / -1; }
-  .right > .pane, .right > .goal { max-width: 420px; margin-inline: auto; } }
+/* tablets and phones: one column (one view at a time, see the tab bar below) */
+@media (max-width: 1180px) { .grid { grid-template-columns: minmax(0, 1fr); }
+  .right > .pane, .right > .goal { max-width: 420px; margin-inline: auto; }
+  #proflist { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; } #proflist .glabel { grid-column: 1 / -1; } }
 .right { width: 100%; min-width: 0; overflow: hidden; }
 .pane { overflow-wrap: anywhere; }
 @media (max-width: 520px) { .mobs { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 780px) { .grid { grid-template-columns: minmax(0, 1fr); } .slots { grid-template-columns: 1fr; }
+@media (max-width: 780px) { .slots { grid-template-columns: 1fr; }
   /* phone rows: name and check on top, materials full width, then pace and the button */
   .rows { display: block; padding: 0 6px 10px; }
   .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "icon name chk" "icon meta chk" "mats mats mats" "rate rate act";
@@ -287,7 +294,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .row > .chk { grid-area: chk; align-self: start; } .row .rate { grid-area: rate; text-align: left; align-self: center; } .row .rate br { display: none; }
   .row .rate > span { margin-left: 6px; } .row .act { grid-area: act; justify-self: end; }
   .mats li { white-space: normal; grid-template-columns: 18px minmax(0, 1fr) auto; }
-  #proflist { display: grid; grid-template-columns: 1fr 1fr; } #proflist .glabel { grid-column: 1 / -1; }
   .prof { padding: 6px 8px; } .prof .nm small { display: none; }
   .rtabs { gap: 4px; padding-inline: 10px; } .rtabs button { font-size: 12px; padding: 5px 2px; letter-spacing: -.01em; } .mini { margin-left: 0; } }
 
@@ -320,32 +326,26 @@ body { display: flex; flex-direction: column; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(18px); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; transition: opacity .4s; } .toast.out { transform: none; } }
 .legendary-lbl { color: #ff8000; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 10px 8px 2px; }
-@media (max-width: 780px) {
-  .hide-sm { display: none; }
-  /* phone header: logo, name and debuffs on top; a stat strip under them: gold, rested, checks */
-  .top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "logo who debuffs" "stats stats stats";
+@media (max-width: 1180px) {
+  /* tablet and phone header: logo, name and buffs on top; a stat strip under them: gold, checks, played */
+  .top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "logo who auras" "stats stats stats";
     gap: 8px 0; padding: 8px 12px; }
-  .top .hstats { grid-area: stats; display: grid; grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); align-items: center; gap: 10px;
+  .top .hstats { grid-area: stats; display: grid; grid-template-columns: repeat(3, minmax(max-content, 1fr)); align-items: center; gap: 10px;
     padding-top: 7px; border-top: 1px solid var(--steel-dk); }
-  .top .hstats > .hstat:not(.hide-sm) { display: grid; gap: 2px; justify-items: start; white-space: nowrap; }
-  .top .h-rested { justify-items: center !important; }
-  .top .h-checks { justify-items: end !important; }
+  .top .hstats > .hstat { display: grid; gap: 2px; justify-items: start; white-space: nowrap; }
+  .top .hstats > .hstat:nth-child(2) { justify-items: center; }
+  .top .hstats > .hstat:nth-child(3) { justify-items: end; }
   .top .hstats .k { letter-spacing: .1em; font-size: 10.5px; line-height: 1; }
-  #rested .u-long { display: none; } #rested .u-short { display: inline; }
+  .top .hstats b, #gold { font-size: 14px; }
   .top .logo { grid-area: logo; font-size: 22px; }
   .top .who { grid-area: who; min-width: 0; margin-left: 12px; }
-  .top .who > span:last-child { min-width: 0; overflow: hidden; }
-  .top .who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .top .who #where { display: none; }
-  .top .debuffs { grid-area: debuffs; margin-left: 12px; }
-  .top .debuff .icon { width: 24px; height: 24px; }
-  #top .h-rested { width: auto; }
-  .top .h-rested .rbar { display: none; }
-  #rested { min-width: 0; font-size: 14px !important; font-weight: 600; }
+  .top .who #where, .top .hsep { display: none; }
+  .top .auras { grid-area: auras; margin-left: 12px; }
+  .top .aura .icon { width: 24px; height: 24px; }
   #gold, #checks { min-width: 0; }
   /* phone: one view at a time, picked from the tab bar under the header */
   .vtabs:not([hidden]) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; position: sticky; top: 0; z-index: 20;
-    padding: 6px 8px; background: var(--bg, #05060f); border-bottom: 1px solid var(--steel-dk); }
+    padding: 6px 0; background: var(--bg, #05060f); border-bottom: 1px solid var(--steel-dk); }
   .vtabs button { background: #0b0e22; border: 1px solid var(--steel-dk); border-radius: 4px; color: var(--mute); padding: 8px 4px;
     font-family: var(--f-title); font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body[data-view="profs"] .vtabs [data-view="profs"], body[data-view="main"] .vtabs [data-view="main"],
@@ -353,6 +353,13 @@ body { display: flex; flex-direction: column; }
   body:not([data-view="profs"]) #profs, body:not([data-view="main"]) #main, body:not([data-view="panel"]) #panel { display: none; }
   #profs > .h2 { display: none; }
 }
+/* phones: the logo icon alone and the speed under your name, so the name has room */
+.nm-short { display: none; }
+@media (max-width: 600px) { .top .logo-txt { display: none; }
+  .vtabs .nm-long { display: none; } .vtabs .nm-short { display: inline; }
+  .top .who { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 7px; }
+  .top .who b, .top .who .speed { grid-column: 2; justify-self: start; max-width: 100%; }
+  .top .who .online { grid-row: 1 / span 2; } }
 
 .rtabs button.locked { opacity: .6; }
 @media (max-width: 780px) { .rtabs .lock { display: none; } }
@@ -390,11 +397,13 @@ body { display: flex; flex-direction: column; }
 @keyframes ambush-pulse { 50% { box-shadow: 0 0 18px rgba(220, 40, 40, .6); } }
 @media (prefers-reduced-motion: reduce) { .slot.ambushed, .ambush-ov { animation: none; } .sbar > i { transition: none; } }
 
-/* debuffs, top right of the header */
-.debuffs { margin-left: auto; display: flex; gap: 8px; }
-.debuffs:empty { display: none; }
-.debuff { display: grid; justify-items: center; gap: 1px; font-size: 11.5px; font-weight: 700; color: #ff8a7a; line-height: 1; }
-.debuff .icon { width: 28px; height: 28px; border: 1px solid #a01818; border-radius: 3px; box-shadow: 0 0 6px rgba(220, 40, 40, .5); }
+/* buffs (blue) and debuffs (red), top right of the header */
+.auras { margin-left: auto; display: flex; gap: 8px; }
+.auras:empty { display: none; }
+.aura { display: grid; justify-items: center; gap: 1px; font-size: 11.5px; font-weight: 700; line-height: 1; }
+.aura .icon { width: 28px; height: 28px; border-radius: 3px; }
+.aura.bad { color: #ff8a7a; } .aura.bad .icon { border: 1px solid #a01818; box-shadow: 0 0 6px rgba(220, 40, 40, .5); }
+.aura.buff { color: #8fb0ff; } .aura.buff .icon { border: 1px solid var(--rested); box-shadow: 0 0 6px rgba(63, 108, 255, .6); }
 
 /* tooltips, skinned like the game's: dark navy, silver border, item name in its quality color */
 .tt { position: fixed; z-index: 80; max-width: 290px; padding: 7px 10px 8px; pointer-events: none;

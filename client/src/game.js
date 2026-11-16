@@ -24,10 +24,11 @@ const GROUPS = [["Fighting", "combat"], ["Gathering", "gathering"], ["Crafting",
 const BY_KIND = Object.fromEntries(GROUPS.map(([, kind]) => [kind, PROFS.filter(p => p.kind === kind).sort((a, b) => a.name.localeCompare(b.name))]));
 const byKind = kind => BY_KIND[kind];
 const GEAR_PROFS = new Set(["blacksmithing", "leatherworking", "tailoring", "engineering"]);
-for (const r of GD.recipes) if (GEAR_PROFS.has(r.profession)) r.quality = r.rank + 1;   // white, green, blue, purple
+// gear, potions and food take the color of their rank: white, green, blue, purple
+for (const r of GD.recipes) if (GEAR_PROFS.has(r.profession) || r.profession === "alchemy" || r.profession === "cooking") r.quality = r.rank + 1;
 const TF = BAL.thunderfury;   // the legendary sword, crafted next to the Fire Resistance set
 GD.fire_resistance_set.push({ name: TF.name, icon: TF.icon, profession: TF.profession, slot: "Sword", unlock: TF.unlock, reagents: TF.reagents, weapon: true });
-for (const f of GD.fire_resistance_set) { f.legendary = true; f.rank = 3; if (GEAR_PROFS.has(f.profession)) f.quality = 5; }
+for (const f of GD.fire_resistance_set) { f.legendary = true; f.rank = 3; f.quality = 5; }
 const BY_NAME = Object.fromEntries([...GD.materials, ...GD.recipes, ...GD.fire_resistance_set].map(e => [e.name, e]));
 const TRINKET = BAL.trinket;   // the hidden legendary trinket
 BY_NAME[TRINKET.name] = { name: TRINKET.name, icon: TRINKET.icon, quality: 5, legendary: true, role: "Trinket" };
@@ -866,7 +867,7 @@ function rememberRoom() {
 // ============================================================================================
 // Interface
 // ============================================================================================
-const DEBUFFS = [   // shown top right in the header while active
+const DEBUFFS = [   // shown top right in the header while active, after Rested
   ["Resurrection Sickness", GD.ui_icons.res_sickness, `combat speed -${Math.round((1 - BAL.traps["Resurrection Sickness"].combat_slow) * 100)}%`],
   ["Broken Tool", "inv_misc_wrench_01", "your gathering tools don't help"],
 ];
@@ -973,21 +974,18 @@ function perHourFight(m) {
 
 // Your bag: the Small Brown Pouch you start with, then the best bag you've crafted.
 const bagIconName = () => GD.recipes.filter(r => r.role === "Bag" && S.crafted.includes(r.name)).sort((a, b) => b.rank - a.rank)[0]?.icon || "inv_misc_bag_09";
+// phones: shorter names on the view tab for the professions too long to fit
+const TAB_SHORT = { leatherworking: "Leather", blacksmithing: "Blacksmith", engineering: "Engineer" };
 function renderHeader() {
   $("gold").html = coins(S.gold, false, true);
-  $("bags").html = `<span class="hstat" title="Each material holds up to ${bagCap()}. Crafting bags and Bag Upgrades raise it."><img class="icon sm" src="${ic(bagIconName())}" alt=""> ${bagCap()} each</span>`;
-  $("rested").html = S.rested > 0 && S.rested < 60
-    ? `${Math.ceil(S.rested)}<span class="u-long"> sec</span><span class="u-short">s</span>`
-    : `${Math.round(S.rested / 60)}<span class="u-long"> min</span><span class="u-short">m</span>`;
-  $("rested-bar").style.width = pct(S.rested / (BAL.offline.rested_cap * 60));
   $("checks").textContent = `${checked.size} / 220`;
   const pm = Math.floor((S.played || 0) / 60);
   $("played").textContent = pm >= 60 ? `${Math.floor(pm / 60)}h${String(pm % 60).padStart(2, "0")}` : `${pm}m`;
-  $("debuffs").html = DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => {
-    const left = S.debuffs[name].until - S.clock;
-    return `<span class="debuff" title="${name}: ${what}"><img class="icon" src="${ic(icon)}" alt="${name}"><span>${fmtT(left)}</span></span>`;
-  }).join("");
+  const aura = (cls, name, icon, what, left) => `<span class="aura ${cls}" title="${name}: ${what}"><img class="icon" src="${ic(icon)}" alt="${name}: ${what}"><span>${fmtT(left)}</span></span>`;
+  $("auras").html = (S.rested > 0 ? aura("buff", "Rested", "spell_nature_sleep", "double XP", S.rested) : "")
+    + DEBUFFS.filter(([name]) => active(S.debuffs, name)).map(([name, icon, what]) => aura("bad", name, icon, what, S.debuffs[name].until - S.clock)).join("");
   $("who").textContent = conn.slotName; $("where").textContent = solo ? "" : "· " + conn.server;
+  $("speed").textContent = speedName();
   $("online").hidden = solo;
 }
 
@@ -1071,12 +1069,13 @@ function showTip(el, x, y, above = false) {
     tt.innerHTML = el.dataset.item ? itemTip(el.dataset.item, el.dataset.note) : textTip(el.dataset.tip || "");
     tt.hidden = false;
   }
-  tt.style.left = "0px";   // measure at full width: near the right edge the browser would squish it
-  const pad = 14, w = tt.offsetWidth, h = tt.offsetHeight;
-  tt.style.left = Math.min(x + pad, innerWidth - w - 6) + "px";
+  tt.style.left = "0px"; tt.style.width = "";   // measure at full width, then keep that width: near the right edge the browser would squish it
+  const pad = 14, w = Math.ceil(tt.getBoundingClientRect().width), h = tt.offsetHeight, vw = document.documentElement.clientWidth;   // vw: the page without its scrollbar
+  tt.style.width = w + "px";
+  tt.style.left = Math.max(6, Math.min(x + pad, vw - w - 6)) + "px";
   // touch: above the finger so it isn't hidden under it
   tt.style.top = (above ? (y - h - 40 < 6 ? y + 40 : y - h - 40) : y + pad + h > innerHeight - 6 ? Math.max(6, y - h - pad) : y + pad) + "px";
-  if (above) tt.style.left = Math.max(6, Math.min(x - w / 2, innerWidth - w - 6)) + "px";
+  if (above) tt.style.left = Math.max(6, Math.min(x - w / 2, vw - w - 6)) + "px";
 }
 let mouse = null, touchAt = null;   // touchAt: where the finger held for the tooltip showing now
 function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; touchAt = null; const tt = $("tt"); if (tt) tt.hidden = true; }
@@ -1399,13 +1398,18 @@ function renderPane() {
     const gl = gearLevel(), fighting = S.field?.kind === "mob" ? MOB[S.field.name] : null;
     const now = fighting ? (WEAPONS.find(w => S.weapons[w] && GD.traits[fighting.trait]?.weapon === w) || (S.weapons.Sword ? "Sword" : null)) : null;
     const title = kind => kind.replace(/\b[a-z]/g, c => c.toUpperCase());   // "Gathering XP food" -> "Gathering XP Food"
-    const buffs = BUFF_ROLES.filter(r => active(S.buffs, r)).map(r => eqBox(S.buffs[r].name, "", `<span class="timer">${fmtT(S.buffs[r].until - S.clock)}</span>`, title(r)));
-    // one box per kind, showing the one used next (the best); its tooltip says how full the kind is
-    const supplies = Object.entries(S.supplies).flatMap(([kind, list]) => {
-      if (!list.length) return [];
+    // potions and food: one fixed slot per kind (the fire ones once you have some). The icon is the one running
+    // or used next, the timer shows while its buff runs, and the pips under it count how many you have left.
+    const kindIcon = kind => GD.recipes.find(r => r.role === kind)?.icon;
+    const supplySlot = kind => {
+      const list = S.supplies[kind] || [], on = active(S.buffs, kind) ? S.buffs[kind] : null;
       const best = [...list].sort((a, b) => BY_NAME[b].rank - BY_NAME[a].rank)[0];
-      return [eqBox(best, "", `<span class="count">${list.length}</span>`, `${title(kind)} ${list.length}/${BAL.buffs.keep}`)];
-    });
+      const tip = `${title(kind)}: ${list.length} / ${BAL.buffs.keep} in stock${on ? `, ${fmtT(on.until - S.clock)} left` : ""}`;
+      const box = on || best ? eqBox(on?.name || best, "", on ? `<span class="timer">${fmtT(on.until - S.clock)}</span>` : "", tip)
+        : `<div class="eq empty" title="${tip}"><img src="${ic(kindIcon(kind))}" alt="${tip}" style="filter:grayscale(1)"></div>`;
+      return `<div class="sup">${box}<div class="stock" role="img" aria-label="${list.length} of ${BAL.buffs.keep} left">${"<i></i>".repeat(list.length)}${"<i class=\"off\"></i>".repeat(BAL.buffs.keep - list.length)}</div></div>`;
+    };
+    const supplyRow = (label, kinds, fire, last = []) => `<div class="blbl">${label}</div><div class="irow">${[...kinds, ...((S.supplies[fire] || []).length ? [fire] : []), ...last].map(supplySlot).join("")}</div>`;
     el.html = `<div class="doll">
         <div class="col">${["Head", "Shoulder", "Back", "Chest"].map(s => eqBox(S.armor[s], s)).join("")}</div>
         <div class="stats"><div><div class="v" title="DPS: damage per second with your best weapon, Shop speed and Combat elixir included. A weapon matching a creature's trait deals more.">${Math.round(weaponDps(null) * speed("combat") * (1 + buffValue("Combat elixir")))}</div><div class="k">DPS</div></div>
@@ -1416,8 +1420,9 @@ function renderPane() {
         : `<div class="eq empty" title="${w}: ${STRONG[w]} Craft one with Blacksmithing."><img src="${ic(GD.ui_icons.slot_MainHand)}" alt="${w} empty"></div>`}${w}</div>`).join("")}</div>
       <div class="subh">Tools</div>
       <div class="irow">${GATHER.slice().sort().map(k => S.tools[k] ? eqBox(S.tools[k], "MainHand") : `<div class="eq empty" title="${P[k].name} tool: craft one with Engineering"><img src="${ic(P[k].icon)}" alt="" style="filter:grayscale(1)"></div>`).join("")}</div>
-      <div class="subh">Buffs <span>· one of each kind</span></div><div class="irow">${buffs.join("") || `<span class="mute small">None running. Craft potions and food.</span>`}</div>
-      <div class="subh">Supplies <span>· up to ${BAL.buffs.keep} of each kind</span></div><div class="irow">${supplies.join("") || `<span class="mute small">None yet.</span>`}</div>`;
+      <div class="subh">Potions &amp; Food</div>
+      ${supplyRow("Potions", ["Gathering speed", "Crafting speed", "Combat elixir"], "Fire protection", ["Healing"])}
+      ${supplyRow("Food", ["Gathering XP food", "Crafting XP food", "Combat food"], "Fire food")}`;
   } else if (rtab === "shop") {
     const track = (k, label, lv, step, kind) => {
       const cost = shopCost(lv), can = cost <= S.gold, max = lv >= BAL.gold.steps;
@@ -1476,7 +1481,7 @@ window.addEventListener("blur", () => pressed.clear());
 function render() {
   if (S && S.gold > GOLD_CAP) S.gold = GOLD_CAP;
   if (!S) return;
-  renderHeader(); renderList(); $("vt-main").textContent = P[selected].name; renderSlots(); renderDetail(); renderPane(); renderGoal(); renderLegend();
+  renderHeader(); renderList(); $("vt-main").html = `<span class="nm-long">${P[selected].name}</span><span class="nm-short">${TAB_SHORT[selected] || P[selected].name}</span>`; renderSlots(); renderDetail(); renderPane(); renderGoal(); renderLegend();
   refreshTip();
 }
 
@@ -1515,7 +1520,10 @@ function rankTabFor(k) {
   return 0;
 }
 // Phone: the tab bar shows one view at a time (Professions, the open profession, Character).
-function showView(v) { document.body.dataset.view = v; window.scrollTo(0, 0); }
+function showView(v) {
+  document.body.dataset.view = v; window.scrollTo(0, 0);
+  document.querySelectorAll(".vtabs [data-view]").forEach(b => b.dataset.view === v ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+}
 $("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) showView(b.dataset.view); };
 $("to-connect").onclick = $("to-menu").onclick = () => { save(); location.href = location.pathname; };
 

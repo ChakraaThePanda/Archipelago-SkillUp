@@ -32,20 +32,19 @@
 </section>
 
 <header class="top frame" id="top" hidden>
-  <button class="logo title" id="to-menu" title="Main menu"><img class="brand" data-logo alt="">SkillUp</button>
-  <button class="who" id="to-connect" title="Change room or slot"><span class="online" id="online" aria-hidden="true"></span><span><b id="who"></b> <span class="mute" id="where"></span></span></button>
+  <button class="logo title" id="to-menu" title="Main menu" aria-label="Main menu"><img class="brand" data-logo alt=""><span class="logo-txt">SkillUp</span></button>
+  <button class="who" id="to-connect" title="Change room or slot"><span class="online" id="online" aria-hidden="true"></span><b id="who"></b><span class="speed" id="speed"></span><span class="mute" id="where"></span></button>
+  <span class="hsep" aria-hidden="true"></span>
   <span class="hstats">
-  <span class="hstat h-gold"><span class="k">Gold</span><span class="coins" id="gold"></span></span>
-  <span class="hstat hide-sm"><span class="k">Bags</span><span id="bags"></span></span>
-  <span class="hstat h-rested"><span class="k">Rested</span><span class="rbar" style="flex:1"><div class="sbar rested" style="height:14px"><i id="rested-bar"></i></div></span><span id="rested" style="font-size:13px"></span></span>
-  <span class="hstat h-checks"><span class="k">Checks</span><b id="checks"></b></span>
-  <span class="hstat hide-sm" title="Time played with the game open (time away doesn't count). Stops when your goal is complete."><span class="k">Played</span><b id="played"></b></span>
+  <span class="hstat"><span class="k">Gold</span><span class="coins" id="gold"></span></span>
+  <span class="hstat"><span class="k">Checks</span><b id="checks"></b></span>
+  <span class="hstat" title="Time played with the game open (time away doesn't count). Stops when your goal is complete."><span class="k">Played</span><b id="played"></b></span>
   </span>
-  <span class="debuffs" id="debuffs" aria-label="Debuffs"></span>
+  <span class="auras" id="auras" role="group" aria-label="Buffs and debuffs"></span>
 </header>
 
 <nav class="vtabs" id="vtabs" aria-label="Views" hidden>
-  <button data-view="profs">Professions</button><button data-view="main" id="vt-main">Combat</button><button data-view="panel">Character</button>
+  <button data-view="profs">Professions</button><button data-view="main" id="vt-main" aria-current="page">Combat</button><button data-view="panel">Character</button>
 </nav>
 <main class="grid" id="game" hidden>
   <nav class="frame side" id="profs" aria-label="Professions"><h2 class="h2 title">Professions</h2><div id="proflist"></div></nav>
