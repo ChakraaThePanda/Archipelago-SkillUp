@@ -345,7 +345,8 @@ body { display: flex; flex-direction: column; }
   #gold, #checks { min-width: 0; }
   /* phone: one view at a time, picked from the tab bar under the header */
   .vtabs:not([hidden]) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; position: sticky; top: 0; z-index: 20;
-    padding: 6px 0; background: var(--bg, #05060f); border-bottom: 1px solid var(--steel-dk); }
+    padding: 6px 0; background: var(--bg, #05060f); }
+  .vtabs:not([hidden]) + #game { margin-top: 0; }   /* the same 6px under the tabs as above them */
   .vtabs button { background: #0b0e22; border: 1px solid var(--steel-dk); border-radius: 4px; color: var(--mute); padding: 8px 4px;
     font-family: var(--f-title); font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body[data-view="profs"] .vtabs [data-view="profs"], body[data-view="main"] .vtabs [data-view="main"],
@@ -353,19 +354,28 @@ body { display: flex; flex-direction: column; }
   body:not([data-view="profs"]) #profs, body:not([data-view="main"]) #main, body:not([data-view="panel"]) #panel { display: none; }
   #profs > .h2 { display: none; }
 }
-/* phones: the logo icon alone and the speed under your name, so the name has room */
 .nm-short { display: none; }
-@media (max-width: 600px) { .top .logo-txt { display: none; }
-  .vtabs .nm-long { display: none; } .vtabs .nm-short { display: inline; }
-  .top .who { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 7px; }
-  .top .who b, .top .who .speed { grid-column: 2; justify-self: start; max-width: 100%; }
-  .top .who .online { grid-row: 1 / span 2; } }
+/* phones: your name, game speed and room move to the Console tab; a red dot on the logo while offline */
+.slotline { display: none; }
+@media (max-width: 600px) { .vtabs .nm-long { display: none; } .vtabs .nm-short { display: inline; }
+  .top .who { display: none; }
+  .top .logo { position: relative; }   /* offline: a red badge on the icon's corner, so it takes no room */
+  .top.offline .logo::after { content: ""; position: absolute; left: calc(1.15em - 7px); top: -3px; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--red); box-shadow: 0 0 0 2px var(--night), 0 0 8px var(--red); }
+  .slotline { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid var(--steel-dk); white-space: nowrap; line-height: 1.2; }
+  .slotline b, .slotline .mute { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .slotline .mute { flex: 1 0 100%; padding-left: 17px; font-size: 13px; }   /* the room on its own line, under your name */
+  .tabs { padding-inline: 4px; } .tabs button { flex: 0 1 auto; padding-inline: 6px; }
+  .top .auras { margin-left: 8px; gap: 5px; } }
+@media (max-width: 360px) { .top .logo { font-size: 19px; }   /* room for the logo and three buffs */
+  #gold .n.copper:not(:first-child), #gold .n.copper:not(:first-child) + img { display: none; } }   /* copper only when it's all you have */
 
 .rtabs button.locked { opacity: .6; }
 @media (max-width: 780px) { .rtabs .lock { display: none; } }
 
 /* the logo: the Engineering gear next to the title */
 .logo { display: inline-flex; align-items: center; gap: .3em; }
+.logo .logo-txt { position: relative; top: .06em; }   /* Cinzel's letters sit high in their line: line them up with the icon */
 .logo .brand { width: 1.15em; height: 1.15em; aspect-ratio: 1 / 1; flex: none; border-radius: 6px; box-shadow: 0 0 0 1px var(--gold-dk), 0 2px 8px #000a; }
 .card .logo { display: flex; justify-content: center; }
 

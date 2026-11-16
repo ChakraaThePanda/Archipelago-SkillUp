@@ -881,7 +881,7 @@ function coins(c, compact = false, short = false) { // short: from 1000 gold on,
   const parts = [[g, GD.ui_icons.gold, "gold"], [s, GD.ui_icons.silver, "silver"], [cp, GD.ui_icons.copper, "copper"]];
   if (short && g >= 1000) parts.pop();
   const shown = compact ? parts.filter(([v]) => v) : parts.filter(([v], i) => v || i === 2 || (i === 1 && g));
-  return (shown.length ? shown : [parts[2]]).map(([v, i, a]) => `<span class="n">${v}</span><img src="${ic(i)}" alt="${a}">`).join("");
+  return (shown.length ? shown : [parts[2]]).map(([v, i, a]) => `<span class="n ${a}">${v}</span><img src="${ic(i)}" alt="${a}">`).join("");
 }
 const lvl = (c, u) => `<span class="lvl c-${c.name}" title="Skill ${u}: ${COLOR_TIP[c.name]}">${u}</span>`;
 const pace = hr => hr > 0 ? `<span title="One skill level every ${fmtT(3600 / hr)}">+1 / <b>${fmtT(3600 / hr)}</b></span>` : "";
@@ -933,13 +933,15 @@ function log(html, cls = "") {
   while (box.childElementCount > LOG_MAX) box.firstElementChild.remove();
   if (atBottom) box.scrollTop = box.scrollHeight;
 }
-const LOG_SKELETON = `<div class="log" id="logbox" role="log" aria-live="polite"></div>
+const SLOT_LINE = `<div class="slotline" id="slotline"></div>`;   // phones: your name, game speed and room (see renderSlotLine)
+const LOG_SKELETON = `${SLOT_LINE}<div class="log" id="logbox" role="log" aria-live="polite"></div>
   <form class="say" id="say" autocomplete="off"><input id="say-text" maxlength="500" placeholder="Message or !command" aria-label="Message to the room"><button class="wbtn" type="submit">Send</button></form>`;
-const SOLO_LOG = `<div class="log" id="logbox" role="log" aria-live="polite"></div>`;
+const SOLO_LOG = `${SLOT_LINE}<div class="log" id="logbox" role="log" aria-live="polite"></div>`;
 function renderLog(el) {
   const skeleton = solo ? SOLO_LOG : LOG_SKELETON;
   if (el._html === skeleton) return;          // already showing: new lines are added as they arrive
   el.html = skeleton;
+  renderSlotLine();
   const box = $("logbox");
   box.innerHTML = logLines.join("") || `<p class="sys empty">${solo ? "The items you find show here." : "Messages from the Archipelago server show here."}</p>`;
   box.scrollTop = box.scrollHeight;
@@ -953,7 +955,20 @@ function renderLog(el) {
     $("say-text").value = "";
   };
 }
-function setOnline(on) { $("online").classList.toggle("off", !on); }
+function setOnline(on) {
+  $("online").classList.toggle("off", !on); $("top").classList.toggle("offline", !on);
+  const menu = $("to-menu"), label = on ? "Main menu" : "Main menu (offline)";   // phones only show a red dot, so say it too
+  menu.title = label; menu.setAttribute("aria-label", label);
+  renderSlotLine();
+}
+// phones: your name, game speed and room sit at the top of the Console tab instead of the header
+function renderSlotLine() {
+  const el = document.getElementById("slotline");
+  if (!el || !conn) return;
+  const state = $("online").classList.contains("off") ? "Offline" : "Online";
+  el.html = (solo ? "" : `<span class="online${state === "Offline" ? " off" : ""}" role="img" aria-label="${state}" title="${state}"></span>`)
+    + `<b>${esc(conn.slotName)}</b><span class="speed">${speedName()}</span>${solo ? "" : `<span class="mute">${esc(conn.server)}</span>`}`;
+}
 
 // XP per second of action time, with Rested and the XP foods (the same ones addXp applies)
 const xpBoost = field => BAL.actions.xp_per_second * (S.rested > 0 ? 2 : 1) * (1 + buffValue(field ? "Gathering XP food" : "Crafting XP food"));
@@ -987,6 +1002,7 @@ function renderHeader() {
   $("who").textContent = conn.slotName; $("where").textContent = solo ? "" : "· " + conn.server;
   $("speed").textContent = speedName();
   $("online").hidden = solo;
+  renderSlotLine();
 }
 
 function renderList() {
