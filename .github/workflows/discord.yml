@@ -1,4 +1,5 @@
-# Posts new commits, and published releases that change the APWorld, to the project's Discord channel as embeds.
+# Posts to the project's Discord channel as embeds: published releases, or new commits for
+# projects that have never published a release.
 # Needs a DISCORD_WEBHOOK repository secret (the channel's webhook URL); skips without it.
 # Run it manually to re-post the latest release, or a specific one by tag.
 name: Discord posts
@@ -28,9 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post commits to Discord
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "DISCORD_WEBHOOK secret is not set, skipping"
+            exit 0
+          fi
+          # projects with releases only announce those; commits are posted for projects without any
+          releases="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq 'map(select(.draft | not)) | length')"
+          if [ "$releases" != 0 ]; then
+            echo "This project publishes releases, so commits are not posted"
             exit 0
           fi
           if [ "$(jq '.commits | length' "$GITHUB_EVENT_PATH")" = 0 ]; then
@@ -82,19 +91,6 @@ jobs:
             exit 0
           fi
           if [ -n "$RELEASE_ID" ]; then
-            # a published release is only announced when the APWorld (worlds/skillup/) changed since the
-            # previous release; game-page-only releases already went out as commits. Manual runs always post.
-            tag="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
-            prev="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=30" \
-              --jq "[.[] | select(.draft | not) | select(.tag_name != \"$tag\")][0].tag_name // empty")"
-            if [ -n "$prev" ]; then
-              # if the comparison fails, post anyway rather than silently skip
-              changed="$(gh api "repos/$GITHUB_REPOSITORY/compare/$prev...$tag" --jq '.files[].filename')" || changed="worlds/skillup/"
-            fi
-            if [ -n "$prev" ] && ! grep -q '^worlds/skillup/' <<< "$changed"; then
-              echo "No APWorld change since $prev, not posting this release"
-              exit 0
-            fi
             release="releases/$RELEASE_ID"
           elif [ -n "$TAG" ]; then
             release="releases/tags/$TAG"
