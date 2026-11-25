@@ -1,7 +1,7 @@
 # Posts to the project's Discord channel as embeds: published releases, or new commits for
 # projects that have never published a release.
 # Needs a DISCORD_WEBHOOK repository secret (the channel's webhook URL); skips without it.
-# Run it manually to re-post the latest release, or a specific one by tag.
+# Run it manually to re-post the latest release, a specific one by tag, or to post one commit.
 name: Discord posts
 
 on:
@@ -13,6 +13,9 @@ on:
     inputs:
       tag:
         description: Release tag to post (leave empty for the latest release)
+        required: false
+      commit:
+        description: Commit to post instead of a release (its SHA)
         required: false
 
 permissions:
@@ -76,8 +79,38 @@ jobs:
               }]}' "$GITHUB_EVENT_PATH" > payload.json
           curl -sSf -H "Content-Type: application/json" --data-binary @payload.json "$DISCORD_WEBHOOK"
 
+  commit:
+    if: github.event_name == 'workflow_dispatch' && inputs.commit != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post one commit to Discord
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.commit }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK secret is not set, skipping"
+            exit 0
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/commits/$SHA" > commit.json
+          footer="$(date -d "$(jq -r '.commit.author.date' commit.json)" '+%Y/%m/%d - %H:%M')"
+          jq --arg footer "$footer" --arg repo "${GITHUB_REPOSITORY#*/}" --arg branch "$BRANCH" '
+            (.commit.message | gsub("\r"; "") | split("\n")) as $lines
+            | ($lines[1:] | join("\n") | sub("^\\s+"; "") | sub("\\s+$"; "")) as $body
+            | {embeds: [{
+                title: $lines[0],
+                url: .html_url,
+                description: ("-# New commit · \($repo)/\($branch) · `\(.sha[0:7])`"
+                  + (if $body == "" then "" else "\n" + $body[0:3500] end)),
+                color: 1752220,
+                author: {name: (.author.login // .commit.author.name), url: .author.html_url, icon_url: .author.avatar_url},
+                footer: {text: $footer}
+              }]}' commit.json > payload.json
+          curl -sSf -H "Content-Type: application/json" --data-binary @payload.json "$DISCORD_WEBHOOK"
+
   release:
-    if: github.event_name != 'push'
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.commit == '')
     runs-on: ubuntu-latest
     steps:
       - name: Post release to Discord
