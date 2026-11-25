@@ -284,9 +284,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fld .hint { font-size: 12.5px; color: var(--mute); }
 .card .wbtn.big { width: 100%; padding: 10px; font-family: var(--f-title); font-weight: 700; letter-spacing: .06em; font-size: 16px; margin-top: 4px; }
 .recent { margin-top: 18px; border-top: 1px solid var(--steel-dk); padding-top: 10px; }
-.recent button { display: grid; grid-template-columns: 1fr auto; width: 100%; text-align: left; background: #0b0e22; border: 1px solid var(--steel-dk); border-radius: 4px; padding: 8px 11px; margin-top: 7px; gap: 2px 10px; }
+.recent > button, .rrow > button:not(.xbtn) { display: grid; grid-template-columns: 1fr auto; width: 100%; text-align: left; background: #0b0e22; border: 1px solid var(--steel-dk); border-radius: 4px; padding: 8px 11px; margin-top: 7px; gap: 2px 10px; }
 .recent:empty { display: none; }
-.recent button:hover { border-color: var(--steel); }
+.recent > button:hover, .rrow > button:not(.xbtn):hover { border-color: var(--steel); }
+/* WoW-style close button: round red, gold ring, gold X, on the row's top-right corner on hover */
+.rrow { position: relative; }
+.xbtn { position: absolute; top: -2px; right: -8px; width: 20px; height: 20px; padding: 0;
+  background: radial-gradient(circle at 50% 35%, #e03a2a, #a01010 55%, #5a0505); border: 2px solid #d4a017; border-radius: 50%;
+  box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #0006, 0 1px 3px #000; opacity: 0; transition: opacity .12s; cursor: pointer; }
+.xbtn svg { display: block; width: 100%; height: 100%; stroke: var(--gold); stroke-width: 2.2; stroke-linecap: round; filter: drop-shadow(0 0 1px #000); }
+.rrow:hover .xbtn, .xbtn:focus-visible { opacity: 1; }
+.xbtn:hover { filter: brightness(1.25); }
+@media (hover: none) { .xbtn { opacity: 1; } }
+.xbtn.ask { opacity: 1; background: radial-gradient(circle at 50% 35%, #4fbf2e, #24801a 55%, #0f4a0a); }
 .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--steel-dk); font-size: 14px; }
 .links a { color: var(--mute); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .links a:hover { color: var(--gold); }
@@ -444,6 +454,7 @@ body { display: flex; flex-direction: column; }
 .hot { outline: 1px solid rgba(255, 209, 0, .75); outline-offset: 1px; box-shadow: 0 0 10px rgba(255, 209, 0, .35); border-radius: 3px; }
 .eq.hot, .icon.hot { outline-offset: 0; }
 .weapons > div.hot { outline-offset: 3px; border-radius: 4px; }
+.xbtn.hot { outline: none; border-radius: 50%; box-shadow: 0 0 0 1px #000, 0 0 8px rgba(255, 209, 0, .5); }
 
 /* the fighting slot: its health above yours */
 .slot .fight { grid-column: 1 / 3; display: grid; gap: 4px; }

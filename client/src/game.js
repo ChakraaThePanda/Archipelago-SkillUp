@@ -1094,6 +1094,12 @@ function showTip(el, x, y, above = false) {
   if (above) tt.style.left = Math.max(6, Math.min(x - w / 2, vw - w - 6)) + "px";
 }
 let mouse = null, touchAt = null;   // touchAt: where the finger held for the tooltip showing now
+// change a tooltip's text, also while it is showing
+function setTip(el, text) {
+  el.dataset.tip = el.ariaLabel = text;
+  const at = mouse || touchAt;
+  if (tipFor === el && at) { tipFor = null; showTip(el, at.x, at.y, !mouse); }   // re-measured, so it fits the new text
+}
 function hideTip() { tipFor?.classList.remove("hot"); tipFor = null; touchAt = null; const tt = $("tt"); if (tt) tt.hidden = true; }
 function tipAt(x, y, target = document.elementFromPoint(x, y), above = false) {
   const el = target?.closest?.("[title], [data-tip], [data-item]");
@@ -1110,7 +1116,7 @@ document.addEventListener("pointerleave", () => { mouse = null; hideTip(); });
 function refreshTip() {
   if (!tipFor || tipFor.isConnected) return;
   tipFor = null;
-  if (mouse) tipAt(mouse.x, mouse.y);
+  if (mouse) { tipAt(mouse.x, mouse.y); if (!tipFor) hideTip(); }   // nothing with a tooltip there now
   else if (touchAt) { const { x, y } = touchAt; tipAt(x, y, undefined, true); if (tipFor) touchAt = { x, y }; else hideTip(); }
   else hideTip();
 }
@@ -1544,6 +1550,8 @@ $("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) 
 $("to-connect").onclick = $("to-menu").onclick = () => { save(); location.href = location.pathname; };
 
 // ---- connect screen ------------------------------------------------------------------------
+// the remove button on a recent room: an X, then a ? asking to click again
+const X_PATH = "M5 5l6 6M11 5l-6 6", Q_PATH = "M5.5 5.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.4v.6M8 12.6v.1";
 function showRecent() {
   let rooms = [];
   try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
@@ -1552,14 +1560,35 @@ function showRecent() {
   $("recent").html = rooms.length ? `<div class="glabel" style="padding:0">Recent rooms</div>` + rooms.map(r => r.solo
     ? `<button type="button" data-solo="1"><b>Solo game<span class="tag-solo">Solo</span></b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
        <span class="mute" style="font-size:13px">Saved in this browser · ${status(r)}</span></button>`
-    : `<button type="button" data-server="${esc(r.server)}" data-slot="${esc(r.slot)}"><b>${esc(r.slot)}</b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
-     <span class="mute" style="font-size:13px">${esc(r.server)} · ${status(r)}</span></button>`).join("") : "";
-  $("recent").querySelectorAll("button").forEach(b => b.onclick = () => {
-    if (b.dataset.solo) return startSolo();
-    $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit();
-  });
+    : `<div class="rrow"><button type="button" data-server="${esc(r.server)}" data-slot="${esc(r.slot)}"><b>${esc(r.slot)}</b><span class="mute" style="font-size:12.5px">${new Date(r.at).toLocaleDateString()}</span>
+     <span class="mute" style="font-size:13px">${esc(r.server)} · ${status(r)}</span></button>
+     <button type="button" class="xbtn" data-forget="${esc(r.server)}|${esc(r.slot)}" aria-label="Remove from list" data-tip="Remove from list"><svg viewBox="0 0 16 16"><path d="${X_PATH}"/></svg></button></div>`).join("") : "";
   showSolo(false);
 }
+$("recent").addEventListener("click", ev => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  if (b.dataset.forget) {   // first click turns the X into a green ?, the second removes it
+    if (!b.classList.contains("ask")) {
+      b.classList.add("ask"); setTip(b, "Click again to remove");
+      b.querySelector("path").setAttribute("d", Q_PATH);
+      return;
+    }
+    let rooms = [];   // only drops it from the list; the room's progress stays saved
+    try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
+    lsSet("skillup:rooms", JSON.stringify(rooms.filter(r => r.solo || `${r.server}|${r.slot}` !== b.dataset.forget)));
+    showRecent(); return refreshTip();   // its tooltip goes away with it
+  }
+  if (b.dataset.solo) return startSolo();
+  $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit();
+});
+// Leaving the row (or tapping elsewhere on a phone) turns a pending ? back into an X.
+const unask = ev => {
+  const a = $("recent").querySelector(".xbtn.ask");
+  if (!a || a.closest(".rrow").contains(ev.target)) return;
+  a.classList.remove("ask"); setTip(a, "Remove from list"); a.querySelector("path").setAttribute("d", X_PATH);
+};
+document.addEventListener("pointerover", unask); document.addEventListener("pointerdown", unask);
 // Solo play: one game per browser, no server. Starting a new one replaces the old one.
 function showSolo(open) {
   const saved = soloSaved();
