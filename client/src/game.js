@@ -1550,8 +1550,8 @@ $("vtabs").onclick = ev => { const b = ev.target.closest("[data-view]"); if (b) 
 $("to-connect").onclick = $("to-menu").onclick = () => { save(); location.href = location.pathname; };
 
 // ---- connect screen ------------------------------------------------------------------------
-// the remove button on a recent room: an X, then a ? asking to click again
-const X_PATH = "M5 5l6 6M11 5l-6 6", Q_PATH = "M5.5 5.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.4v.6M8 12.6v.1";
+// the remove button on a recent room: an X, then a green check to confirm
+const X_PATH = "M5 5l6 6M11 5l-6 6", CHECK_PATH = "M4.5 8.5l2.3 2.3 4.7-5.3";
 function showRecent() {
   let rooms = [];
   try { rooms = JSON.parse(lsGet("skillup:rooms") || "[]"); } catch {}
@@ -1568,10 +1568,10 @@ function showRecent() {
 $("recent").addEventListener("click", ev => {
   const b = ev.target.closest("button");
   if (!b) return;
-  if (b.dataset.forget) {   // first click turns the X into a green ?, the second removes it
+  if (b.dataset.forget) {   // first click turns the X into a green check, the second removes it
     if (!b.classList.contains("ask")) {
       b.classList.add("ask"); setTip(b, "Click again to remove");
-      b.querySelector("path").setAttribute("d", Q_PATH);
+      b.querySelector("path").setAttribute("d", CHECK_PATH);
       return;
     }
     let rooms = [];   // only drops it from the list; the room's progress stays saved
@@ -1582,7 +1582,7 @@ $("recent").addEventListener("click", ev => {
   if (b.dataset.solo) return startSolo();
   $("c-server").value = b.dataset.server; $("c-slot").value = b.dataset.slot; $("connect-form").requestSubmit();
 });
-// Leaving the row (or tapping elsewhere on a phone) turns a pending ? back into an X.
+// Leaving the row (or tapping elsewhere on a phone) turns a pending check back into an X.
 const unask = ev => {
   const a = $("recent").querySelector(".xbtn.ask");
   if (!a || a.closest(".rrow").contains(ev.target)) return;

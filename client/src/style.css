@@ -292,7 +292,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .xbtn { position: absolute; top: -2px; right: -8px; width: 20px; height: 20px; padding: 0;
   background: radial-gradient(circle at 50% 35%, #e03a2a, #a01010 55%, #5a0505); border: 2px solid #d4a017; border-radius: 50%;
   box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #0006, 0 1px 3px #000; opacity: 0; transition: opacity .12s; cursor: pointer; }
-.xbtn svg { display: block; width: 100%; height: 100%; stroke: var(--gold); stroke-width: 2.2; stroke-linecap: round; filter: drop-shadow(0 0 1px #000); }
+.xbtn svg { display: block; width: 100%; height: 100%; stroke: var(--gold); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1px #000); }
 .rrow:hover .xbtn, .xbtn:focus-visible { opacity: 1; }
 .xbtn:hover { filter: brightness(1.25); }
 @media (hover: none) { .xbtn { opacity: 1; } }
